@@ -3,7 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { Pool } from 'pg'
 
-let dbPool: Pool | null = null
+let pools = new Map<string, Pool>()
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -36,23 +36,33 @@ function createWindow(): void {
 }
 
 // 数据库 IPC 处理
-ipcMain.handle('db:connect', async (_, config) => {
+ipcMain.handle('db:connect', async (_, { id, config }) => {
   try {
-    if (dbPool) {
-      await dbPool.end()
+    if (pools.has(id)) {
+      await pools.get(id)!.end()
     }
-    dbPool = new Pool(config)
-    await dbPool.query('SELECT NOW()')
+    const pool = new Pool(config)
+    await pool.query('SELECT NOW()')
+    pools.set(id, pool)
     return { success: true }
   } catch (error: any) {
     return { success: false, error: error.message }
   }
 })
 
-ipcMain.handle('db:query', async (_, sql, params) => {
-  if (!dbPool) return { success: false, error: 'No database connection' }
+ipcMain.handle('db:disconnect', async (_, id) => {
+  if (pools.has(id)) {
+    await pools.get(id)!.end()
+    pools.delete(id)
+  }
+  return { success: true }
+})
+
+ipcMain.handle('db:query', async (_, { id, sql, params }) => {
+  const pool = pools.get(id)
+  if (!pool) return { success: false, error: 'No database connection' }
   try {
-    const result = await dbPool.query(sql, params)
+    const result = await pool.query(sql, params)
     return { success: true, rows: result.rows, fields: result.fields }
   } catch (error: any) {
     return { success: false, error: error.message }

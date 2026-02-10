@@ -6,8 +6,9 @@ if (process.contextIsolated) {
   try {
     exposeElectronAPI()
     contextBridge.exposeInMainWorld('api', {
-      connect: (config) => ipcRenderer.invoke('db:connect', config),
-      query: (sql, params) => ipcRenderer.invoke('db:query', sql, params)
+      connect: (id, config) => ipcRenderer.invoke('db:connect', { id, config }),
+      query: (id, sql, params) => ipcRenderer.invoke('db:query', { id, sql, params }),
+      disconnect: (id) => ipcRenderer.invoke('db:disconnect', id)
     })
   } catch (error) {
     console.error(error)
