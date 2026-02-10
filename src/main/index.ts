@@ -1,9 +1,7 @@
 import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { Pool } from 'pg'
-
-let pools = new Map<string, Pool>()
+import { dbManager } from './db-manager'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -37,36 +35,15 @@ function createWindow(): void {
 
 // 数据库 IPC 处理
 ipcMain.handle('db:connect', async (_, { id, config }) => {
-  try {
-    if (pools.has(id)) {
-      await pools.get(id)!.end()
-    }
-    const pool = new Pool(config)
-    await pool.query('SELECT NOW()')
-    pools.set(id, pool)
-    return { success: true }
-  } catch (error: any) {
-    return { success: false, error: error.message }
-  }
+  return await dbManager.connect(id, config)
 })
 
 ipcMain.handle('db:disconnect', async (_, id) => {
-  if (pools.has(id)) {
-    await pools.get(id)!.end()
-    pools.delete(id)
-  }
-  return { success: true }
+  return await dbManager.disconnect(id)
 })
 
 ipcMain.handle('db:query', async (_, { id, sql, params }) => {
-  const pool = pools.get(id)
-  if (!pool) return { success: false, error: 'No database connection' }
-  try {
-    const result = await pool.query(sql, params)
-    return { success: true, rows: result.rows, fields: result.fields }
-  } catch (error: any) {
-    return { success: false, error: error.message }
-  }
+  return await dbManager.query(id, sql, params)
 })
 
 app.whenReady().then(() => {

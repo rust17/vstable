@@ -169,7 +169,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
   }
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-white text-gray-900" style={{ display: isActive ? 'flex' : 'none' }}>
+    <div data-testid={`session-view-${id}`} className="flex h-full w-full overflow-hidden bg-white text-gray-900" style={{ display: isActive ? 'flex' : 'none' }}>
       <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
         <div className="p-4 flex-1 overflow-y-auto">
           <div className="flex items-center justify-between mb-4">
@@ -187,7 +187,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
               <div className="mt-6">
                 <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-2">Tables</h3>
                 {tables.map((table, i) => (
-                  <div key={i} onClick={() => handleTableClick(table.table_schema, table.table_name)} className={`group flex items-center gap-2 px-2 py-1 rounded-md hover:bg-gray-200 cursor-pointer transition-colors ${currentTable?.name === table.table_name ? 'bg-gray-200 text-blue-600' : 'text-gray-600'}`}>
+                  <div key={i} data-testid={`table-item-${table.table_name}`} onClick={() => handleTableClick(table.table_schema, table.table_name)} className={`group flex items-center gap-2 px-2 py-1 rounded-md hover:bg-gray-200 cursor-pointer transition-colors ${currentTable?.name === table.table_name ? 'bg-gray-200 text-blue-600' : 'text-gray-600'}`}>
                     <TableIcon size={14} className={`group-hover:text-blue-500 ${currentTable?.name === table.table_name ? 'text-blue-500' : 'text-gray-400'}`} />
                     <span className="truncate text-sm">{table.table_name}</span>
                   </div>
@@ -203,15 +203,15 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
         <div className="border-b border-gray-100 flex items-center px-4 justify-end gap-2 bg-gray-50/50 h-10">
            {isConnected && currentTable && (
              <div className="mr-auto flex bg-gray-200/50 p-1 rounded-lg no-drag">
-               <button onClick={() => setActiveTab('data')} className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${activeTab === 'data' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>Data</button>
-               <button onClick={() => setActiveTab('structure')} className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${activeTab === 'structure' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>Structure</button>
+               <button data-testid="tab-data" onClick={() => setActiveTab('data')} className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${activeTab === 'data' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>Data</button>
+               <button data-testid="tab-structure" onClick={() => setActiveTab('structure')} className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${activeTab === 'structure' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>Structure</button>
              </div>
            )}
           {isConnected && (
              <>
                <span className="text-[10px] text-gray-400 font-mono px-4 uppercase tracking-wider hidden md:block">Connected to {config.host}</span>
                {activeTab === 'data' && (
-                 <button onClick={() => executeSql(query)} disabled={executing} className="flex items-center gap-1.5 px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"><Play size={12} fill="currentColor" /> {executing ? 'Running...' : 'Run Query'}</button>
+                 <button data-testid="btn-run-query" onClick={() => executeSql(query)} disabled={executing} className="flex items-center gap-1.5 px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"><Play size={12} fill="currentColor" /> {executing ? 'Running...' : 'Run Query'}</button>
                )}
              </>
           )}
@@ -222,21 +222,21 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
             <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-white">
               <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center mb-4 shadow-inner"><Database size={40} className="text-gray-200" /></div>
               <p className="text-sm font-medium text-gray-500">No active connection</p>
-              <button onClick={() => setShowConnectForm(true)} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">Create New Connection</button>
+              <button data-testid="create-connection-btn" onClick={() => setShowConnectForm(true)} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">Create New Connection</button>
             </div>
           ) : showConnectForm ? (
             <div className="flex-1 flex items-center justify-center bg-gray-50/50 p-6 overflow-y-auto">
-              <form onSubmit={handleConnect} className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+              <form data-testid="connection-form" onSubmit={handleConnect} className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
                 <h3 className="text-xl font-semibold mb-6 text-gray-800">Connection Settings</h3>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-4 gap-4 items-center"><label className="text-sm font-medium text-gray-600 col-span-1">Host</label><input className="col-span-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" value={config.host} onChange={e => setConfig({...config, host: e.target.value})} required /></div>
-                  <div className="grid grid-cols-4 gap-4 items-center"><label className="text-sm font-medium text-gray-600 col-span-1">Port</label><input type="number" className="col-span-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" value={config.port} onChange={e => setConfig({...config, port: parseInt(e.target.value)})} required /></div>
-                  <div className="grid grid-cols-4 gap-4 items-center"><label className="text-sm font-medium text-gray-600 col-span-1">User</label><input className="col-span-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" value={config.user} onChange={e => setConfig({...config, user: e.target.value})} required /></div>
-                  <div className="grid grid-cols-4 gap-4 items-center"><label className="text-sm font-medium text-gray-600 col-span-1">Password</label><input type="password" className="col-span-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" value={config.password} onChange={e => setConfig({...config, password: e.target.value})} /></div>
-                  <div className="grid grid-cols-4 gap-4 items-center"><label className="text-sm font-medium text-gray-600 col-span-1">Database</label><input className="col-span-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" value={config.database} onChange={e => setConfig({...config, database: e.target.value})} required /></div>
+                  <div className="grid grid-cols-4 gap-4 items-center"><label className="text-sm font-medium text-gray-600 col-span-1">Host</label><input data-testid="input-host" className="col-span-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" value={config.host} onChange={e => setConfig({...config, host: e.target.value})} required /></div>
+                  <div className="grid grid-cols-4 gap-4 items-center"><label className="text-sm font-medium text-gray-600 col-span-1">Port</label><input data-testid="input-port" type="number" className="col-span-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" value={config.port} onChange={e => setConfig({...config, port: parseInt(e.target.value)})} required /></div>
+                  <div className="grid grid-cols-4 gap-4 items-center"><label className="text-sm font-medium text-gray-600 col-span-1">User</label><input data-testid="input-user" className="col-span-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" value={config.user} onChange={e => setConfig({...config, user: e.target.value})} required /></div>
+                  <div className="grid grid-cols-4 gap-4 items-center"><label className="text-sm font-medium text-gray-600 col-span-1">Password</label><input data-testid="input-password" type="password" className="col-span-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" value={config.password} onChange={e => setConfig({...config, password: e.target.value})} /></div>
+                  <div className="grid grid-cols-4 gap-4 items-center"><label className="text-sm font-medium text-gray-600 col-span-1">Database</label><input data-testid="input-database" className="col-span-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" value={config.database} onChange={e => setConfig({...config, database: e.target.value})} required /></div>
                 </div>
                 {error && <div className="mt-6 p-3 bg-red-50 text-red-600 text-xs rounded-lg border border-red-100">{error}</div>}
-                <div className="mt-8 flex gap-3"><button type="button" onClick={() => setShowConnectForm(false)} className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">Cancel</button><button type="submit" disabled={loading} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm">{loading ? 'Connecting...' : 'Connect'}</button></div>
+                <div className="mt-8 flex gap-3"><button type="button" onClick={() => setShowConnectForm(false)} className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">Cancel</button><button data-testid="btn-connect" type="submit" disabled={loading} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm">{loading ? 'Connecting...' : 'Connect'}</button></div>
               </form>
             </div>
           ) : (
@@ -295,7 +295,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                                 {results.fields.map((field, j) => {
                                   const isEditable = !!currentTable?.pk && field.name !== currentTable.pk
                                   return (
-                                    <td key={j} className="border-r border-gray-100 text-gray-600 whitespace-nowrap max-w-xs truncate p-0">
+                                    <td key={j} data-testid={`cell-${field.name}-${i}`} className="border-r border-gray-100 text-gray-600 whitespace-nowrap max-w-xs truncate p-0">
                                       <EditableCell value={row[field.name]} isEditable={isEditable} onUpdate={(val) => handleCellUpdate(row, field.name, val)} />
                                     </td>
                                   )
@@ -328,8 +328,8 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                       <tbody>
                         {structure.map((col, i) => (
                           <tr key={i} className="hover:bg-gray-50 border-b border-gray-100 transition-colors">
-                            <td className="border-r border-gray-100 p-0 h-10"><EditableCell value={col.column_name} isEditable={true} onUpdate={(val) => handleStructureUpdate(col.column_name, 'column_name', val)} /></td>
-                            <td className="border-r border-gray-100 p-0 h-10"><EditableCell value={col.data_type} isEditable={true} onUpdate={(val) => handleStructureUpdate(col.column_name, 'data_type', val)} /></td>
+                            <td className="border-r border-gray-100 p-0 h-10" data-testid={`struct-name-${i}`}><EditableCell value={col.column_name} isEditable={true} onUpdate={(val) => handleStructureUpdate(col.column_name, 'column_name', val)} /></td>
+                            <td className="border-r border-gray-100 p-0 h-10" data-testid={`struct-type-${i}`}><EditableCell value={col.data_type} isEditable={true} onUpdate={(val) => handleStructureUpdate(col.column_name, 'data_type', val)} /></td>
                             <td className="px-4 py-2 border-r border-gray-100 text-gray-600">{col.is_nullable === 'YES' ? <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">NULL</span> : <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded text-xs">NOT NULL</span>}</td>
                             <td className="px-4 py-2 text-gray-400 font-mono text-xs">{col.column_default}</td>
                           </tr>

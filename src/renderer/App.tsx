@@ -46,11 +46,13 @@ function App() {
             {sessions.map(session => (
               <div
                 key={session.id}
+                data-testid="session-tab"
                 onClick={() => setActiveSessionId(session.id)}
                 className={`group flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-t-md cursor-pointer transition-all border-t border-x border-b-0 min-w-[100px] ${activeSessionId === session.id ? 'bg-white text-gray-800 shadow-sm border-gray-200 translate-y-[1px] z-10' : 'bg-transparent text-gray-500 hover:bg-gray-200 border-transparent'}`}
               >
                 <span className="max-w-[120px] truncate flex-1">{session.title}</span>
                 <button
+                  data-testid={`close-session-${session.id}`}
                   onClick={(e) => handleCloseSession(e, session.id)}
                   className={`p-0.5 rounded-full hover:bg-gray-300 text-gray-400 hover:text-gray-700 transition-opacity ${activeSessionId === session.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
                 >
@@ -58,7 +60,7 @@ function App() {
                 </button>
               </div>
             ))}
-            <button onClick={handleAddSession} className="p-1.5 hover:bg-gray-200 rounded-md text-gray-500 transition-colors ml-1">
+            <button data-testid="add-session-btn" onClick={handleAddSession} className="p-1.5 hover:bg-gray-200 rounded-md text-gray-500 transition-colors ml-1">
               <Plus size={14} />
             </button>
          </div>
