@@ -34,7 +34,7 @@ const EditableCell = ({ value, onUpdate, isEditable, placeholder }: { value: any
   }
 
   return (
-    <div 
+    <div
       onDoubleClick={() => isEditable && setEditing(true)}
       className={`w-full h-full px-3 py-2 ${isEditable ? 'cursor-text hover:bg-gray-50' : 'cursor-default'}`}
     >
@@ -53,7 +53,7 @@ function App() {
   const [query, setQuery] = useState('SELECT * FROM ')
   const [results, setResults] = useState<{rows: any[], fields: any[]} | null>(null)
   const [executing, setExecuting] = useState(false)
-  
+
   const [currentTable, setCurrentTable] = useState<{schema: string, name: string, pk: string | null} | null>(null)
   const [activeTab, setActiveTab] = useState<'data' | 'structure'>('data')
   const [structure, setStructure] = useState<any[]>([])
@@ -80,7 +80,7 @@ function App() {
     if (!currentTable || !currentTable.pk) return
     const pkValue = row[currentTable.pk]
     const updateSql = `UPDATE "${currentTable.schema}"."${currentTable.name}" SET "${field}" = '${newValue.replace(/'/g, "''")}' WHERE "${currentTable.pk}" = '${pkValue}';`
-    
+
     try {
       const result = await window.api.query(updateSql)
       if (result.success) {
@@ -92,7 +92,7 @@ function App() {
       setError(err.message)
     }
   }
-  
+
   const handleStructureUpdate = async (column: string, field: 'column_name' | 'data_type', newValue: string) => {
      if (!currentTable) return
      let sql = ''
@@ -101,7 +101,7 @@ function App() {
      } else if (field === 'data_type') {
        sql = `ALTER TABLE "${currentTable.schema}"."${currentTable.name}" ALTER COLUMN "${column}" TYPE ${newValue} USING "${column}"::${newValue};`
      }
-     
+
      try {
        const result = await window.api.query(sql)
        if (result.success) {
@@ -118,7 +118,7 @@ function App() {
     const result = await window.api.query(`SELECT table_name, table_schema FROM information_schema.tables WHERE table_schema NOT IN ('information_schema', 'pg_catalog') ORDER BY table_schema, table_name;`)
     if (result.success && result.rows) setTables(result.rows)
   }
-  
+
   const fetchStructure = async (schema: string, name: string) => {
     const result = await window.api.query(`SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = '${schema}' AND table_name = '${name}' ORDER BY ordinal_position;`)
     if (result.success && result.rows) setStructure(result.rows)
@@ -128,13 +128,13 @@ function App() {
     setActiveTab('data')
     const q = `SELECT * FROM "${schema}"."${name}" LIMIT 100;`
     setQuery(q)
-    
+
     const pkResult = await window.api.query(`SELECT kcu.column_name FROM information_schema.table_constraints tco JOIN information_schema.key_column_usage kcu ON kcu.constraint_name = tco.constraint_name AND kcu.constraint_schema = tco.constraint_schema WHERE tco.constraint_type = 'PRIMARY KEY' AND tco.table_schema = '${schema}' AND tco.table_name = '${name}';`)
     const pk = (pkResult.success && pkResult.rows && pkResult.rows.length > 0) ? pkResult.rows[0].column_name : null
-      
+
     setCurrentTable({ schema, name, pk })
     fetchStructure(schema, name)
-    
+
     // 我们直接在这里执行，不通过按钮模拟
     executeSql(q)
   }
@@ -194,7 +194,7 @@ function App() {
       <div className="flex-1 flex flex-col min-w-0">
         <div className="titlebar border-b border-gray-100 flex items-center px-4 justify-end gap-2 bg-gray-50/50">
            {isConnected && currentTable && (
-             <div className="mr-auto flex bg-gray-200/50 p-1 rounded-lg">
+             <div className="mr-auto flex bg-gray-200/50 p-1 rounded-lg no-drag">
                <button onClick={() => setActiveTab('data')} className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${activeTab === 'data' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>Data</button>
                <button onClick={() => setActiveTab('structure')} className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${activeTab === 'structure' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>Structure</button>
              </div>
@@ -208,7 +208,7 @@ function App() {
              </>
           )}
         </div>
-        
+
         <div className="flex-1 flex flex-col overflow-hidden">
           {!isConnected && !showConnectForm ? (
             <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-white">

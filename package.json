@@ -1,5 +1,5 @@
 {
-  "name": "pgsql-client",
+  "name": "quickpg",
   "version": "1.0.0",
   "description": "",
   "main": "./out/main/index.js",

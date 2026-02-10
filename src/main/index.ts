@@ -60,7 +60,10 @@ ipcMain.handle('db:query', async (_, sql, params) => {
 })
 
 app.whenReady().then(() => {
-  electronApp.setAppId('com.quickpg.app')
+  // Set app user model id for windows
+  if (process.platform === 'win32') {
+    app.setAppUserModelId('com.quickpg.app')
+  }
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
