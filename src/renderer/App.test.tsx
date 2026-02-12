@@ -19,6 +19,17 @@ describe('App Component', () => {
     expect(tabs).toHaveLength(2)
   })
 
+  it('ensures add button is outside the scrollable tab container', () => {
+    render(<App />)
+    const addButton = screen.getByTestId('add-session-btn')
+    const scrollContainer = addButton.parentElement?.querySelector('.overflow-x-auto')
+    
+    // The addButton should not be inside the scroll container
+    expect(scrollContainer?.contains(addButton)).toBe(false)
+    // Both should be children of the titlebar
+    expect(addButton.parentElement?.classList.contains('titlebar')).toBe(true)
+  })
+
   it('switches active session when clicking tabs', () => {
     render(<App />)
     const addButton = screen.getByTestId('add-session-btn')

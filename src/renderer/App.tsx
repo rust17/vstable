@@ -42,7 +42,7 @@ function App() {
       {/* Titlebar / Tab Bar */}
       <div className="titlebar h-10 flex items-center bg-gray-100 border-b border-gray-200 pl-20 pr-4 select-none draggable-region">
          {/* Traffic lights area is padded by pl-20 via CSS or Tailwind if configured, keeping it here for safety */}
-         <div className="flex items-center gap-1 overflow-x-auto no-drag scrollbar-hide">
+         <div className="flex-1 flex items-center gap-1 overflow-x-auto no-drag scrollbar-hide">
             {sessions.map(session => (
               <div
                 key={session.id}
@@ -60,10 +60,10 @@ function App() {
                 </button>
               </div>
             ))}
-            <button data-testid="add-session-btn" onClick={handleAddSession} className="p-1.5 hover:bg-gray-200 rounded-md text-gray-500 transition-colors ml-1">
-              <Plus size={14} />
-            </button>
          </div>
+         <button data-testid="add-session-btn" onClick={handleAddSession} className="p-1.5 hover:bg-gray-200 rounded-md text-gray-500 transition-colors ml-2 no-drag flex-shrink-0">
+            <Plus size={14} />
+         </button>
       </div>
       
       {/* Content Area */}
