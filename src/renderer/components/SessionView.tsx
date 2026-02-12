@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Database, Plus, Server, Play, Table as TableIcon, Settings, Edit2 } from 'lucide-react'
+import { Database, Plus, Server, Play, Table as TableIcon, Settings, Edit2, ChevronLeft, ChevronRight } from 'lucide-react'
 import Editor from '@monaco-editor/react'
 
 const EditableCell = ({ value, onUpdate, isEditable, placeholder }: { value: any, onUpdate: (newVal: string) => void, isEditable: boolean, placeholder?: string }) => {
@@ -63,6 +63,10 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
   const [query, setQuery] = useState('SELECT * FROM ')
   const [results, setResults] = useState<{rows: any[], fields: any[]} | null>(null)
   const [executing, setExecuting] = useState(false)
+
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(100)
+  const [totalRows, setTotalRows] = useState(0)
 
   const [currentTable, setCurrentTable] = useState<{schema: string, name: string, pk: string | null} | null>(null)
   const [activeTab, setActiveTab] = useState<'data' | 'structure'>('data')
@@ -134,17 +138,40 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
     if (result.success && result.rows) setStructure(result.rows)
   }
 
+  const fetchTableData = async (schema: string, name: string, p: number, size: number) => {
+    setExecuting(true)
+    setError('')
+    try {
+      const countResult = await window.api.query(id, `SELECT COUNT(*) FROM "${schema}"."${name}";`)
+      if (countResult.success && countResult.rows && countResult.rows.length > 0) {
+        setTotalRows(parseInt(countResult.rows[0].count || '0'))
+      }
+
+      const q = `SELECT * FROM "${schema}"."${name}" LIMIT ${size} OFFSET ${(p - 1) * size};`
+      setQuery(q)
+      const result = await window.api.query(id, q)
+      if (result.success) {
+        setResults({ rows: result.rows || [], fields: result.fields || [] })
+      } else {
+        setError(result.error || 'Query failed')
+      }
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setExecuting(false)
+    }
+  }
+
   const handleTableClick = async (schema: string, name: string) => {
     setActiveTab('data')
-    const q = `SELECT * FROM "${schema}"."${name}" LIMIT 100;`
-    setQuery(q)
-
+    setPage(1)
+    
     const pkResult = await window.api.query(id, `SELECT kcu.column_name FROM information_schema.table_constraints tco JOIN information_schema.key_column_usage kcu ON kcu.constraint_name = tco.constraint_name AND kcu.constraint_schema = tco.constraint_schema WHERE tco.constraint_type = 'PRIMARY KEY' AND tco.table_schema = '${schema}' AND tco.table_name = '${name}';`)
     const pk = (pkResult.success && pkResult.rows && pkResult.rows.length > 0) ? pkResult.rows[0].column_name : null
 
     setCurrentTable({ schema, name, pk })
     fetchStructure(schema, name)
-    executeSql(q)
+    fetchTableData(schema, name, 1, pageSize)
   }
 
   const handleConnect = async (e: React.FormEvent) => {
@@ -275,12 +302,79 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                     </div>
                   </div>
                   <div className="flex-1 flex flex-col min-h-0 bg-white overflow-hidden">
-                    <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                    <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
                        <div className="flex items-center gap-4">
                          <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">Results</span>
                          {currentTable?.pk && <span className="text-[10px] text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">Editable (PK: {currentTable.pk})</span>}
                        </div>
-                       {results && <span className="text-[10px] text-gray-400 font-medium">{results.rows.length} rows returned</span>}
+                       
+                       {currentTable && (
+                         <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-md px-2 py-1 shadow-sm">
+                           <div className="flex items-center gap-1 border-r border-gray-100 pr-2 mr-1">
+                             <button 
+                               data-testid="btn-prev-page"
+                               disabled={page <= 1 || executing} 
+                               onClick={() => {
+                                 const p = page - 1
+                                 setPage(p)
+                                 fetchTableData(currentTable.schema, currentTable.name, p, pageSize)
+                               }}
+                               className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 text-gray-600"
+                             >
+                               <ChevronLeft size={14} />
+                             </button>
+                             <input 
+                               data-testid="input-page-number"
+                               type="number" 
+                               value={page} 
+                               onChange={(e) => setPage(parseInt(e.target.value) || 1)}
+                               onKeyDown={(e) => {
+                                 if (e.key === 'Enter') {
+                                   const p = Math.max(1, Math.min(page, Math.ceil(totalRows / pageSize)))
+                                   setPage(p)
+                                   fetchTableData(currentTable.schema, currentTable.name, p, pageSize)
+                                 }
+                               }}
+                               className="w-10 text-center text-xs font-medium focus:outline-none"
+                             />
+                             <span className="text-[10px] text-gray-400">/ {Math.ceil(totalRows / pageSize) || 1}</span>
+                             <button 
+                               data-testid="btn-next-page"
+                               disabled={page >= Math.ceil(totalRows / pageSize) || executing} 
+                               onClick={() => {
+                                 const p = page + 1
+                                 setPage(p)
+                                 fetchTableData(currentTable.schema, currentTable.name, p, pageSize)
+                               }}
+                               className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 text-gray-600"
+                             >
+                               <ChevronRight size={14} />
+                             </button>
+                           </div>
+
+                           <select 
+                             data-testid="select-page-size"
+                             value={pageSize} 
+                             onChange={(e) => {
+                               const size = parseInt(e.target.value)
+                               setPageSize(size)
+                               setPage(1)
+                               fetchTableData(currentTable.schema, currentTable.name, 1, size)
+                             }}
+                             className="text-[10px] font-medium text-gray-600 focus:outline-none bg-transparent cursor-pointer"
+                           >
+                             <option value="50">50 / page</option>
+                             <option value="100">100 / page</option>
+                             <option value="500">500 / page</option>
+                           </select>
+
+                           <span className="text-[10px] text-gray-400 font-medium border-l border-gray-100 pl-2 ml-1">
+                             Total: {totalRows}
+                           </span>
+                         </div>
+                       )}
+
+                       {results && !currentTable && <span className="text-[10px] text-gray-400 font-medium">{results.rows.length} rows returned</span>}
                     </div>
                     <div className="flex-1 overflow-auto">
                       {error && <div className="p-4 text-red-600 font-mono text-xs whitespace-pre-wrap bg-red-50/30">Error: {error}</div>}

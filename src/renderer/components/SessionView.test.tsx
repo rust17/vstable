@@ -106,6 +106,9 @@ describe('SessionView Component', () => {
       if (sql.includes('SELECT table_name')) {
         return Promise.resolve({ success: true, rows: [{ table_name: 'users', table_schema: 'public' }] })
       }
+      if (sql.includes('COUNT(*)')) {
+        return Promise.resolve({ success: true, rows: [{ count: '1' }] })
+      }
       if (sql.includes('PRIMARY KEY')) {
         return Promise.resolve({ success: true, rows: [{ column_name: 'id' }] })
       }
@@ -157,6 +160,9 @@ describe('SessionView Component', () => {
     ;(window.api.query as any).mockImplementation((id, sql) => {
       if (sql.includes('SELECT table_name')) {
         return Promise.resolve({ success: true, rows: [{ table_name: 'users', table_schema: 'public' }] })
+      }
+      if (sql.includes('COUNT(*)')) {
+        return Promise.resolve({ success: true, rows: [{ count: '2' }] })
       }
       if (sql.includes('information_schema.columns')) {
         return Promise.resolve({
@@ -229,6 +235,85 @@ describe('SessionView Component', () => {
 
     await waitFor(() => {
       expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining('SELECT * FROM '))
+    })
+  })
+
+  describe('Pagination', () => {
+    beforeEach(async () => {
+      // Setup connected state with a table
+      ;(window.api.connect as any).mockResolvedValue({ success: true })
+      ;(window.api.query as any).mockImplementation((id, sql) => {
+        if (sql.includes('SELECT table_name')) {
+          return Promise.resolve({ success: true, rows: [{ table_name: 'users', table_schema: 'public' }] })
+        }
+        if (sql.includes('COUNT(*)')) {
+          return Promise.resolve({ success: true, rows: [{ count: '250' }] })
+        }
+        if (sql.includes('SELECT * FROM "public"."users"')) {
+          return Promise.resolve({
+            success: true,
+            rows: Array(100).fill(0).map((_, i) => ({ id: i, name: `User ${i}` })),
+            fields: [{ name: 'id' }, { name: 'name' }]
+          })
+        }
+        return Promise.resolve({ success: true, rows: [] })
+      })
+
+      render(<SessionView {...defaultProps} />)
+      fireEvent.click(screen.getByTestId('btn-connect'))
+      await waitFor(() => expect(screen.queryByTestId('connection-form')).not.toBeInTheDocument())
+      await waitFor(() => expect(screen.getByTestId('table-item-users')).toBeInTheDocument())
+      fireEvent.click(screen.getByTestId('table-item-users'))
+      await waitFor(() => expect(screen.getByText('User 0')).toBeInTheDocument())
+    })
+
+    it('renders pagination controls', () => {
+      expect(screen.getByTestId('btn-prev-page')).toBeInTheDocument()
+      expect(screen.getByTestId('btn-next-page')).toBeInTheDocument()
+      expect(screen.getByTestId('input-page-number')).toBeInTheDocument()
+      expect(screen.getByTestId('select-page-size')).toBeInTheDocument()
+    })
+
+    it('navigates to next page', async () => {
+      const nextBtn = screen.getByTestId('btn-next-page')
+      fireEvent.click(nextBtn)
+
+      await waitFor(() => {
+        expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining('LIMIT 100 OFFSET 100'))
+      })
+    })
+
+    it('navigates to previous page', async () => {
+      // Go to second page first
+      fireEvent.click(screen.getByTestId('btn-next-page'))
+      await waitFor(() => expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining('OFFSET 100')))
+
+      const prevBtn = screen.getByTestId('btn-prev-page')
+      fireEvent.click(prevBtn)
+
+      await waitFor(() => {
+        expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining('LIMIT 100 OFFSET 0'))
+      })
+    })
+
+    it('changes page size', async () => {
+      const select = screen.getByTestId('select-page-size')
+      fireEvent.change(select, { target: { value: '50' } })
+
+      await waitFor(() => {
+        expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining('LIMIT 50'))
+      })
+    })
+
+    it('jumps to specific page', async () => {
+      const input = screen.getByTestId('input-page-number')
+      fireEvent.change(input, { target: { value: '3' } })
+      fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' })
+
+      await waitFor(() => {
+        // Page 3 with size 100 should be OFFSET 200
+        expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining('LIMIT 100 OFFSET 200'))
+      })
     })
   })
 })
