@@ -67,7 +67,10 @@ describe('SessionView Component', () => {
     // Setup connected state
     ;(window.api.connect as any).mockResolvedValue({ success: true })
     ;(window.api.query as any).mockImplementation((id, sql) => {
-      if (sql.includes('SELECT table_name')) return Promise.resolve({ success: true, rows: [] })
+      if (sql.includes('SELECT table_name')) return Promise.resolve({ success: true, rows: [{table_name: 'users', table_schema: 'public'}] })
+      if (sql.includes('information_schema.columns')) return Promise.resolve({ success: true, rows: [] })
+      if (sql.includes('PRIMARY KEY')) return Promise.resolve({ success: true, rows: [] })
+      if (sql.includes('COUNT(*)')) return Promise.resolve({ success: true, rows: [{count: '0'}] })
       if (sql === 'SELECT * FROM users') return Promise.resolve({  
         success: true, 
         rows: [{ id: 1, name: 'Alice' }], 
@@ -82,8 +85,14 @@ describe('SessionView Component', () => {
     fireEvent.click(screen.getByTestId('btn-connect'))
     await waitFor(() => expect(screen.queryByTestId('connection-form')).not.toBeInTheDocument())
 
+    // MUST open a table/tab first now because the query editor is inside a tab
+    await waitFor(() => expect(screen.getByTestId('table-item-users')).toBeInTheDocument())
+    fireEvent.click(screen.getByTestId('table-item-users'))
+    await waitFor(() => expect(screen.getByTestId('tab-table-users')).toBeInTheDocument())
+
     // Enter query
-    const editor = screen.getByTestId('monaco-editor-mock')
+    const editors = screen.getAllByTestId('monaco-editor-mock')
+    const editor = editors[editors.length - 1]
     fireEvent.change(editor, { target: { value: 'SELECT * FROM users' } })
 
     // Click Run
@@ -108,6 +117,9 @@ describe('SessionView Component', () => {
       }
       if (sql.includes('COUNT(*)')) {
         return Promise.resolve({ success: true, rows: [{ count: '1' }] })
+      }
+      if (sql.includes('information_schema.columns')) {
+        return Promise.resolve({ success: true, rows: [{column_name: 'id', data_type: 'integer'}, {column_name: 'name', data_type: 'text'}] })
       }
       if (sql.includes('PRIMARY KEY')) {
         return Promise.resolve({ success: true, rows: [{ column_name: 'id' }] })
@@ -192,12 +204,12 @@ describe('SessionView Component', () => {
     await waitFor(() => expect(screen.getByTestId('table-item-users')).toBeInTheDocument())
     fireEvent.click(screen.getByTestId('table-item-users'))
 
-    // Wait for the tabs to appear (indicating currentTable is set)
+    // Wait for the tabs to appear
     await waitFor(() => expect(screen.getByTestId('tab-structure')).toBeInTheDocument())
     fireEvent.click(screen.getByTestId('tab-structure'))
 
     // Wait for structure to load
-    await waitFor(() => expect(screen.getByText('integer')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getAllByText('integer').length).toBeGreaterThan(0))
 
     // Double click on 'name' column name to rename
     const nameText = screen.getAllByText('name').find(el => el.closest('[data-testid^="struct-name"]'))
@@ -218,12 +230,22 @@ describe('SessionView Component', () => {
   it('triggers query execution with Cmd+Enter shortcut', async () => {
     ;(window.api.connect as any).mockResolvedValue({ success: true })
     ;(window.api.query as any).mockResolvedValue({ success: true, rows: [], fields: [] })
+    // Mock tables for click
+    ;(window.api.query as any).mockImplementation((id, sql) => {
+       if (sql.includes('SELECT table_name')) return Promise.resolve({ success: true, rows: [{table_name: 'users', table_schema: 'public'}] })
+       return Promise.resolve({ success: true, rows: [], fields: [] })
+    })
 
     render(<SessionView {...defaultProps} />)
     
     // Connect
     fireEvent.click(screen.getByTestId('btn-connect'))
     await waitFor(() => expect(screen.queryByTestId('connection-form')).not.toBeInTheDocument())
+
+    // Open a tab
+    await waitFor(() => expect(screen.getByTestId('table-item-users')).toBeInTheDocument())
+    fireEvent.click(screen.getByTestId('table-item-users'))
+    await waitFor(() => expect(screen.getByTestId('tab-table-users')).toBeInTheDocument())
 
     // The command key is KeyMod.CtrlCmd | KeyCode.Enter = 2048 | 3 = 2051
     const cmdEnterKey = 2051
@@ -248,6 +270,9 @@ describe('SessionView Component', () => {
         }
         if (sql.includes('COUNT(*)')) {
           return Promise.resolve({ success: true, rows: [{ count: '250' }] })
+        }
+        if (sql.includes('information_schema.columns')) {
+          return Promise.resolve({ success: true, rows: [{column_name: 'id', data_type: 'integer'}, {column_name: 'name', data_type: 'text'}] })
         }
         if (sql.includes('SELECT * FROM "public"."users"')) {
           return Promise.resolve({
@@ -313,6 +338,153 @@ describe('SessionView Component', () => {
       await waitFor(() => {
         // Page 3 with size 100 should be OFFSET 200
         expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining('LIMIT 100 OFFSET 200'))
+      })
+    })
+  })
+
+  describe('New Data Table Features', () => {
+    beforeEach(async () => {
+      // Setup connected state with multiple tables
+      ;(window.api.connect as any).mockResolvedValue({ success: true })
+      ;(window.api.query as any).mockImplementation((id, sql) => {
+        if (sql.includes('SELECT table_name')) {
+          return Promise.resolve({ 
+            success: true, 
+            rows: [
+              { table_name: 'users', table_schema: 'public' },
+              { table_name: 'posts', table_schema: 'public' }
+            ] 
+          })
+        }
+        if (sql.includes('information_schema.columns')) {
+          if (sql.includes("'users'")) {
+            return Promise.resolve({
+              success: true,
+              rows: [
+                { column_name: 'id', data_type: 'integer' },
+                { column_name: 'name', data_type: 'text' }
+              ]
+            })
+          }
+          if (sql.includes("'posts'")) {
+            return Promise.resolve({
+              success: true,
+              rows: [
+                { column_name: 'post_id', data_type: 'integer' },
+                { column_name: 'title', data_type: 'varchar' }
+              ]
+            })
+          }
+        }
+        if (sql.includes('COUNT(*)')) {
+          return Promise.resolve({ success: true, rows: [{ count: '1' }] })
+        }
+        if (sql.includes('PRIMARY KEY')) {
+          return Promise.resolve({ success: true, rows: [] })
+        }
+        if (sql.includes('SELECT * FROM "public"."users"')) {
+          return Promise.resolve({
+            success: true,
+            rows: [{ id: 1, name: 'Alice' }],
+            fields: [{ name: 'id' }, { name: 'name' }]
+          })
+        }
+        if (sql.includes('SELECT * FROM "public"."posts"')) {
+          return Promise.resolve({
+            success: true,
+            rows: [{ post_id: 1, title: 'Hello' }],
+            fields: [{ name: 'post_id' }, { name: 'title' }]
+          })
+        }
+        return Promise.resolve({ success: true, rows: [] })
+      })
+
+      render(<SessionView {...defaultProps} />)
+      fireEvent.click(screen.getByTestId('btn-connect'))
+      await waitFor(() => expect(screen.queryByTestId('connection-form')).not.toBeInTheDocument())
+    })
+
+    it('opens a new tab when a table is clicked and supports multiple table tabs', async () => {
+      // Click 'users' table
+      await waitFor(() => expect(screen.getByTestId('table-item-users')).toBeInTheDocument())
+      fireEvent.click(screen.getByTestId('table-item-users'))
+
+      // Should show a tab for 'users'
+      await waitFor(() => {
+        expect(screen.getByTestId('tab-table-users')).toBeInTheDocument()
+      })
+
+      // Click 'posts' table
+      fireEvent.click(screen.getByTestId('table-item-posts'))
+
+      // Should show tabs for both 'users' and 'posts'
+      await waitFor(() => {
+        expect(screen.getByTestId('tab-table-users')).toBeInTheDocument()
+        expect(screen.getByTestId('tab-table-posts')).toBeInTheDocument()
+      })
+      
+      // 'posts' should be the active one
+      expect(screen.getByTestId('tab-table-posts')).toHaveAttribute('data-active', 'true')
+    })
+
+    it('displays column data types in the table header', async () => {
+      // Click 'users' table
+      await waitFor(() => expect(screen.getByTestId('table-item-users')).toBeInTheDocument())
+      fireEvent.click(screen.getByTestId('table-item-users'))
+
+      // Check for column headers with types. The text might be split into spans.
+      await waitFor(() => {
+        const idTh = screen.getByText('id').closest('th')
+        expect(idTh).toHaveTextContent(/integer/i)
+        
+        const nameTh = screen.getByText('name').closest('th')
+        expect(nameTh).toHaveTextContent(/text/i)
+      })
+
+      // Click 'posts' table
+      fireEvent.click(screen.getByTestId('table-item-posts'))
+
+      // Check for posts column headers with types
+      await waitFor(() => {
+        const postIdTh = screen.getByText('post_id').closest('th')
+        expect(postIdTh).toHaveTextContent(/integer/i)
+        
+        const titleTh = screen.getByText('title').closest('th')
+        expect(titleTh).toHaveTextContent(/varchar/i)
+      })
+    })
+
+    it('can switch between open table tabs', async () => {
+      // Open 'users' then 'posts'
+      await waitFor(() => expect(screen.getByTestId('table-item-users')).toBeInTheDocument())
+      fireEvent.click(screen.getByTestId('table-item-users'))
+      await waitFor(() => expect(screen.getByTestId('tab-table-users')).toBeInTheDocument())
+      
+      fireEvent.click(screen.getByTestId('table-item-posts'))
+      await waitFor(() => expect(screen.getByTestId('tab-table-posts')).toBeInTheDocument())
+
+      // Currently 'posts' is active. Switch back to 'users'
+      fireEvent.click(screen.getByTestId('tab-table-users'))
+
+      await waitFor(() => {
+        expect(screen.getByTestId('tab-table-users')).toHaveAttribute('data-active', 'true')
+        // Check if 'users' data is displayed
+        expect(screen.getByText('Alice')).toBeInTheDocument()
+      })
+    })
+
+    it('can close a table tab', async () => {
+      // Open 'users'
+      await waitFor(() => expect(screen.getByTestId('table-item-users')).toBeInTheDocument())
+      fireEvent.click(screen.getByTestId('table-item-users'))
+      await waitFor(() => expect(screen.getByTestId('tab-table-users')).toBeInTheDocument())
+
+      // Close 'users' tab
+      const closeBtn = screen.getByTestId('close-tab-users')
+      fireEvent.click(closeBtn)
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('tab-table-users')).not.toBeInTheDocument()
       })
     })
   })
