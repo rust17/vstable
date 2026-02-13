@@ -85,10 +85,10 @@ describe('SessionView Component', () => {
     fireEvent.click(screen.getByTestId('btn-connect'))
     await waitFor(() => expect(screen.queryByTestId('connection-form')).not.toBeInTheDocument())
 
-    // MUST open a table/tab first now because the query editor is inside a tab
-    await waitFor(() => expect(screen.getByTestId('table-item-users')).toBeInTheDocument())
-    fireEvent.click(screen.getByTestId('table-item-users'))
-    await waitFor(() => expect(screen.getByTestId('tab-table-users')).toBeInTheDocument())
+    // MUST open a query tab to see the editor
+    await waitFor(() => expect(screen.getByTestId('btn-new-query')).toBeInTheDocument())
+    fireEvent.click(screen.getByTestId('btn-new-query'))
+    await waitFor(() => expect(screen.getByText(/New Query/i)).toBeInTheDocument())
 
     // Enter query
     const editors = screen.getAllByTestId('monaco-editor-mock')
@@ -158,7 +158,9 @@ describe('SessionView Component', () => {
     await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument())
     const input = screen.getByDisplayValue('Alice')
     fireEvent.change(input, { target: { value: 'Bob' } })
-    fireEvent.blur(input)
+    
+    // Click Save
+    fireEvent.click(screen.getByText('Save Changes'))
 
     // Verify UPDATE query was called
     await waitFor(() => {
@@ -219,7 +221,9 @@ describe('SessionView Component', () => {
     await waitFor(() => expect(screen.getByDisplayValue('name')).toBeInTheDocument())
     const input = screen.getByDisplayValue('name')
     fireEvent.change(input, { target: { value: 'full_name' } })
-    fireEvent.blur(input)
+    
+    // Click Save
+    fireEvent.click(screen.getByText('Save Changes'))
 
     // Verify ALTER TABLE query was called
     await waitFor(() => {
@@ -242,10 +246,10 @@ describe('SessionView Component', () => {
     fireEvent.click(screen.getByTestId('btn-connect'))
     await waitFor(() => expect(screen.queryByTestId('connection-form')).not.toBeInTheDocument())
 
-    // Open a tab
-    await waitFor(() => expect(screen.getByTestId('table-item-users')).toBeInTheDocument())
-    fireEvent.click(screen.getByTestId('table-item-users'))
-    await waitFor(() => expect(screen.getByTestId('tab-table-users')).toBeInTheDocument())
+    // Open a New Query tab
+    await waitFor(() => expect(screen.getByTestId('btn-new-query')).toBeInTheDocument())
+    fireEvent.click(screen.getByTestId('btn-new-query'))
+    await waitFor(() => expect(screen.getByText(/New Query/i)).toBeInTheDocument())
 
     // The command key is KeyMod.CtrlCmd | KeyCode.Enter = 2048 | 3 = 2051
     const cmdEnterKey = 2051
@@ -434,10 +438,10 @@ describe('SessionView Component', () => {
 
       // Check for column headers with types. The text might be split into spans.
       await waitFor(() => {
-        const idTh = screen.getByText('id').closest('th')
+        const idTh = screen.getAllByText('id').find(el => el.tagName === 'SPAN' && el.closest('th'))?.closest('th')
         expect(idTh).toHaveTextContent(/integer/i)
         
-        const nameTh = screen.getByText('name').closest('th')
+        const nameTh = screen.getAllByText('name').find(el => el.tagName === 'SPAN' && el.closest('th'))?.closest('th')
         expect(nameTh).toHaveTextContent(/text/i)
       })
 
@@ -446,10 +450,10 @@ describe('SessionView Component', () => {
 
       // Check for posts column headers with types
       await waitFor(() => {
-        const postIdTh = screen.getByText('post_id').closest('th')
+        const postIdTh = screen.getAllByText('post_id').find(el => el.tagName === 'SPAN' && el.closest('th'))?.closest('th')
         expect(postIdTh).toHaveTextContent(/integer/i)
         
-        const titleTh = screen.getByText('title').closest('th')
+        const titleTh = screen.getAllByText('title').find(el => el.tagName === 'SPAN' && el.closest('th'))?.closest('th')
         expect(titleTh).toHaveTextContent(/varchar/i)
       })
     })

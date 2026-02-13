@@ -108,6 +108,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
   
   const [executing, setExecuting] = useState(false)
   const [viewMode, setViewMode] = useState<'data' | 'structure'>('data')
+  const [isMaximized, setIsMaximized] = useState(false)
   const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null)
   const [editingCellData, setEditingCellData] = useState<{value: any, dataType?: string, onSave: (val: string) => void} | null>(null)
   
@@ -415,8 +416,8 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
 
   return (
     <div data-testid={`session-view-${id}`} className="flex h-full w-full overflow-hidden bg-white text-gray-900" style={{ display: isActive ? 'flex' : 'none' }}>
-      <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
-        <div className="p-4 flex-1 overflow-y-auto">
+      <div className={`${isMaximized ? 'hidden' : 'w-64'} bg-gray-50 border-r border-gray-200 flex flex-col`}>
+        <div data-testid="sidebar-scroll" className="p-4 flex-1 overflow-y-auto overscroll-contain">
           <div className="space-y-1">
             {tables.length > 0 && (
               <div className="mt-2">
@@ -460,6 +461,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                 data-testid={`tab-table-${tab.name}`}
                 data-active={activeTabId === tab.id}
                 onClick={() => setActiveTabId(tab.id)}
+                onDoubleClick={() => setIsMaximized(!isMaximized)}
                 className={`group flex items-center gap-2 px-3 py-1 text-[11px] font-medium rounded-md cursor-pointer transition-all border ${activeTabId === tab.id ? 'bg-white text-blue-600 shadow-sm border-gray-200' : 'bg-transparent text-gray-500 hover:bg-gray-200 border-transparent'}`}
               >
                 {tab.type === 'table' ? (
@@ -646,7 +648,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                         </div>
                       </div>
                     )}
-                    <div className="flex-1 overflow-auto pb-12">
+                    <div data-testid="results-scroll" className="flex-1 overflow-auto pb-12 overscroll-contain">
                       {error && <div className="p-4 text-red-600 font-mono text-xs whitespace-pre-wrap bg-red-50/30">Error: {error}</div>}
                       {activeTab.results && activeTab.results.rows.length > 0 ? (
                         <table className="w-full border-collapse text-left text-xs font-mono">
@@ -797,7 +799,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                               <EditableCell 
                                 value={col.column_name} 
                                 isEditable={true} 
-                                onDoubleClick={() => setEditingCell({
+                                onDoubleClick={() => setEditingCellData({
                                   value: col.column_name,
                                   onSave: (val) => handleStructureUpdate(col.column_name, 'column_name', val)
                                 })} 
@@ -807,7 +809,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                               <EditableCell 
                                 value={col.data_type} 
                                 isEditable={true} 
-                                onDoubleClick={() => setEditingCell({
+                                onDoubleClick={() => setEditingCellData({
                                   value: col.data_type,
                                   onSave: (val) => handleStructureUpdate(col.column_name, 'data_type', val)
                                 })} 
