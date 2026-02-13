@@ -11,15 +11,15 @@ fix:
 
 add:
     - 窗口管理
-        - [ ] 去除 Tables 上方的 Connections 区域，只保留右上角一个 Connections 添加按钮
+        - [x] 去除 Tables 上方的 Connections 区域，只保留右上角一个 Connections 添加按钮
     - 表格列表
-        - [ ] 添加快速筛选的 input 框，支持普通正则匹配
+        - [x] 添加快速筛选的 input 框，支持普通正则匹配
 fix:
-    - [ ] 分页页码输入框有点小，调整成根据页码自动匹配宽度
+    - [x] 分页页码输入框有点小，调整成根据页码自动匹配宽度
 edit:
     - Data 区域
-        - [ ] 只展示数据表格，隐藏 SQL QUERY 区域
-        - [ ] 把分页放到右下角
+        - [x] 只展示数据表格，隐藏 SQL QUERY 区域
+        - [x] 把分页放到 right bottom
     - SQL 执行器
-        - [ ] 把 Run Query 放到单独的 tab
-        - [ ] Run Query Tab 上方执行 SQL，下方对应展示 SQL 执行对应数据
+        - [x] 把 Run Query 放到单独的 tab
+        - [x] Run Query Tab 上方执行 SQL，下方对应展示 SQL 执行对应数据
