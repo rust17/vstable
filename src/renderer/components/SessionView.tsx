@@ -8,6 +8,7 @@ const formatDisplayValue = (value: any, dataType?: string) => {
   if (dataType?.includes('json') && typeof value === 'object') {
     display = JSON.stringify(value, null, 2)
   } else if (dataType?.includes('timestamp') || dataType?.includes('date')) {
+    // Remove timezone like +08, Z and milliseconds .123
     display = String(value).replace(/[+-]\d{2}(:\d{2})?$/, '').replace(/Z$/, '').replace(/\.\d+$/, '')
   }
   return display
@@ -31,7 +32,8 @@ const DataEditModal = ({ isOpen, value, onClose, onSave }: { isOpen: boolean, va
         </div>
         <div className="p-0 flex-1 overflow-hidden">
           <textarea 
-            className="w-full h-full min-h-[300px] p-6 font-mono text-sm border-none focus:ring-0 resize-none bg-white text-gray-800"
+            data-testid="edit-textarea"
+            className="w-full h-full min-h-[300px] p-6 font-mono text-sm border-none focus:ring-0 outline-none resize-none bg-white text-gray-800"
             value={val}
             onChange={e => setVal(e.target.value)}
             autoFocus
@@ -94,7 +96,8 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
   
   const [executing, setExecuting] = useState(false)
   const [viewMode, setViewMode] = useState<'data' | 'structure'>('data')
-  const [editingCell, setEditingCell] = useState<{value: any, dataType?: string, onSave: (val: string) => void} | null>(null)
+  const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null)
+  const [editingCellData, setEditingCellData] = useState<{value: any, dataType?: string, onSave: (val: string) => void} | null>(null)
 
   const activeTab = tabs.find(t => t.id === activeTabId)
 
@@ -462,89 +465,105 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                             <tr>
                               {activeTab.results.fields.map((field, i) => {
                                 const colInfo = activeTab.structure?.find(c => c.column_name === field.name)
-                                return (
-                                  <th key={i} className="px-3 py-2 border-r border-b border-gray-200 text-gray-600 font-bold whitespace-nowrap">
-                                    <div className="flex flex-col">
-                                      <span>{field.name}</span>
-                                      {colInfo && <span className="text-[9px] font-normal text-gray-400">{colInfo.data_type}</span>}
-                                    </div>
-                                  </th>
-                                )
-                              })}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {activeTab.results.rows.map((row, i) => (
-                              <tr key={i} className="hover:bg-blue-50/50 border-b border-gray-100 transition-colors">
-                                {activeTab.results!.fields.map((field, j) => {
-                                  const colInfo = activeTab.structure?.find(c => c.column_name === field.name)
-                                  const isEditable = activeTab.type === 'table' && !!activeTab.pk && field.name !== activeTab.pk
-                                  return (
-                                    <td key={j} data-testid={`cell-${field.name}-${i}`} className="border-r border-gray-100 text-gray-600 whitespace-nowrap max-w-xs truncate p-0">
-                                      <EditableCell 
-                                        value={row[field.name]} 
-                                        dataType={colInfo?.data_type}
-                                        isEditable={isEditable} 
-                                        onDoubleClick={() => setEditingCell({ 
-                                          value: row[field.name], 
-                                          dataType: colInfo?.data_type,
-                                          onSave: (newVal) => handleCellUpdate(row, field.name, newVal)
-                                        })} 
-                                      />
-                                    </td>
-                                  )
-                                })}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      ) : <div className="p-8 text-center text-gray-300 italic text-sm">No data found</div>}
-                    </div>
-
-                    {/* Pagination in bottom right (Only for table tabs) */}
-                    {activeTab.type === 'table' && activeTab.page !== undefined && activeTab.pageSize !== undefined && activeTab.totalRows !== undefined && (
-                      <div className="absolute bottom-4 right-4 flex items-center gap-3 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-1.5 shadow-lg z-20">
-                           <div className="flex items-center gap-1 border-r border-gray-100 pr-2 mr-1">
-                             <button 
-                               data-testid="btn-prev-page"
-                               disabled={activeTab.page <= 1 || executing} 
-                               onClick={() => {
-                                 const p = activeTab.page! - 1
-                                 fetchTableData(activeTab.schema!, activeTab.name, p, activeTab.pageSize!)
-                               }}
-                               className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 text-gray-600"
-                             >
-                               <ChevronLeft size={14} />
-                             </button>
-                             <input 
-                               data-testid="input-page-number"
-                               type="number" 
-                               value={activeTab.page} 
-                               onChange={(e) => updateActiveTab({ page: parseInt(e.target.value) || 1 })}
-                               onKeyDown={(e) => {
-                                 if (e.key === 'Enter') {
-                                   const p = Math.max(1, Math.min(activeTab.page!, Math.ceil(activeTab.totalRows! / activeTab.pageSize!)))
-                                   fetchTableData(activeTab.schema!, activeTab.name, p, activeTab.pageSize!)
-                                 }
-                               }}
-                               className="text-center text-xs font-medium focus:outline-none bg-transparent mx-1"
-                               style={{ width: `${String(activeTab.page).length + 1}ch` }}
-                             />
-                             <span className="text-[10px] text-gray-400">/ {Math.ceil(activeTab.totalRows / activeTab.pageSize) || 1}</span>
-                             <button 
-                               data-testid="btn-next-page"
-                               disabled={activeTab.page >= Math.ceil(activeTab.totalRows / activeTab.pageSize) || executing} 
-                               onClick={() => {
-                                 const p = activeTab.page! + 1
-                                 fetchTableData(activeTab.schema!, activeTab.name, p, activeTab.pageSize!)
-                               }}
-                               className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 text-gray-600"
-                             >
-                               <ChevronRight size={14} />
-                             </button>
-                           </div>
-
-                           <select 
+                                                                  return (
+                                                                    <th key={i} className="px-3 py-2 border-r border-b border-gray-200 text-gray-600 font-bold whitespace-nowrap">
+                                                                      <div className="flex flex-col">
+                                                                        <span>{field.name}</span>
+                                                                        {colInfo && <span className="text-[9px] font-normal text-gray-400">{colInfo.data_type.replace(/ without time zone$/, '')}</span>}
+                                                                      </div>
+                                                                    </th>
+                                                                  )
+                                                                })}
+                                                              </tr>
+                                                            </thead>
+                                                                                                                                                <tbody>
+                                                                                                                                                  {activeTab.results.rows.map((row, i) => (
+                                                                                                                                                    <tr 
+                                                                                                                                                      key={i} 
+                                                                                                                                                      data-editing={editingRowIndex === i}
+                                                                                                                                                      className={`${editingRowIndex === i ? 'bg-blue-100' : 'hover:bg-blue-50/50'} border-b border-gray-100 transition-colors`}
+                                                                                                                                                    >
+                                                                                                                                                      {activeTab.results!.fields.map((field, j) => {
+                                                                                                                                                                                            const colInfo = activeTab.structure?.find(c => c.column_name === field.name)
+                                                                                                                                                                                            const isEditable = activeTab.type === 'table' && !!activeTab.pk && field.name !== activeTab.pk
+                                                                                                                                                                                            return (
+                                                                                                                                                                                              <td 
+                                                                                                                                                                                                key={j} 
+                                                                                                                                                                                                data-testid={`cell-${field.name}-${i}`} 
+                                                                                                                                                                                                className="border-r border-gray-100 text-gray-600 whitespace-nowrap max-w-xs truncate p-0"
+                                                                                                                                                                                                onDoubleClick={() => {
+                                                                                                                                                                                                  if (isEditable) {
+                                                                                                                                                                                                    setEditingRowIndex(i)
+                                                                                                                                                                                                    setEditingCellData({ 
+                                                                                                                                                                                                      value: row[field.name], 
+                                                                                                                                                                                                      dataType: colInfo?.data_type,
+                                                                                                                                                                                                      onSave: (newVal) => handleCellUpdate(row, field.name, newVal)
+                                                                                                                                                                                                    })
+                                                                                                                                                                                                  }
+                                                                                                                                                                                                }}
+                                                                                                                                                                                              >
+                                                                                                                                                                                                <EditableCell 
+                                                                                                                                                                                                  value={row[field.name]} 
+                                                                                                                                                                                                  dataType={colInfo?.data_type}
+                                                                                                                                                                                                  isEditable={isEditable} 
+                                                                                                                                                                                                  onDoubleClick={() => {}} 
+                                                                                                                                                                                                />
+                                                                                                                                                                                              </td>
+                                                                                                                                                                                            )
+                                                                                                                                                                                          })}
+                                                                                                                                                        
+                                                                                                                                                    </tr>
+                                                                                                                                                  ))}
+                                                                                                                                                </tbody>
+                                                                                                                    
+                                                                                      </table>
+                                                                                    ) : <div className="p-8 text-center text-gray-300 italic text-sm">No data found</div>}
+                                                                                  </div>
+                                                            
+                                                                                  {/* Pagination in bottom right (Only for table tabs) */}
+                                                                                  {activeTab.type === 'table' && activeTab.page !== undefined && activeTab.pageSize !== undefined && activeTab.totalRows !== undefined && (
+                                                                                    <div className="absolute bottom-4 right-4 flex items-center gap-3 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-1.5 shadow-lg z-20">
+                                                                                         <div className="flex items-center gap-1 border-r border-gray-100 pr-2 mr-1">
+                                                                                           <button 
+                                                                                             data-testid="btn-prev-page"
+                                                                                             disabled={activeTab.page <= 1 || executing} 
+                                                                                             onClick={() => {
+                                                                                               const p = activeTab.page! - 1
+                                                                                               fetchTableData(activeTab.schema!, activeTab.name, p, activeTab.pageSize!)
+                                                                                             }}
+                                                                                             className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 text-gray-600"
+                                                                                           >
+                                                                                             <ChevronLeft size={14} />
+                                                                                           </button>
+                                                                                           <input 
+                                                                                             data-testid="input-page-number"
+                                                                                             type="number" 
+                                                                                             value={activeTab.page} 
+                                                                                             onChange={(e) => updateActiveTab({ page: parseInt(e.target.value) || 1 })}
+                                                                                             onKeyDown={(e) => {
+                                                                                               if (e.key === 'Enter') {
+                                                                                                 const p = Math.max(1, Math.min(activeTab.page!, Math.ceil(activeTab.totalRows! / activeTab.pageSize!)))
+                                                                                                 fetchTableData(activeTab.schema!, activeTab.name, p, activeTab.pageSize!)
+                                                                                               }
+                                                                                             }}
+                                                                                             className="text-center text-xs font-medium focus:outline-none bg-transparent mx-1 no-arrows [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                                                             style={{ width: `${String(activeTab.page).length + 1}ch` }}
+                                                                                           />
+                                                                                           <span className="text-[10px] text-gray-400">/ {Math.ceil(activeTab.totalRows / activeTab.pageSize) || 1}</span>
+                                                                                           <button 
+                                                                                             data-testid="btn-next-page"
+                                                                                             disabled={activeTab.page >= Math.ceil(activeTab.totalRows / activeTab.pageSize) || executing} 
+                                                                                             onClick={() => {
+                                                                                               const p = activeTab.page! + 1
+                                                                                               fetchTableData(activeTab.schema!, activeTab.name, p, activeTab.pageSize!)
+                                                                                             }}
+                                                                                             className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 text-gray-600"
+                                                                                           >
+                                                                                             <ChevronRight size={14} />
+                                                                                           </button>
+                                                                                         </div>
+                                                            
+                                                           <select 
                              data-testid="select-page-size"
                              value={activeTab.pageSize} 
                              onChange={(e) => {
@@ -624,13 +643,17 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
       </div>
 
       <DataEditModal 
-        isOpen={!!editingCell} 
-        value={editingCell ? (editingCell.dataType?.includes('json') && typeof editingCell.value === 'object' ? JSON.stringify(editingCell.value, null, 2) : String(editingCell.value ?? '')) : ''} 
-        onClose={() => setEditingCell(null)} 
+        isOpen={!!editingCellData} 
+        value={editingCellData ? (editingCellData.dataType?.includes('json') && typeof editingCellData.value === 'object' ? JSON.stringify(editingCellData.value, null, 2) : String(editingCellData.value ?? '')) : ''} 
+        onClose={() => {
+          setEditingCellData(null)
+          setEditingRowIndex(null)
+        }} 
         onSave={(newVal) => {
-          if (editingCell) {
-            editingCell.onSave(newVal)
-            setEditingCell(null)
+          if (editingCellData) {
+            editingCellData.onSave(newVal)
+            setEditingCellData(null)
+            setEditingRowIndex(null)
           }
         }} 
       />
