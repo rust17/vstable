@@ -55,15 +55,15 @@ interface SessionViewProps {
 
 interface TableTab {
   id: string
-  type: 'table'
-  schema: string
+  type: 'table' | 'query'
+  schema?: string
   name: string
-  pk: string | null
-  page: number
-  pageSize: number
-  totalRows: number
+  pk?: string | null
+  page?: number
+  pageSize?: number
+  totalRows?: number
   results: {rows: any[], fields: any[]} | null
-  structure: any[]
+  structure?: any[]
   query: string
 }
 
@@ -74,6 +74,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [tables, setTables] = useState<{table_name: string, table_schema: string}[]>([])
+  const [tableFilter, setTableFilter] = useState('')
   
   const [tabs, setTabs] = useState<TableTab[]>([])
   const [activeTabId, setActiveTabId] = useState<string | null>(null)
@@ -233,6 +234,19 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
     await fetchTableData(schema, name, 1, 100, tabId)
   }
 
+  const handleNewQuery = () => {
+    const tabId = crypto.randomUUID()
+    const newTab: TableTab = {
+      id: tabId,
+      type: 'query',
+      name: 'New Query',
+      results: null,
+      query: '-- Write your SQL here\nSELECT * FROM '
+    }
+    setTabs(prev => [...prev, newTab])
+    setActiveTabId(tabId)
+  }
+
   const handleCloseTab = (e: React.MouseEvent, tabId: string) => {
     e.stopPropagation()
     const newTabs = tabs.filter(t => t.id !== tabId)
@@ -263,6 +277,16 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
     }
   }
 
+  const filteredTables = tables.filter(table => {
+    if (!tableFilter) return true
+    try {
+      const regex = new RegExp(tableFilter, 'i')
+      return regex.test(table.table_name)
+    } catch (e) {
+      return table.table_name.toLowerCase().includes(tableFilter.toLowerCase())
+    }
+  })
+
   return (
     <div data-testid={`session-view-${id}`} className="flex h-full w-full overflow-hidden bg-white text-gray-900" style={{ display: isActive ? 'flex' : 'none' }}>
       <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
@@ -270,8 +294,17 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
           <div className="space-y-1">
             {tables.length > 0 && (
               <div className="mt-2">
+                <div className="px-2 mb-4">
+                  <input
+                    type="text"
+                    placeholder="Filter tables..."
+                    value={tableFilter}
+                    onChange={(e) => setTableFilter(e.target.value)}
+                    className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                  />
+                </div>
                 <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-2">Tables</h3>
-                {tables.map((table, i) => (
+                {filteredTables.map((table, i) => (
                   <div key={i} data-testid={`table-item-${table.table_name}`} onClick={() => handleTableClick(table.table_schema, table.table_name)} className={`group flex items-center gap-2 px-2 py-1 rounded-md hover:bg-gray-200 cursor-pointer transition-colors ${activeTab?.name === table.table_name ? 'bg-gray-200 text-blue-600' : 'text-gray-600'}`}>
                     <TableIcon size={14} className={`group-hover:text-blue-500 ${activeTab?.name === table.table_name ? 'text-blue-500' : 'text-gray-400'}`} />
                     <span className="truncate text-sm">{table.table_name}</span>
@@ -295,7 +328,11 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                 onClick={() => setActiveTabId(tab.id)}
                 className={`group flex items-center gap-2 px-3 py-1 text-[11px] font-medium rounded-md cursor-pointer transition-all border ${activeTabId === tab.id ? 'bg-white text-blue-600 shadow-sm border-gray-200' : 'bg-transparent text-gray-500 hover:bg-gray-200 border-transparent'}`}
               >
-                <TableIcon size={12} className={activeTabId === tab.id ? 'text-blue-500' : 'text-gray-400'} />
+                {tab.type === 'table' ? (
+                  <TableIcon size={12} className={activeTabId === tab.id ? 'text-blue-500' : 'text-gray-400'} />
+                ) : (
+                  <Play size={12} className={activeTabId === tab.id ? 'text-green-500' : 'text-gray-400'} />
+                )}
                 <span className="truncate max-w-[100px]">{tab.name}</span>
                 <button
                   data-testid={`close-tab-${tab.name}`}
@@ -309,6 +346,16 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              data-testid="btn-new-query"
+              onClick={handleNewQuery}
+              className="p-1.5 hover:bg-gray-200 rounded-md text-gray-500 transition-colors flex items-center gap-1"
+              title="New SQL Query"
+            >
+              <Play size={14} />
+              <span className="text-[10px] font-medium">Query</span>
+            </button>
+
             <button
               data-testid="btn-add-connection"
               onClick={() => setShowConnectForm(true)}
@@ -360,113 +407,57 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
             </div>
           ) : (
             <div className="flex-1 flex flex-col min-h-0">
-              {activeTab && viewMode === 'data' ? (
+              {activeTab && (activeTab.type === 'query' || viewMode === 'data') ? (
                 <>
-                  <div className="h-1/3 border-b border-gray-200 flex flex-col bg-white overflow-hidden">
-                    <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
-                       <TableIcon size={14} className="text-blue-500" />
-                       <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">SQL Query</span>
-                       <span className="text-[10px] text-gray-400 ml-auto italic">Cmd+Enter to Run</span>
-                    </div>
-                    <div className="flex-1">
-                      <Editor
-                        height="100%"
-                        defaultLanguage="sql"
-                        theme="vs"
-                        value={activeTab.query}
-                        onChange={(val) => updateActiveTab({ query: val || '' })}
-                        options={{
-                          minimap: { enabled: false },
-                          fontSize: 13,
-                          fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-                          scrollBeyondLastLine: false,
-                          automaticLayout: true,
-                          lineNumbers: 'on',
-                          padding: { top: 10 },
-                          wordWrap: 'on'
-                        }}
-                        onMount={(editor, monaco) => {
-                          editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-                            executeSql(editor.getValue())
-                          })
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex-1 flex flex-col min-h-0 bg-white overflow-hidden">
+                  <div className="flex-1 flex flex-col min-h-0 bg-white overflow-hidden relative">
+                    {activeTab.type === 'query' && (
+                      <div className="h-1/2 border-b border-gray-200 flex flex-col bg-white overflow-hidden">
+                        <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+                           <Play size={14} className="text-green-500" />
+                           <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">SQL Query</span>
+                           <span className="text-[10px] text-gray-400 ml-auto italic">Cmd+Enter to Run</span>
+                        </div>
+                        <div className="flex-1">
+                          <Editor
+                            height="100%"
+                            defaultLanguage="sql"
+                            theme="vs"
+                            value={activeTab.query}
+                            onChange={(val) => updateActiveTab({ query: val || '' })}
+                            options={{
+                              minimap: { enabled: false },
+                              fontSize: 13,
+                              fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+                              scrollBeyondLastLine: false,
+                              automaticLayout: true,
+                              lineNumbers: 'on',
+                              padding: { top: 10 },
+                              wordWrap: 'on'
+                            }}
+                            onMount={(editor, monaco) => {
+                              editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+                                executeSql(editor.getValue())
+                              })
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
                        <div className="flex items-center gap-4">
                          <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">Results</span>
-                         {activeTab.pk && <span className="text-[10px] text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">Editable (PK: {activeTab.pk})</span>}
-                       </div>
-                       
-                       <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-md px-2 py-1 shadow-sm">
-                         <div className="flex items-center gap-1 border-r border-gray-100 pr-2 mr-1">
-                           <button 
-                             data-testid="btn-prev-page"
-                             disabled={activeTab.page <= 1 || executing} 
-                             onClick={() => {
-                               const p = activeTab.page - 1
-                               fetchTableData(activeTab.schema, activeTab.name, p, activeTab.pageSize)
-                             }}
-                             className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 text-gray-600"
-                           >
-                             <ChevronLeft size={14} />
-                           </button>
-                           <input 
-                             data-testid="input-page-number"
-                             type="number" 
-                             value={activeTab.page} 
-                             onChange={(e) => updateActiveTab({ page: parseInt(e.target.value) || 1 })}
-                             onKeyDown={(e) => {
-                               if (e.key === 'Enter') {
-                                 const p = Math.max(1, Math.min(activeTab.page, Math.ceil(activeTab.totalRows / activeTab.pageSize)))
-                                 fetchTableData(activeTab.schema, activeTab.name, p, activeTab.pageSize)
-                               }
-                             }}
-                             className="w-10 text-center text-xs font-medium focus:outline-none"
-                           />
-                           <span className="text-[10px] text-gray-400">/ {Math.ceil(activeTab.totalRows / activeTab.pageSize) || 1}</span>
-                           <button 
-                             data-testid="btn-next-page"
-                             disabled={activeTab.page >= Math.ceil(activeTab.totalRows / activeTab.pageSize) || executing} 
-                             onClick={() => {
-                               const p = activeTab.page + 1
-                               fetchTableData(activeTab.schema, activeTab.name, p, activeTab.pageSize)
-                             }}
-                             className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 text-gray-600"
-                           >
-                             <ChevronRight size={14} />
-                           </button>
-                         </div>
-
-                         <select 
-                           data-testid="select-page-size"
-                           value={activeTab.pageSize} 
-                           onChange={(e) => {
-                             const size = parseInt(e.target.value)
-                             fetchTableData(activeTab.schema, activeTab.name, 1, size)
-                           }}
-                           className="text-[10px] font-medium text-gray-600 focus:outline-none bg-transparent cursor-pointer"
-                         >
-                           <option value="50">50 / page</option>
-                           <option value="100">100 / page</option>
-                           <option value="500">500 / page</option>
-                         </select>
-
-                         <span className="text-[10px] text-gray-400 font-medium border-l border-gray-100 pl-2 ml-1">
-                           Total: {activeTab.totalRows}
-                         </span>
+                         {activeTab.type === 'table' && activeTab.pk && <span className="text-[10px] text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">Editable (PK: {activeTab.pk})</span>}
                        </div>
                     </div>
-                    <div className="flex-1 overflow-auto">
+                    <div className="flex-1 overflow-auto pb-12">
                       {error && <div className="p-4 text-red-600 font-mono text-xs whitespace-pre-wrap bg-red-50/30">Error: {error}</div>}
                       {activeTab.results && activeTab.results.rows.length > 0 ? (
                         <table className="w-full border-collapse text-left text-xs font-mono">
                           <thead className="bg-gray-100 sticky top-0 z-10">
                             <tr>
                               {activeTab.results.fields.map((field, i) => {
-                                const colInfo = activeTab.structure.find(c => c.column_name === field.name)
+                                const colInfo = activeTab.structure?.find(c => c.column_name === field.name)
                                 return (
                                   <th key={i} className="px-3 py-2 border-r border-b border-gray-200 text-gray-600 font-bold whitespace-nowrap">
                                     <div className="flex flex-col">
@@ -482,7 +473,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                             {activeTab.results.rows.map((row, i) => (
                               <tr key={i} className="hover:bg-blue-50/50 border-b border-gray-100 transition-colors">
                                 {activeTab.results!.fields.map((field, j) => {
-                                  const isEditable = !!activeTab.pk && field.name !== activeTab.pk
+                                  const isEditable = activeTab.type === 'table' && !!activeTab.pk && field.name !== activeTab.pk
                                   return (
                                     <td key={j} data-testid={`cell-${field.name}-${i}`} className="border-r border-gray-100 text-gray-600 whitespace-nowrap max-w-xs truncate p-0">
                                       <EditableCell value={row[field.name]} isEditable={isEditable} onUpdate={(val) => handleCellUpdate(row, field.name, val)} />
@@ -495,6 +486,69 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                         </table>
                       ) : <div className="p-8 text-center text-gray-300 italic text-sm">No data found</div>}
                     </div>
+
+                    {/* Pagination in bottom right (Only for table tabs) */}
+                    {activeTab.type === 'table' && activeTab.page !== undefined && activeTab.pageSize !== undefined && activeTab.totalRows !== undefined && (
+                      <div className="absolute bottom-4 right-4 flex items-center gap-3 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-1.5 shadow-lg z-20">
+                           <div className="flex items-center gap-1 border-r border-gray-100 pr-2 mr-1">
+                             <button 
+                               data-testid="btn-prev-page"
+                               disabled={activeTab.page <= 1 || executing} 
+                               onClick={() => {
+                                 const p = activeTab.page! - 1
+                                 fetchTableData(activeTab.schema!, activeTab.name, p, activeTab.pageSize!)
+                               }}
+                               className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 text-gray-600"
+                             >
+                               <ChevronLeft size={14} />
+                             </button>
+                             <input 
+                               data-testid="input-page-number"
+                               type="number" 
+                               value={activeTab.page} 
+                               onChange={(e) => updateActiveTab({ page: parseInt(e.target.value) || 1 })}
+                               onKeyDown={(e) => {
+                                 if (e.key === 'Enter') {
+                                   const p = Math.max(1, Math.min(activeTab.page!, Math.ceil(activeTab.totalRows! / activeTab.pageSize!)))
+                                   fetchTableData(activeTab.schema!, activeTab.name, p, activeTab.pageSize!)
+                                 }
+                               }}
+                               className="text-center text-xs font-medium focus:outline-none bg-transparent"
+                               style={{ width: `${String(activeTab.page).length + 1}ch` }}
+                             />
+                             <span className="text-[10px] text-gray-400">/ {Math.ceil(activeTab.totalRows / activeTab.pageSize) || 1}</span>
+                             <button 
+                               data-testid="btn-next-page"
+                               disabled={activeTab.page >= Math.ceil(activeTab.totalRows / activeTab.pageSize) || executing} 
+                               onClick={() => {
+                                 const p = activeTab.page! + 1
+                                 fetchTableData(activeTab.schema!, activeTab.name, p, activeTab.pageSize!)
+                               }}
+                               className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 text-gray-600"
+                             >
+                               <ChevronRight size={14} />
+                             </button>
+                           </div>
+
+                           <select 
+                             data-testid="select-page-size"
+                             value={activeTab.pageSize} 
+                             onChange={(e) => {
+                               const size = parseInt(e.target.value)
+                               fetchTableData(activeTab.schema!, activeTab.name, 1, size)
+                             }}
+                             className="text-[10px] font-medium text-gray-600 focus:outline-none bg-transparent cursor-pointer"
+                           >
+                             <option value="50">50 / page</option>
+                             <option value="100">100 / page</option>
+                             <option value="500">500 / page</option>
+                           </select>
+
+                           <span className="text-[10px] text-gray-400 font-medium border-l border-gray-100 pl-2 ml-1">
+                             Total: {activeTab.totalRows}
+                           </span>
+                      </div>
+                    )}
                   </div>
                 </>
               ) : activeTab && viewMode === 'structure' ? (
