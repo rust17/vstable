@@ -36,6 +36,10 @@ const DataEditModal = ({ isOpen, value, onClose, onSave }: { isOpen: boolean, va
             className="w-full h-full min-h-[300px] p-6 font-mono text-sm border-none focus:ring-0 outline-none resize-none bg-white text-gray-800"
             value={val}
             onChange={e => setVal(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Escape') onClose()
+              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') onSave(val)
+            }}
             autoFocus
             spellCheck={false}
           />
@@ -68,6 +72,13 @@ interface SessionViewProps {
   onUpdateTitle: (title: string) => void
 }
 
+interface FilterCondition {
+  id: string
+  column: string
+  operator: string
+  value: string
+}
+
 interface TableTab {
   id: string
   type: 'table' | 'query'
@@ -80,6 +91,7 @@ interface TableTab {
   results: {rows: any[], fields: any[]} | null
   structure?: any[]
   query: string
+  filters?: FilterCondition[]
 }
 
 export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdateTitle }) => {
@@ -98,12 +110,94 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
   const [viewMode, setViewMode] = useState<'data' | 'structure'>('data')
   const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null)
   const [editingCellData, setEditingCellData] = useState<{value: any, dataType?: string, onSave: (val: string) => void} | null>(null)
+  
+  const sidebarFilterRef = React.useRef<HTMLInputElement>(null)
+  const filterInputRef = React.useRef<HTMLInputElement>(null)
 
   const activeTab = tabs.find(t => t.id === activeTabId)
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd + P: Focus sidebar filter
+      if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
+        e.preventDefault()
+        sidebarFilterRef.current?.focus()
+      }
+      
+      // Cmd + F: Focus filter
+      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+        e.preventDefault()
+        filterInputRef.current?.focus()
+      }
+      
+      // Cmd + T: New Query
+      if ((e.metaKey || e.ctrlKey) && e.key === 't') {
+        e.preventDefault()
+        handleNewQuery()
+      }
+      
+      // Cmd + W: Close current tab
+      if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
+        e.preventDefault()
+        if (activeTabId) handleCloseTab(e as any, activeTabId)
+      }
+
+      // Cmd + R: Refresh
+      if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
+        e.preventDefault()
+        if (activeTab) {
+          if (activeTab.type === 'table') {
+            fetchTableData(activeTab.schema!, activeTab.name, activeTab.page || 1, activeTab.pageSize || 100)
+          } else {
+            executeSql(activeTab.query)
+          }
+        }
+      }
+
+      // Ctrl + Tab: Switch Tab
+      if (e.ctrlKey && e.key === 'Tab') {
+        e.preventDefault()
+        if (tabs.length > 1 && activeTabId) {
+          const currentIndex = tabs.findIndex(t => t.id === activeTabId)
+          const nextIndex = (currentIndex + 1) % tabs.length
+          setActiveTabId(tabs[nextIndex].id)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [tabs, activeTabId, activeTab])
 
   const updateActiveTab = (updates: Partial<TableTab>) => {
     if (!activeTabId) return
     setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, ...updates } : t))
+  }
+
+  const handleAddFilter = () => {
+    if (!activeTab) return
+    const newFilter: FilterCondition = { id: crypto.randomUUID(), column: '', operator: '=', value: '' }
+    if (activeTab.structure && activeTab.structure.length > 0) {
+      newFilter.column = activeTab.structure[0].column_name
+    }
+    const currentFilters = activeTab.filters || []
+    updateActiveTab({ filters: [...currentFilters, newFilter] })
+  }
+
+  const handleRemoveFilter = (filterId: string) => {
+    if (!activeTab || !activeTab.filters) return
+    updateActiveTab({ filters: activeTab.filters.filter(f => f.id !== filterId) })
+  }
+
+  const handleUpdateFilter = (filterId: string, field: keyof FilterCondition, val: string) => {
+    if (!activeTab || !activeTab.filters) return
+    updateActiveTab({ filters: activeTab.filters.map(f => f.id === filterId ? { ...f, [field]: val } : f) })
+  }
+
+  const handleApplyFilters = () => {
+    if (!activeTab) return
+    fetchTableData(activeTab.schema!, activeTab.name, 1, activeTab.pageSize || 100)
   }
 
   const executeSql = async (sql: string) => {
@@ -188,13 +282,27 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
     setExecuting(true)
     setError('')
     try {
-      const countResult = await window.api.query(id, `SELECT COUNT(*) FROM "${schema}"."${name}";`)
+      const currentTab = tabs.find(t => t.id === targetId)
+      const currentFilters = currentTab?.filters || []
+      
+      let whereClause = ''
+      if (currentFilters.length > 0) {
+        const conditions = currentFilters.filter(f => f.column && f.value).map(f => {
+          const val = f.value.replace(/'/g, "''")
+          return `"${f.column}" ${f.operator} '${val}'`
+        })
+        if (conditions.length > 0) {
+          whereClause = ` WHERE ${conditions.join(' AND ')}`
+        }
+      }
+
+      const countResult = await window.api.query(id, `SELECT COUNT(*) FROM "${schema}"."${name}"${whereClause};`)
       let total = 0
       if (countResult.success && countResult.rows && countResult.rows.length > 0) {
         total = parseInt(countResult.rows[0].count || '0')
       }
 
-      const q = `SELECT * FROM "${schema}"."${name}" LIMIT ${size} OFFSET ${(p - 1) * size};`
+      const q = `SELECT * FROM "${schema}"."${name}"${whereClause} LIMIT ${size} OFFSET ${(p - 1) * size};`
       const result = await window.api.query(id, q)
       
       setTabs(prev => prev.map(t => t.id === targetId ? {
@@ -233,7 +341,8 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
       totalRows: 0,
       results: null,
       structure: [],
-      query: `SELECT * FROM "${schema}"."${name}"`
+      query: `SELECT * FROM "${schema}"."${name}"`,
+      filters: [{ id: crypto.randomUUID(), column: '', operator: '=', value: '' }]
     }
 
     setTabs(prev => [...prev, newTab])
@@ -313,10 +422,18 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
               <div className="mt-2">
                 <div className="px-2 mb-4">
                   <input
+                    ref={sidebarFilterRef}
                     type="text"
                     placeholder="Filter tables..."
                     value={tableFilter}
                     onChange={(e) => setTableFilter(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && filteredTables.length > 0) {
+                        handleTableClick(filteredTables[0].table_schema, filteredTables[0].table_name)
+                        // Optional: Clear filter after selection? Maybe better to keep it.
+                        // setTableFilter('') 
+                      }
+                    }}
                     className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
                   />
                 </div>
@@ -457,6 +574,78 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                          {activeTab.type === 'table' && activeTab.pk && <span className="text-[10px] text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">Editable (PK: {activeTab.pk})</span>}
                        </div>
                     </div>
+                    
+                    {/* Filter Bar */}
+                    {activeTab.type === 'table' && (
+                      <div className="px-4 py-2 border-b border-gray-100 bg-gray-50/50 flex flex-col gap-2">
+                        {(activeTab.filters || []).map((filter, index) => (
+                          <div key={filter.id} data-testid={`filter-row-${index}`} className="flex items-center gap-2">
+                            <select 
+                              data-testid={`filter-column-${index}`}
+                              className="text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[150px]"
+                              value={filter.column}
+                              onChange={e => handleUpdateFilter(filter.id, 'column', e.target.value)}
+                            >
+                              {activeTab.structure?.length ? activeTab.structure.map(c => (
+                                <option key={c.column_name} value={c.column_name}>{c.column_name}</option>
+                              )) : <option value="">Select column...</option>}
+                            </select>
+                            <select 
+                              data-testid={`filter-operator-${index}`}
+                              className="text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-16"
+                              value={filter.operator}
+                              onChange={e => handleUpdateFilter(filter.id, 'operator', e.target.value)}
+                            >
+                              <option value="=">=</option>
+                              <option value="!=">!=</option>
+                              <option value=">">&gt;</option>
+                              <option value="<">&lt;</option>
+                              <option value=">=">&gt;=</option>
+                              <option value="<=">&lt;=</option>
+                              <option value="LIKE">LIKE</option>
+                              <option value="ILIKE">ILIKE</option>
+                            </select>
+                            <input 
+                              ref={index === 0 ? filterInputRef : null}
+                              data-testid={`filter-value-${index}`}
+                              type="text" 
+                              className="flex-1 text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              placeholder="Value"
+                              value={filter.value}
+                              onChange={e => handleUpdateFilter(filter.id, 'value', e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') handleApplyFilters()
+                              }}
+                            />
+                            <button 
+                              data-testid={`btn-remove-filter-${index}`}
+                              onClick={() => handleRemoveFilter(filter.id)}
+                              className="p-1 hover:bg-red-100 text-gray-400 hover:text-red-500 rounded transition-colors"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                        <div className="flex items-center gap-2 mt-1">
+                          <button 
+                            data-testid="btn-add-filter"
+                            onClick={handleAddFilter}
+                            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors border border-transparent hover:border-blue-100"
+                          >
+                            <Plus size={12} /> Add Filter
+                          </button>
+                          {(activeTab.filters || []).length > 0 && (
+                            <button 
+                              data-testid="btn-apply-filter"
+                              onClick={handleApplyFilters}
+                              className="px-3 py-1 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-sm"
+                            >
+                              Apply Filter
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     <div className="flex-1 overflow-auto pb-12">
                       {error && <div className="p-4 text-red-600 font-mono text-xs whitespace-pre-wrap bg-red-50/30">Error: {error}</div>}
                       {activeTab.results && activeTab.results.rows.length > 0 ? (
