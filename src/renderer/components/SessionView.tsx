@@ -267,19 +267,9 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
     <div data-testid={`session-view-${id}`} className="flex h-full w-full overflow-hidden bg-white text-gray-900" style={{ display: isActive ? 'flex' : 'none' }}>
       <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
         <div className="p-4 flex-1 overflow-y-auto">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Connections</h2>
-            <button onClick={() => setShowConnectForm(true)} className="p-1 hover:bg-gray-200 rounded text-gray-600 transition-colors"><Plus size={14} /></button>
-          </div>
           <div className="space-y-1">
-            {isConnected && (
-              <div className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-blue-600 text-white text-sm shadow-sm mb-4">
-                <Server size={14} />
-                <span className="truncate font-medium">{config.database}</span>
-              </div>
-            )}
             {tables.length > 0 && (
-              <div className="mt-6">
+              <div className="mt-2">
                 <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-2">Tables</h3>
                 {tables.map((table, i) => (
                   <div key={i} data-testid={`table-item-${table.table_name}`} onClick={() => handleTableClick(table.table_schema, table.table_name)} className={`group flex items-center gap-2 px-2 py-1 rounded-md hover:bg-gray-200 cursor-pointer transition-colors ${activeTab?.name === table.table_name ? 'bg-gray-200 text-blue-600' : 'text-gray-600'}`}>
@@ -319,6 +309,16 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              data-testid="btn-add-connection"
+              onClick={() => setShowConnectForm(true)}
+              className="p-1.5 hover:bg-gray-200 rounded-md text-gray-500 transition-colors flex items-center gap-1"
+              title="Add Connection"
+            >
+              <Plus size={14} />
+              <span className="text-[10px] font-medium">Connect</span>
+            </button>
+
             {isConnected && activeTab && (
               <div className="flex bg-gray-200/50 p-1 rounded-lg no-drag">
                 <button data-testid="tab-data" onClick={() => setViewMode('data')} className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${viewMode === 'data' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>Data</button>
