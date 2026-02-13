@@ -2,47 +2,60 @@ import React, { useState, useEffect } from 'react'
 import { Database, Plus, Server, Play, Table as TableIcon, Settings, Edit2, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import Editor from '@monaco-editor/react'
 
-const EditableCell = ({ value, onUpdate, isEditable, placeholder }: { value: any, onUpdate: (newVal: string) => void, isEditable: boolean, placeholder?: string }) => {
-  const [editing, setEditing] = useState(false)
-  const [tempValue, setTempValue] = useState(String(value ?? ''))
-
-  const handleBlur = () => {
-    setEditing(false)
-    if (tempValue !== String(value ?? '')) {
-      onUpdate(tempValue)
-    }
+const formatDisplayValue = (value: any, dataType?: string) => {
+  if (value === null) return <span className="text-gray-300 italic">null</span>
+  let display = String(value)
+  if (dataType?.includes('json') && typeof value === 'object') {
+    display = JSON.stringify(value, null, 2)
+  } else if (dataType?.includes('timestamp') || dataType?.includes('date')) {
+    display = String(value).replace(/[+-]\d{2}(:\d{2})?$/, '').replace(/Z$/, '').replace(/\.\d+$/, '')
   }
+  return display
+}
 
+const DataEditModal = ({ isOpen, value, onClose, onSave }: { isOpen: boolean, value: string, onClose: () => void, onSave: (val: string) => void }) => {
+  const [val, setVal] = useState('')
+  
   useEffect(() => {
-    setTempValue(String(value ?? ''))
-  }, [value])
+    if (isOpen) setVal(value)
+  }, [isOpen, value])
 
-  if (editing) {
-    return (
-      <input
-        autoFocus
-        className="w-full h-full bg-blue-50 outline-none px-2 text-xs font-mono"
-        value={tempValue}
-        placeholder={placeholder}
-        onChange={e => setTempValue(e.target.value)}
-        onBlur={handleBlur}
-        onKeyDown={e => {
-          if (e.key === 'Enter') handleBlur()
-          if (e.key === 'Escape') {
-            setEditing(false)
-            setTempValue(String(value ?? ''))
-          }
-        }}
-      />
-    )
-  }
+  if (!isOpen) return null
 
   return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px]" role="dialog">
+      <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl border border-gray-200 flex flex-col max-h-[80vh] m-4 animate-in fade-in zoom-in duration-200">
+        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
+          <h3 className="font-semibold text-gray-700 flex items-center gap-2"><Edit2 size={16} className="text-blue-500" /> Edit Data</h3>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors"><X size={18} className="text-gray-400" /></button>
+        </div>
+        <div className="p-0 flex-1 overflow-hidden">
+          <textarea 
+            className="w-full h-full min-h-[300px] p-6 font-mono text-sm border-none focus:ring-0 resize-none bg-white text-gray-800"
+            value={val}
+            onChange={e => setVal(e.target.value)}
+            autoFocus
+            spellCheck={false}
+          />
+        </div>
+        <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50 rounded-b-xl">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200/50 rounded-lg transition-colors">Cancel</button>
+          <button onClick={() => onSave(val)} className="px-6 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm transition-colors">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const EditableCell = ({ value, dataType, onDoubleClick, isEditable }: { value: any, dataType?: string, onDoubleClick: () => void, isEditable: boolean }) => {
+  return (
     <div
-      onDoubleClick={() => isEditable && setEditing(true)}
+      onDoubleClick={onDoubleClick}
       className={`w-full h-full px-3 py-2 ${isEditable ? 'cursor-text hover:bg-gray-50' : 'cursor-default'}`}
     >
-      {value === null ? <span className="text-gray-300 italic">null</span> : String(value)}
+       <div className="max-h-20 overflow-hidden text-ellipsis whitespace-nowrap">
+        {formatDisplayValue(value, dataType)}
+      </div>
     </div>
   )
 }
@@ -81,6 +94,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
   
   const [executing, setExecuting] = useState(false)
   const [viewMode, setViewMode] = useState<'data' | 'structure'>('data')
+  const [editingCell, setEditingCell] = useState<{value: any, dataType?: string, onSave: (val: string) => void} | null>(null)
 
   const activeTab = tabs.find(t => t.id === activeTabId)
 
@@ -356,16 +370,6 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
               <span className="text-[10px] font-medium">Query</span>
             </button>
 
-            <button
-              data-testid="btn-add-connection"
-              onClick={() => setShowConnectForm(true)}
-              className="p-1.5 hover:bg-gray-200 rounded-md text-gray-500 transition-colors flex items-center gap-1"
-              title="Add Connection"
-            >
-              <Plus size={14} />
-              <span className="text-[10px] font-medium">Connect</span>
-            </button>
-
             {isConnected && activeTab && (
               <div className="flex bg-gray-200/50 p-1 rounded-lg no-drag">
                 <button data-testid="tab-data" onClick={() => setViewMode('data')} className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${viewMode === 'data' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>Data</button>
@@ -473,10 +477,20 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                             {activeTab.results.rows.map((row, i) => (
                               <tr key={i} className="hover:bg-blue-50/50 border-b border-gray-100 transition-colors">
                                 {activeTab.results!.fields.map((field, j) => {
+                                  const colInfo = activeTab.structure?.find(c => c.column_name === field.name)
                                   const isEditable = activeTab.type === 'table' && !!activeTab.pk && field.name !== activeTab.pk
                                   return (
                                     <td key={j} data-testid={`cell-${field.name}-${i}`} className="border-r border-gray-100 text-gray-600 whitespace-nowrap max-w-xs truncate p-0">
-                                      <EditableCell value={row[field.name]} isEditable={isEditable} onUpdate={(val) => handleCellUpdate(row, field.name, val)} />
+                                      <EditableCell 
+                                        value={row[field.name]} 
+                                        dataType={colInfo?.data_type}
+                                        isEditable={isEditable} 
+                                        onDoubleClick={() => setEditingCell({ 
+                                          value: row[field.name], 
+                                          dataType: colInfo?.data_type,
+                                          onSave: (newVal) => handleCellUpdate(row, field.name, newVal)
+                                        })} 
+                                      />
                                     </td>
                                   )
                                 })}
@@ -513,7 +527,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                                    fetchTableData(activeTab.schema!, activeTab.name, p, activeTab.pageSize!)
                                  }
                                }}
-                               className="text-center text-xs font-medium focus:outline-none bg-transparent"
+                               className="text-center text-xs font-medium focus:outline-none bg-transparent mx-1"
                                style={{ width: `${String(activeTab.page).length + 1}ch` }}
                              />
                              <span className="text-[10px] text-gray-400">/ {Math.ceil(activeTab.totalRows / activeTab.pageSize) || 1}</span>
@@ -571,8 +585,26 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                       <tbody>
                         {activeTab.structure.map((col, i) => (
                           <tr key={i} className="hover:bg-gray-50 border-b border-gray-100 transition-colors">
-                            <td className="border-r border-gray-100 p-0 h-10" data-testid={`struct-name-${i}`}><EditableCell value={col.column_name} isEditable={true} onUpdate={(val) => handleStructureUpdate(col.column_name, 'column_name', val)} /></td>
-                            <td className="border-r border-gray-100 p-0 h-10" data-testid={`struct-type-${i}`}><EditableCell value={col.data_type} isEditable={true} onUpdate={(val) => handleStructureUpdate(col.column_name, 'data_type', val)} /></td>
+                            <td className="border-r border-gray-100 p-0 h-10" data-testid={`struct-name-${i}`}>
+                              <EditableCell 
+                                value={col.column_name} 
+                                isEditable={true} 
+                                onDoubleClick={() => setEditingCell({
+                                  value: col.column_name,
+                                  onSave: (val) => handleStructureUpdate(col.column_name, 'column_name', val)
+                                })} 
+                              />
+                            </td>
+                            <td className="border-r border-gray-100 p-0 h-10" data-testid={`struct-type-${i}`}>
+                              <EditableCell 
+                                value={col.data_type} 
+                                isEditable={true} 
+                                onDoubleClick={() => setEditingCell({
+                                  value: col.data_type,
+                                  onSave: (val) => handleStructureUpdate(col.column_name, 'data_type', val)
+                                })} 
+                              />
+                            </td>
                             <td className="px-4 py-2 border-r border-gray-100 text-gray-600">{col.is_nullable === 'YES' ? <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">NULL</span> : <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded text-xs">NOT NULL</span>}</td>
                             <td className="px-4 py-2 text-gray-400 font-mono text-xs">{col.column_default}</td>
                           </tr>
@@ -590,6 +622,18 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
           )}
         </div>
       </div>
+
+      <DataEditModal 
+        isOpen={!!editingCell} 
+        value={editingCell ? (editingCell.dataType?.includes('json') && typeof editingCell.value === 'object' ? JSON.stringify(editingCell.value, null, 2) : String(editingCell.value ?? '')) : ''} 
+        onClose={() => setEditingCell(null)} 
+        onSave={(newVal) => {
+          if (editingCell) {
+            editingCell.onSave(newVal)
+            setEditingCell(null)
+          }
+        }} 
+      />
     </div>
   )
 }
