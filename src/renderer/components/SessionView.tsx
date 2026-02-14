@@ -68,6 +68,112 @@ const DataEditModal = ({ isOpen, value, onClose, onSave }: { isOpen: boolean, va
   )
 }
 
+const TabSwitcher = ({ isOpen, tabs, mruTabIds, selectedIndex }: { isOpen: boolean, tabs: TableTab[], mruTabIds: string[], selectedIndex: number }) => {
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/10 backdrop-blur-[1px]">
+      <div className="bg-white w-full max-w-md rounded-xl shadow-2xl border border-gray-200 overflow-hidden animate-in fade-in zoom-in duration-150">
+        <div className="bg-gray-50 px-4 py-2 border-b border-gray-100 flex items-center justify-between">
+          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Switch Tab</span>
+          <span className="text-[10px] text-gray-400">Ctrl + Tab to cycle</span>
+        </div>
+        <div className="py-2 max-h-[60vh] overflow-y-auto">
+          {mruTabIds.map((id, index) => {
+            const tab = tabs.find(t => t.id === id)
+            if (!tab) return null
+            return (
+              <div
+                key={id}
+                className={`px-4 py-2 flex items-center gap-3 transition-colors ${index === selectedIndex ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'}`}
+              >
+                {tab.type === 'table' ? <TableIcon size={14} /> : <Play size={14} />}
+                <span className="text-sm font-medium truncate flex-1">{tab.name}</span>
+                {index === 0 && <span className={`text-[10px] ${index === selectedIndex ? 'text-blue-200' : 'text-gray-400'}`}>Active</span>}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const TableSearchModal = ({ isOpen, onClose, tables, onSelect }: { isOpen: boolean, onClose: () => void, tables: {table_name: string, table_schema: string}[], onSelect: (schema: string, name: string) => void }) => {
+  const [query, setQuery] = useState('')
+  const [selectedIndex, setSelectedIndex] = useState(0)
+
+  useEffect(() => {
+    if (isOpen) {
+      setQuery('')
+      setSelectedIndex(0)
+    }
+  }, [isOpen])
+
+  const filtered = tables.filter(t => 
+    t.table_name.toLowerCase().includes(query.toLowerCase()) || 
+    t.table_schema.toLowerCase().includes(query.toLowerCase())
+  ).slice(0, 10)
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-start justify-center pt-[15vh] bg-black/20 backdrop-blur-[2px]" onClick={onClose}>
+      <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl border border-gray-200 overflow-hidden animate-in slide-in-from-top-4 duration-200" onClick={e => e.stopPropagation()}>
+        <div className="p-4 border-b border-gray-100">
+          <div className="flex items-center gap-3 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+            <Database size={18} className="text-gray-400" />
+            <input
+              autoFocus
+              placeholder="Search tables..."
+              className="flex-1 bg-transparent border-none outline-none text-sm text-gray-800"
+              value={query}
+              onChange={e => {
+                setQuery(e.target.value)
+                setSelectedIndex(0)
+              }}
+              onKeyDown={e => {
+                if (e.key === 'ArrowDown') {
+                  e.preventDefault()
+                  setSelectedIndex(prev => (prev + 1) % Math.max(1, filtered.length))
+                } else if (e.key === 'ArrowUp') {
+                  e.preventDefault()
+                  setSelectedIndex(prev => (prev - 1 + filtered.length) % Math.max(1, filtered.length))
+                } else if (e.key === 'Enter' && filtered[selectedIndex]) {
+                  onSelect(filtered[selectedIndex].table_schema, filtered[selectedIndex].table_name)
+                } else if (e.key === 'Escape') {
+                  onClose()
+                }
+              }}
+            />
+          </div>
+        </div>
+        <div className="max-h-[50vh] overflow-y-auto py-2">
+          {filtered.length > 0 ? filtered.map((t, i) => (
+            <div
+              key={`${t.table_schema}.${t.table_name}`}
+              className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors ${i === selectedIndex ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'}`}
+              onClick={() => onSelect(t.table_schema, t.table_name)}
+            >
+              <TableIcon size={16} className={i === selectedIndex ? 'text-blue-200' : 'text-gray-400'} />
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold">{t.table_name}</span>
+                <span className={`text-[10px] ${i === selectedIndex ? 'text-blue-100' : 'text-gray-400'}`}>{t.table_schema}</span>
+              </div>
+            </div>
+          )) : (
+            <div className="px-4 py-8 text-center text-gray-400 text-sm italic">No tables found</div>
+          )}
+        </div>
+        <div className="bg-gray-50 px-4 py-2 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-400">
+          <span>↑↓ to navigate, Enter to open</span>
+          <span>Esc to close</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const EditableCell = ({ value, dataType, onDoubleClick, isEditable }: { value: any, dataType?: string, onDoubleClick: () => void, isEditable: boolean }) => {
   return (
     <div
@@ -120,8 +226,30 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
 
   const [tabs, setTabs] = useState<TableTab[]>([])
   const [activeTabId, setActiveTabId] = useState<string | null>(null)
+  const [mruTabIds, setMruTabIds] = useState<string[]>([])
+  const [showTabSwitcher, setShowTabSwitcher] = useState(false)
+  const [switcherIndex, setSwitcherIndex] = useState(0)
+
+  const [showTableSearch, setShowTableSearch] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchIndex, setSearchIndex] = useState(0)
 
   const [executing, setExecuting] = useState(false)
+
+  // Track MRU
+  useEffect(() => {
+    if (activeTabId && !showTabSwitcher) {
+      setMruTabIds(prev => {
+        const filtered = prev.filter(id => id !== activeTabId && tabs.some(t => t.id === id))
+        return [activeTabId, ...filtered]
+      })
+    }
+  }, [activeTabId, showTabSwitcher, tabs])
+
+  // Cleanup MRU when tabs are closed
+  useEffect(() => {
+    setMruTabIds(prev => prev.filter(id => tabs.some(t => t.id === id)))
+  }, [tabs])
   const [viewMode, setViewMode] = useState<'data' | 'structure'>('data')
   const [isMaximized, setIsMaximized] = useState(false)
   const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null)
@@ -135,10 +263,10 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
   // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd + P: Focus sidebar filter
+      // Cmd + P: Fuzzy table search
       if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
         e.preventDefault()
-        sidebarFilterRef.current?.focus()
+        setShowTableSearch(true)
       }
 
       // Cmd + F: Focus filter
@@ -171,20 +299,36 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
         }
       }
 
-      // Ctrl + Tab: Switch Tab
+      // Ctrl + Tab: Switch Tab (MRU)
       if (e.ctrlKey && e.key === 'Tab') {
         e.preventDefault()
-        if (tabs.length > 1 && activeTabId) {
-          const currentIndex = tabs.findIndex(t => t.id === activeTabId)
-          const nextIndex = (currentIndex + 1) % tabs.length
-          setActiveTabId(tabs[nextIndex].id)
+        if (mruTabIds.length > 1) {
+          if (!showTabSwitcher) {
+            setShowTabSwitcher(true)
+            setSwitcherIndex(1)
+          } else {
+            setSwitcherIndex(prev => (prev + 1) % mruTabIds.length)
+          }
         }
       }
     }
 
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Control' && showTabSwitcher) {
+        const targetId = mruTabIds[switcherIndex]
+        if (targetId) setActiveTabId(targetId)
+        setShowTabSwitcher(false)
+        setSwitcherIndex(0)
+      }
+    }
+
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [tabs, activeTabId, activeTab])
+    window.addEventListener('keyup', handleKeyUp)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
+  }, [tabs, activeTabId, activeTab, mruTabIds, showTabSwitcher, switcherIndex])
 
   const updateActiveTab = (updates: Partial<TableTab>) => {
     if (!activeTabId) return
@@ -432,7 +576,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
   return (
     <div data-testid={`session-view-${id}`} className="flex h-full w-full overflow-hidden bg-white text-gray-900" style={{ display: isActive ? 'flex' : 'none' }}>
       <div className={`${isMaximized ? 'hidden' : 'w-64'} bg-gray-50 border-r border-gray-200 flex flex-col`}>
-        <div data-testid="sidebar-scroll" className="p-4 flex-1 overflow-y-auto overscroll-contain">
+        <div data-testid="sidebar-scroll" className="p-4 flex-1 overflow-y-auto">
           <div className="space-y-1">
             {tables.length > 0 && (
               <div className="mt-2">
@@ -663,7 +807,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                         </div>
                       </div>
                     )}
-                    <div data-testid="results-scroll" className="flex-1 overflow-auto pb-12 overscroll-contain">
+                    <div data-testid="results-scroll" className="flex-1 overflow-auto pb-12">
                       {error && <div className="p-4 text-red-600 font-mono text-xs whitespace-pre-wrap bg-red-50/30">Error: {error}</div>}
                       {activeTab.results && activeTab.results.rows.length > 0 ? (
                         <table className="w-full border-collapse text-left text-xs font-mono">
@@ -867,6 +1011,23 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
             setEditingCellData(null)
             setEditingRowIndex(null)
           }
+        }}
+      />
+
+      <TabSwitcher
+        isOpen={showTabSwitcher}
+        tabs={tabs}
+        mruTabIds={mruTabIds}
+        selectedIndex={switcherIndex}
+      />
+
+      <TableSearchModal
+        isOpen={showTableSearch}
+        onClose={() => setShowTableSearch(false)}
+        tables={tables}
+        onSelect={(schema, name) => {
+          handleTableClick(schema, name)
+          setShowTableSearch(false)
         }}
       />
     </div>
