@@ -46,6 +46,17 @@ ipcMain.handle('db:query', async (_, { id, sql, params }) => {
   return await dbManager.query(id, sql, params)
 })
 
+ipcMain.handle('window:toggle-maximize', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  if (win) {
+    if (win.isMaximized()) {
+      win.unmaximize()
+    } else {
+      win.maximize()
+    }
+  }
+})
+
 app.whenReady().then(() => {
   // Set app user model id for windows
   if (process.platform === 'win32') {

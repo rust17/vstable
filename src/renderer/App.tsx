@@ -40,15 +40,17 @@ function App() {
   return (
     <div className="flex flex-col h-screen bg-gray-50 overflow-hidden">
       {/* Titlebar / Tab Bar */}
-      <div className="titlebar h-10 flex items-center bg-gray-100 border-b border-gray-200 pl-20 pr-4 select-none draggable-region">
+      <div
+        className="titlebar h-10 flex items-end bg-gray-100 border-b border-gray-200 pl-20 pr-4 select-none draggable-region"
+      >
          {/* Traffic lights area is padded by pl-20 via CSS or Tailwind if configured, keeping it here for safety */}
-         <div className="flex-1 flex items-center gap-1 overflow-x-auto no-drag scrollbar-hide">
+         <div className="flex items-end gap-1 overflow-x-auto scrollbar-hide h-full">
             {sessions.map(session => (
               <div
                 key={session.id}
                 data-testid="session-tab"
                 onClick={() => setActiveSessionId(session.id)}
-                className={`group flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-t-md cursor-pointer transition-all border-t border-x border-b-0 min-w-[100px] ${activeSessionId === session.id ? 'bg-white text-gray-800 shadow-sm border-gray-200 translate-y-[1px] z-10' : 'bg-transparent text-gray-500 hover:bg-gray-200 border-transparent'}`}
+                className={`group flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-t-md cursor-pointer transition-all border-t border-x border-b-0 min-w-[100px] no-drag ${activeSessionId === session.id ? 'bg-white text-gray-800 shadow-sm border-gray-200 translate-y-[1px] z-10' : 'bg-transparent text-gray-500 hover:bg-gray-200 border-transparent mb-[1px]'}`}
               >
                 <span className="max-w-[120px] truncate flex-1">{session.title}</span>
                 <button
@@ -61,9 +63,18 @@ function App() {
               </div>
             ))}
          </div>
-         <button data-testid="add-session-btn" onClick={handleAddSession} className="p-1.5 hover:bg-gray-200 rounded-md text-gray-500 transition-colors ml-2 no-drag flex-shrink-0">
-            <Plus size={14} />
-         </button>
+         
+         {/* Empty area for double-click to maximize */}
+         <div 
+           className="flex-1 h-full min-w-[20px]" 
+           onDoubleClick={() => window.api.toggleMaximize()}
+         />
+
+         <div className="h-full flex items-center pb-1">
+           <button data-testid="add-session-btn" onClick={handleAddSession} className="p-1.5 hover:bg-gray-200 rounded-md text-gray-500 transition-colors ml-2 no-drag flex-shrink-0">
+              <Plus size={14} />
+           </button>
+         </div>
       </div>
       
       {/* Content Area */}

@@ -8,7 +8,8 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('api', {
       connect: (id, config) => ipcRenderer.invoke('db:connect', { id, config }),
       query: (id, sql, params) => ipcRenderer.invoke('db:query', { id, sql, params }),
-      disconnect: (id) => ipcRenderer.invoke('db:disconnect', id)
+      disconnect: (id) => ipcRenderer.invoke('db:disconnect', id),
+      toggleMaximize: () => ipcRenderer.invoke('window:toggle-maximize')
     })
   } catch (error) {
     console.error(error)

@@ -78,7 +78,7 @@ const TabSwitcher = ({ isOpen, tabs, mruTabIds, selectedIndex }: { isOpen: boole
           <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Switch Tab</span>
           <span className="text-[10px] text-gray-400">Ctrl + Tab to cycle</span>
         </div>
-        <div className="py-2 max-h-[60vh] overflow-y-auto">
+        <div className="py-2 max-h-[60vh] overflow-y-auto elastic-scroll">
           {mruTabIds.map((id, index) => {
             const tab = tabs.find(t => t.id === id)
             if (!tab) return null
@@ -148,7 +148,7 @@ const TableSearchModal = ({ isOpen, onClose, tables, onSelect }: { isOpen: boole
             />
           </div>
         </div>
-        <div className="max-h-[50vh] overflow-y-auto py-2">
+        <div className="max-h-[50vh] overflow-y-auto py-2 elastic-scroll">
           {filtered.length > 0 ? filtered.map((t, i) => (
             <div
               key={`${t.table_schema}.${t.table_name}`}
@@ -576,7 +576,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
   return (
     <div data-testid={`session-view-${id}`} className="flex h-full w-full overflow-hidden bg-white text-gray-900" style={{ display: isActive ? 'flex' : 'none' }}>
       <div className={`${isMaximized ? 'hidden' : 'w-64'} bg-gray-50 border-r border-gray-200 flex flex-col`}>
-        <div data-testid="sidebar-scroll" className="p-4 flex-1 overflow-y-auto">
+        <div data-testid="sidebar-scroll" className="p-4 flex-1 overflow-y-auto elastic-scroll">
           <div className="space-y-1">
             {tables.length > 0 && (
               <div className="mt-2">
@@ -725,90 +725,80 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                               })
                             }}
                           />
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
-                       <div className="flex items-center gap-4">
-                         <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">Results</span>
-                         {activeTab.type === 'table' && activeTab.pk && <span className="text-[10px] text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">Editable (PK: {activeTab.pk})</span>}
-                       </div>
-                    </div>
-
-                    {/* Filter Bar */}
-                    {activeTab.type === 'table' && (
-                      <div className="px-4 py-2 border-b border-gray-100 bg-gray-50/50 flex flex-col gap-2">
-                        {(activeTab.filters || []).map((filter, index) => (
-                          <div key={filter.id} data-testid={`filter-row-${index}`} className="flex items-center gap-2">
-                            <select
-                              data-testid={`filter-column-${index}`}
-                              className="text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[150px]"
-                              value={filter.column}
-                              onChange={e => handleUpdateFilter(filter.id, 'column', e.target.value)}
-                            >
-                              {activeTab.structure?.length ? activeTab.structure.map(c => (
-                                <option key={c.column_name} value={c.column_name}>{c.column_name}</option>
-                              )) : <option value="">Select column...</option>}
-                            </select>
-                            <select
-                              data-testid={`filter-operator-${index}`}
-                              className="text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-16"
-                              value={filter.operator}
-                              onChange={e => handleUpdateFilter(filter.id, 'operator', e.target.value)}
-                            >
-                              <option value="=">=</option>
-                              <option value="!=">!=</option>
-                              <option value=">">&gt;</option>
-                              <option value="<">&lt;</option>
-                              <option value=">=">&gt;=</option>
-                              <option value="<=">&lt;=</option>
-                              <option value="LIKE">LIKE</option>
-                              <option value="ILIKE">ILIKE</option>
-                            </select>
-                            <input
-                              ref={index === 0 ? filterInputRef : null}
-                              data-testid={`filter-value-${index}`}
-                              type="text"
-                              className="flex-1 text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                              placeholder="Value"
-                              value={filter.value}
-                              onChange={e => handleUpdateFilter(filter.id, 'value', e.target.value)}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') handleApplyFilters()
-                              }}
-                            />
-                            <button
-                              data-testid={`btn-remove-filter-${index}`}
-                              onClick={() => handleRemoveFilter(filter.id)}
-                              className="p-1 hover:bg-red-100 text-gray-400 hover:text-red-500 rounded transition-colors"
-                            >
-                              <X size={14} />
-                            </button>
-                          </div>
-                        ))}
-                        <div className="flex items-center gap-2 mt-1">
-                          <button
-                            data-testid="btn-add-filter"
-                            onClick={handleAddFilter}
-                            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors border border-transparent hover:border-blue-100"
-                          >
-                            <Plus size={12} /> Add Filter
-                          </button>
-                          {(activeTab.filters || []).length > 0 && (
-                            <button
-                              data-testid="btn-apply-filter"
-                              onClick={handleApplyFilters}
-                              className="px-3 py-1 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-sm"
-                            >
-                              Apply Filter
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    <div data-testid="results-scroll" className="flex-1 overflow-auto pb-12">
-                      {error && <div className="p-4 text-red-600 font-mono text-xs whitespace-pre-wrap bg-red-50/30">Error: {error}</div>}
+                                                </div>
+                                              </div>
+                                            )}
+                        
+                                                                {/* Filter Bar as the primary header for results */}
+                                                                {activeTab.type === 'table' && (
+                                                                  <div className="px-4 py-2 border-b border-gray-100 bg-gray-50 flex flex-col gap-2">
+                                                                    {(activeTab.filters || []).map((filter, index) => (
+                                                                      <div key={filter.id} data-testid={`filter-row-${index}`} className="flex items-center gap-2">
+                                                                        <select
+                                                                          data-testid={`filter-column-${index}`}                                                      className="text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[150px]"
+                                                      value={filter.column}
+                                                      onChange={e => handleUpdateFilter(filter.id, 'column', e.target.value)}
+                                                    >
+                                                      {activeTab.structure?.length ? activeTab.structure.map(c => (
+                                                        <option key={c.column_name} value={c.column_name}>{c.column_name}</option>
+                                                      )) : <option value="">Select column...</option>}
+                                                    </select>
+                                                    <select
+                                                      data-testid={`filter-operator-${index}`}
+                                                      className="text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-16"
+                                                      value={filter.operator}
+                                                      onChange={e => handleUpdateFilter(filter.id, 'operator', e.target.value)}
+                                                    >
+                                                      <option value="=">=</option>
+                                                      <option value="!=">!=</option>
+                                                      <option value=">">&gt;</option>
+                                                      <option value="<">&lt;</option>
+                                                      <option value=">=">&gt;=</option>
+                                                      <option value="<=">&lt;=</option>
+                                                      <option value="LIKE">LIKE</option>
+                                                      <option value="ILIKE">ILIKE</option>
+                                                    </select>
+                                                    <input
+                                                      ref={index === 0 ? filterInputRef : null}
+                                                      data-testid={`filter-value-${index}`}
+                                                      type="text"
+                                                      className="flex-1 text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                      placeholder="Value"
+                                                      value={filter.value}
+                                                      onChange={e => handleUpdateFilter(filter.id, 'value', e.target.value)}
+                                                      onKeyDown={e => {
+                                                        if (e.key === 'Enter') handleApplyFilters()
+                                                      }}
+                                                    />
+                                                    <button
+                                                      data-testid={`btn-remove-filter-${index}`}
+                                                      onClick={() => handleRemoveFilter(filter.id)}
+                                                      className="p-1 hover:bg-red-100 text-gray-400 hover:text-red-500 rounded transition-colors"
+                                                    >
+                                                      <X size={14} />
+                                                    </button>
+                                                  </div>
+                                                ))}
+                                                                        <div className="flex items-center gap-2 mt-1">
+                                                                          <button
+                                                                            data-testid="btn-add-filter"
+                                                                            onClick={handleAddFilter}                                                    className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors border border-transparent hover:border-blue-100"
+                                                  >
+                                                    <Plus size={12} /> Add Filter
+                                                  </button>
+                                                  {(activeTab.filters || []).length > 0 && (
+                                                    <button
+                                                      data-testid="btn-apply-filter"
+                                                      onClick={handleApplyFilters}
+                                                      className="px-3 py-1 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-sm"
+                                                    >
+                                                      Apply Filter
+                                                    </button>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            )}
+                                            <div data-testid="results-scroll" className="flex-1 overflow-auto pb-12 elastic-scroll">                      {error && <div className="p-4 text-red-600 font-mono text-xs whitespace-pre-wrap bg-red-50/30">Error: {error}</div>}
                       {activeTab.results && activeTab.results.rows.length > 0 ? (
                         <table className="w-full border-collapse text-left text-xs font-mono">
                           <thead className="bg-gray-100 sticky top-0 z-10">
@@ -940,7 +930,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                      <Edit2 size={14} className="text-orange-500" />
                      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">Table Structure</span>
                   </div>
-                  <div className="flex-1 overflow-auto">
+                  <div className="flex-1 overflow-auto elastic-scroll">
                     {error && <div className="p-4 text-red-600 font-mono text-xs whitespace-pre-wrap bg-red-50/30">Error: {error}</div>}
                     <table className="w-full border-collapse text-left text-sm">
                       <thead className="bg-gray-100 sticky top-0 z-10">
