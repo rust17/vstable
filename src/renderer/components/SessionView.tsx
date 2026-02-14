@@ -2,21 +2,36 @@ import React, { useState, useEffect } from 'react'
 import { Database, Plus, Server, Play, Table as TableIcon, Settings, Edit2, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import Editor from '@monaco-editor/react'
 
+const formatTimestamp = (value: any) => {
+  if (value === null || value === undefined || value === '') return ''
+  const date = new Date(value)
+  if (isNaN(date.getTime())) return String(value)
+
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  const y = date.getFullYear()
+  const m = pad(date.getMonth() + 1)
+  const d = pad(date.getDate())
+  const h = pad(date.getHours())
+  const min = pad(date.getMinutes())
+  const s = pad(date.getSeconds())
+
+  return `${y}-${m}-${d} ${h}:${min}:${s}`
+}
+
 const formatDisplayValue = (value: any, dataType?: string) => {
   if (value === null) return <span className="text-gray-300 italic">null</span>
   let display = String(value)
   if (dataType?.includes('json') && typeof value === 'object') {
     display = JSON.stringify(value, null, 2)
-  } else if (dataType?.includes('timestamp') || dataType?.includes('date')) {
-    // Remove timezone like +08, Z and milliseconds .123
-    display = String(value).replace(/[+-]\d{2}(:\d{2})?$/, '').replace(/Z$/, '').replace(/\.\d+$/, '')
+  } else if (dataType?.includes('timestamp') || dataType?.includes('date') || dataType?.includes('time')) {
+    display = formatTimestamp(value)
   }
   return display
 }
 
 const DataEditModal = ({ isOpen, value, onClose, onSave }: { isOpen: boolean, value: string, onClose: () => void, onSave: (val: string) => void }) => {
   const [val, setVal] = useState('')
-  
+
   useEffect(() => {
     if (isOpen) setVal(value)
   }, [isOpen, value])
@@ -31,7 +46,7 @@ const DataEditModal = ({ isOpen, value, onClose, onSave }: { isOpen: boolean, va
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors"><X size={18} className="text-gray-400" /></button>
         </div>
         <div className="p-0 flex-1 overflow-hidden">
-          <textarea 
+          <textarea
             data-testid="edit-textarea"
             className="w-full h-full min-h-[300px] p-6 font-mono text-sm border-none focus:ring-0 outline-none resize-none bg-white text-gray-800"
             value={val}
@@ -102,16 +117,16 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
   const [error, setError] = useState('')
   const [tables, setTables] = useState<{table_name: string, table_schema: string}[]>([])
   const [tableFilter, setTableFilter] = useState('')
-  
+
   const [tabs, setTabs] = useState<TableTab[]>([])
   const [activeTabId, setActiveTabId] = useState<string | null>(null)
-  
+
   const [executing, setExecuting] = useState(false)
   const [viewMode, setViewMode] = useState<'data' | 'structure'>('data')
   const [isMaximized, setIsMaximized] = useState(false)
   const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null)
   const [editingCellData, setEditingCellData] = useState<{value: any, dataType?: string, onSave: (val: string) => void} | null>(null)
-  
+
   const sidebarFilterRef = React.useRef<HTMLInputElement>(null)
   const filterInputRef = React.useRef<HTMLInputElement>(null)
 
@@ -125,19 +140,19 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
         e.preventDefault()
         sidebarFilterRef.current?.focus()
       }
-      
+
       // Cmd + F: Focus filter
       if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
         e.preventDefault()
         filterInputRef.current?.focus()
       }
-      
+
       // Cmd + T: New Query
       if ((e.metaKey || e.ctrlKey) && e.key === 't') {
         e.preventDefault()
         handleNewQuery()
       }
-      
+
       // Cmd + W: Close current tab
       if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
         e.preventDefault()
@@ -208,7 +223,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
     try {
       const result = await window.api.query(id, sql)
       if (result.success) {
-        updateActiveTab({ 
+        updateActiveTab({
           results: { rows: result.rows || [], fields: result.fields || [] },
           query: sql
         })
@@ -285,7 +300,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
     try {
       const currentTab = tabs.find(t => t.id === targetId)
       const currentFilters = currentTab?.filters || []
-      
+
       let whereClause = ''
       if (currentFilters.length > 0) {
         const conditions = currentFilters.filter(f => f.column && f.value).map(f => {
@@ -305,7 +320,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
 
       const q = `SELECT * FROM "${schema}"."${name}"${whereClause} LIMIT ${size} OFFSET ${(p - 1) * size};`
       const result = await window.api.query(id, q)
-      
+
       setTabs(prev => prev.map(t => t.id === targetId ? {
         ...t,
         totalRows: total,
@@ -349,7 +364,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
     setTabs(prev => [...prev, newTab])
     setActiveTabId(tabId)
     setViewMode('data')
-    
+
     const [pkRes, structRows] = await Promise.all([
       window.api.query(id, `SELECT kcu.column_name FROM information_schema.table_constraints tco JOIN information_schema.key_column_usage kcu ON kcu.constraint_name = tco.constraint_name AND kcu.constraint_schema = tco.constraint_schema WHERE tco.constraint_type = 'PRIMARY KEY' AND tco.table_schema = '${schema}' AND tco.table_name = '${name}';`),
       fetchStructure(schema, name)
@@ -432,7 +447,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                       if (e.key === 'Enter' && filteredTables.length > 0) {
                         handleTableClick(filteredTables[0].table_schema, filteredTables[0].table_name)
                         // Optional: Clear filter after selection? Maybe better to keep it.
-                        // setTableFilter('') 
+                        // setTableFilter('')
                       }
                     }}
                     className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
@@ -576,13 +591,13 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                          {activeTab.type === 'table' && activeTab.pk && <span className="text-[10px] text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">Editable (PK: {activeTab.pk})</span>}
                        </div>
                     </div>
-                    
+
                     {/* Filter Bar */}
                     {activeTab.type === 'table' && (
                       <div className="px-4 py-2 border-b border-gray-100 bg-gray-50/50 flex flex-col gap-2">
                         {(activeTab.filters || []).map((filter, index) => (
                           <div key={filter.id} data-testid={`filter-row-${index}`} className="flex items-center gap-2">
-                            <select 
+                            <select
                               data-testid={`filter-column-${index}`}
                               className="text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[150px]"
                               value={filter.column}
@@ -592,7 +607,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                                 <option key={c.column_name} value={c.column_name}>{c.column_name}</option>
                               )) : <option value="">Select column...</option>}
                             </select>
-                            <select 
+                            <select
                               data-testid={`filter-operator-${index}`}
                               className="text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-16"
                               value={filter.operator}
@@ -607,10 +622,10 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                               <option value="LIKE">LIKE</option>
                               <option value="ILIKE">ILIKE</option>
                             </select>
-                            <input 
+                            <input
                               ref={index === 0 ? filterInputRef : null}
                               data-testid={`filter-value-${index}`}
-                              type="text" 
+                              type="text"
                               className="flex-1 text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                               placeholder="Value"
                               value={filter.value}
@@ -619,7 +634,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                                 if (e.key === 'Enter') handleApplyFilters()
                               }}
                             />
-                            <button 
+                            <button
                               data-testid={`btn-remove-filter-${index}`}
                               onClick={() => handleRemoveFilter(filter.id)}
                               className="p-1 hover:bg-red-100 text-gray-400 hover:text-red-500 rounded transition-colors"
@@ -629,7 +644,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                           </div>
                         ))}
                         <div className="flex items-center gap-2 mt-1">
-                          <button 
+                          <button
                             data-testid="btn-add-filter"
                             onClick={handleAddFilter}
                             className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors border border-transparent hover:border-blue-100"
@@ -637,7 +652,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                             <Plus size={12} /> Add Filter
                           </button>
                           {(activeTab.filters || []).length > 0 && (
-                            <button 
+                            <button
                               data-testid="btn-apply-filter"
                               onClick={handleApplyFilters}
                               className="px-3 py-1 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-sm"
@@ -669,8 +684,8 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                                                             </thead>
                                                                                                                                                 <tbody>
                                                                                                                                                   {activeTab.results.rows.map((row, i) => (
-                                                                                                                                                    <tr 
-                                                                                                                                                      key={i} 
+                                                                                                                                                    <tr
+                                                                                                                                                      key={i}
                                                                                                                                                       data-editing={editingRowIndex === i}
                                                                                                                                                       className={`${editingRowIndex === i ? 'bg-blue-100' : 'hover:bg-blue-50/50'} border-b border-gray-100 transition-colors`}
                                                                                                                                                     >
@@ -678,46 +693,46 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                                                                                                                                                                                             const colInfo = activeTab.structure?.find(c => c.column_name === field.name)
                                                                                                                                                                                             const isEditable = activeTab.type === 'table' && !!activeTab.pk && field.name !== activeTab.pk
                                                                                                                                                                                             return (
-                                                                                                                                                                                              <td 
-                                                                                                                                                                                                key={j} 
-                                                                                                                                                                                                data-testid={`cell-${field.name}-${i}`} 
+                                                                                                                                                                                              <td
+                                                                                                                                                                                                key={j}
+                                                                                                                                                                                                data-testid={`cell-${field.name}-${i}`}
                                                                                                                                                                                                 className="border-r border-gray-100 text-gray-600 whitespace-nowrap max-w-xs truncate p-0"
                                                                                                                                                                                                 onDoubleClick={() => {
                                                                                                                                                                                                   if (isEditable) {
                                                                                                                                                                                                     setEditingRowIndex(i)
-                                                                                                                                                                                                    setEditingCellData({ 
-                                                                                                                                                                                                      value: row[field.name], 
+                                                                                                                                                                                                    setEditingCellData({
+                                                                                                                                                                                                      value: row[field.name],
                                                                                                                                                                                                       dataType: colInfo?.data_type,
                                                                                                                                                                                                       onSave: (newVal) => handleCellUpdate(row, field.name, newVal)
                                                                                                                                                                                                     })
                                                                                                                                                                                                   }
                                                                                                                                                                                                 }}
                                                                                                                                                                                               >
-                                                                                                                                                                                                <EditableCell 
-                                                                                                                                                                                                  value={row[field.name]} 
+                                                                                                                                                                                                <EditableCell
+                                                                                                                                                                                                  value={row[field.name]}
                                                                                                                                                                                                   dataType={colInfo?.data_type}
-                                                                                                                                                                                                  isEditable={isEditable} 
-                                                                                                                                                                                                  onDoubleClick={() => {}} 
+                                                                                                                                                                                                  isEditable={isEditable}
+                                                                                                                                                                                                  onDoubleClick={() => {}}
                                                                                                                                                                                                 />
                                                                                                                                                                                               </td>
                                                                                                                                                                                             )
                                                                                                                                                                                           })}
-                                                                                                                                                        
+
                                                                                                                                                     </tr>
                                                                                                                                                   ))}
                                                                                                                                                 </tbody>
-                                                                                                                    
+
                                                                                       </table>
                                                                                     ) : <div className="p-8 text-center text-gray-300 italic text-sm">No data found</div>}
                                                                                   </div>
-                                                            
+
                                                                                   {/* Pagination in bottom right (Only for table tabs) */}
                                                                                   {activeTab.type === 'table' && activeTab.page !== undefined && activeTab.pageSize !== undefined && activeTab.totalRows !== undefined && (
                                                                                     <div className="absolute bottom-4 right-4 flex items-center gap-3 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-1.5 shadow-lg z-20">
                                                                                          <div className="flex items-center gap-1 border-r border-gray-100 pr-2 mr-1">
-                                                                                           <button 
+                                                                                           <button
                                                                                              data-testid="btn-prev-page"
-                                                                                             disabled={activeTab.page <= 1 || executing} 
+                                                                                             disabled={activeTab.page <= 1 || executing}
                                                                                              onClick={() => {
                                                                                                const p = activeTab.page! - 1
                                                                                                fetchTableData(activeTab.schema!, activeTab.name, p, activeTab.pageSize!)
@@ -726,10 +741,10 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                                                                                            >
                                                                                              <ChevronLeft size={14} />
                                                                                            </button>
-                                                                                           <input 
+                                                                                           <input
                                                                                              data-testid="input-page-number"
-                                                                                             type="number" 
-                                                                                             value={activeTab.page} 
+                                                                                             type="number"
+                                                                                             value={activeTab.page}
                                                                                              onChange={(e) => updateActiveTab({ page: parseInt(e.target.value) || 1 })}
                                                                                              onKeyDown={(e) => {
                                                                                                if (e.key === 'Enter') {
@@ -741,9 +756,9 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                                                                                              style={{ width: `${String(activeTab.page).length + 1}ch` }}
                                                                                            />
                                                                                            <span className="text-[10px] text-gray-400">/ {Math.ceil(activeTab.totalRows / activeTab.pageSize) || 1}</span>
-                                                                                           <button 
+                                                                                           <button
                                                                                              data-testid="btn-next-page"
-                                                                                             disabled={activeTab.page >= Math.ceil(activeTab.totalRows / activeTab.pageSize) || executing} 
+                                                                                             disabled={activeTab.page >= Math.ceil(activeTab.totalRows / activeTab.pageSize) || executing}
                                                                                              onClick={() => {
                                                                                                const p = activeTab.page! + 1
                                                                                                fetchTableData(activeTab.schema!, activeTab.name, p, activeTab.pageSize!)
@@ -753,10 +768,10 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                                                                                              <ChevronRight size={14} />
                                                                                            </button>
                                                                                          </div>
-                                                            
-                                                           <select 
+
+                                                           <select
                              data-testid="select-page-size"
-                             value={activeTab.pageSize} 
+                             value={activeTab.pageSize}
                              onChange={(e) => {
                                const size = parseInt(e.target.value)
                                fetchTableData(activeTab.schema!, activeTab.name, 1, size)
@@ -796,23 +811,23 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                         {activeTab.structure.map((col, i) => (
                           <tr key={i} className="hover:bg-gray-50 border-b border-gray-100 transition-colors">
                             <td className="border-r border-gray-100 p-0 h-10" data-testid={`struct-name-${i}`}>
-                              <EditableCell 
-                                value={col.column_name} 
-                                isEditable={true} 
+                              <EditableCell
+                                value={col.column_name}
+                                isEditable={true}
                                 onDoubleClick={() => setEditingCellData({
                                   value: col.column_name,
                                   onSave: (val) => handleStructureUpdate(col.column_name, 'column_name', val)
-                                })} 
+                                })}
                               />
                             </td>
                             <td className="border-r border-gray-100 p-0 h-10" data-testid={`struct-type-${i}`}>
-                              <EditableCell 
-                                value={col.data_type} 
-                                isEditable={true} 
+                              <EditableCell
+                                value={col.data_type}
+                                isEditable={true}
                                 onDoubleClick={() => setEditingCellData({
                                   value: col.data_type,
                                   onSave: (val) => handleStructureUpdate(col.column_name, 'data_type', val)
-                                })} 
+                                })}
                               />
                             </td>
                             <td className="px-4 py-2 border-r border-gray-100 text-gray-600">{col.is_nullable === 'YES' ? <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">NULL</span> : <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded text-xs">NOT NULL</span>}</td>
@@ -833,20 +848,26 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
         </div>
       </div>
 
-      <DataEditModal 
-        isOpen={!!editingCellData} 
-        value={editingCellData ? (editingCellData.dataType?.includes('json') && typeof editingCellData.value === 'object' ? JSON.stringify(editingCellData.value, null, 2) : String(editingCellData.value ?? '')) : ''} 
+      <DataEditModal
+        isOpen={!!editingCellData}
+        value={editingCellData ? (
+          editingCellData.dataType?.includes('json') && typeof editingCellData.value === 'object'
+            ? JSON.stringify(editingCellData.value, null, 2)
+            : (editingCellData.dataType?.includes('timestamp') || editingCellData.dataType?.includes('date') || editingCellData.dataType?.includes('time'))
+              ? formatTimestamp(editingCellData.value)
+              : String(editingCellData.value ?? '')
+        ) : ''}
         onClose={() => {
           setEditingCellData(null)
           setEditingRowIndex(null)
-        }} 
+        }}
         onSave={(newVal) => {
           if (editingCellData) {
             editingCellData.onSave(newVal)
             setEditingCellData(null)
             setEditingRowIndex(null)
           }
-        }} 
+        }}
       />
     </div>
   )

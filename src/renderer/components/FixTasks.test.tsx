@@ -19,16 +19,16 @@ describe('SessionView Fix Tasks', () => {
     ;(window.api.query as any).mockResolvedValue({ success: true, rows: [] })
 
     render(<SessionView {...defaultProps} />)
-    
+
     // Connect
     fireEvent.click(screen.getByTestId('btn-connect'))
     await waitFor(() => expect(screen.queryByTestId('connection-form')).not.toBeInTheDocument())
 
     // The Connect button (btn-add-connection) should NOT be present in the header
     // Currently it is present, so this test should FAIL if we expect it to be gone.
-    // Wait, the requirement says "去除 Query 旁边的 Connect". 
+    // Wait, the requirement says "去除 Query 旁边的 Connect".
     // In the code, both are in the same div: <div className="flex items-center gap-2 shrink-0">
-    
+
     expect(screen.queryByTestId('btn-add-connection')).not.toBeInTheDocument()
   })
 
@@ -52,9 +52,9 @@ describe('SessionView Fix Tasks', () => {
     await waitFor(() => expect(screen.queryByTestId('connection-form')).not.toBeInTheDocument())
     await waitFor(() => expect(screen.getByTestId('table-item-users')).toBeInTheDocument())
     fireEvent.click(screen.getByTestId('table-item-users'))
-    
+
     const pageInput = await screen.findByTestId('input-page-number')
-    
+
     // Check if it has horizontal margin or padding (e.g., mx-1, mx-2, px-1, etc.)
     const className = pageInput.className
     expect(className).toMatch(/\b(p[xy]?-\d+|m[xy]?-\d+)\b/)
@@ -78,9 +78,9 @@ describe('SessionView Fix Tasks', () => {
     fireEvent.click(screen.getByTestId('btn-connect'))
     await waitFor(() => expect(screen.getByTestId('table-item-users')).toBeInTheDocument())
     fireEvent.click(screen.getByTestId('table-item-users'))
-    
+
     const pageInput = await screen.findByTestId('input-page-number')
-    
+
     // Check if it has the utility class to hide arrows (typically [appearance:textfield] or similar in Tailwind)
     // Or we check if it has a specific custom class we'll define
     expect(pageInput.className).toContain('no-arrows')
