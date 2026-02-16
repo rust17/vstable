@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Database, Plus, Server, Play, Table as TableIcon, Settings, Edit2, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import Editor from '@monaco-editor/react'
+import { StructureView } from './StructureView'
 
 const formatTimestamp = (value: any) => {
   if (value === null || value === undefined || value === '') return ''
@@ -925,53 +926,12 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                   </div>
                 </>
               ) : activeTab && viewMode === 'structure' ? (
-                <div className="flex-1 flex flex-col min-h-0 bg-white overflow-hidden">
-                   <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
-                     <Edit2 size={14} className="text-orange-500" />
-                     <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">Table Structure</span>
-                  </div>
-                  <div className="flex-1 overflow-auto elastic-scroll">
-                    {error && <div className="p-4 text-red-600 font-mono text-xs whitespace-pre-wrap bg-red-50/30">Error: {error}</div>}
-                    <table className="w-full border-collapse text-left text-sm">
-                      <thead className="bg-gray-100 sticky top-0 z-10">
-                        <tr>
-                          <th className="px-4 py-2 border-b border-gray-200 text-gray-600 font-semibold w-1/3">Column Name</th>
-                          <th className="px-4 py-2 border-b border-gray-200 text-gray-600 font-semibold w-1/3">Type</th>
-                          <th className="px-4 py-2 border-b border-gray-200 text-gray-600 font-semibold">Nullable</th>
-                          <th className="px-4 py-2 border-b border-gray-200 text-gray-600 font-semibold">Default</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {activeTab.structure.map((col, i) => (
-                          <tr key={i} className="hover:bg-gray-50 border-b border-gray-100 transition-colors">
-                            <td className="border-r border-gray-100 p-0 h-10" data-testid={`struct-name-${i}`}>
-                              <EditableCell
-                                value={col.column_name}
-                                isEditable={true}
-                                onDoubleClick={() => setEditingCellData({
-                                  value: col.column_name,
-                                  onSave: (val) => handleStructureUpdate(col.column_name, 'column_name', val)
-                                })}
-                              />
-                            </td>
-                            <td className="border-r border-gray-100 p-0 h-10" data-testid={`struct-type-${i}`}>
-                              <EditableCell
-                                value={col.data_type}
-                                isEditable={true}
-                                onDoubleClick={() => setEditingCellData({
-                                  value: col.data_type,
-                                  onSave: (val) => handleStructureUpdate(col.column_name, 'data_type', val)
-                                })}
-                              />
-                            </td>
-                            <td className="px-4 py-2 border-r border-gray-100 text-gray-600">{col.is_nullable === 'YES' ? <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">NULL</span> : <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded text-xs">NOT NULL</span>}</td>
-                            <td className="px-4 py-2 text-gray-400 font-mono text-xs">{col.column_default}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                <StructureView
+                  connectionId={id}
+                  schema={activeTab.schema || 'public'}
+                  tableName={activeTab.name}
+                  onClose={() => setViewMode('data')}
+                />
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center text-gray-300 italic bg-gray-50/30">
                   Select a table from the sidebar to view its data

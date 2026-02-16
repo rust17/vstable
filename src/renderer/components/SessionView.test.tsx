@@ -182,10 +182,13 @@ describe('SessionView Component', () => {
         return Promise.resolve({
           success: true,
           rows: [
-            { column_name: 'id', data_type: 'integer', is_nullable: 'NO', column_default: null },
-            { column_name: 'name', data_type: 'text', is_nullable: 'YES', column_default: null }
+            { column_name: 'id', data_type: 'integer', is_nullable: 'NO', column_default: null, pk_constraint_name: 'pk' },
+            { column_name: 'name', data_type: 'text', is_nullable: 'YES', column_default: null, pk_constraint_name: null }
           ]
         })
+      }
+      if (sql.includes('pg_class t')) {
+        return Promise.resolve({ success: true, rows: [] })
       }
       if (sql.includes('PRIMARY KEY')) {
         return Promise.resolve({ success: true, rows: [{ column_name: 'id' }] })
@@ -211,19 +214,20 @@ describe('SessionView Component', () => {
     fireEvent.click(screen.getByTestId('tab-structure'))
 
     // Wait for structure to load
-    await waitFor(() => expect(screen.getAllByText('integer').length).toBeGreaterThan(0))
-
-    // Double click on 'name' column name to rename
-    const nameText = screen.getAllByText('name').find(el => el.closest('[data-testid^="struct-name"]'))
-    fireEvent.doubleClick(nameText!)
-
-    // Change value
     await waitFor(() => expect(screen.getByDisplayValue('name')).toBeInTheDocument())
+
+    // Change value directly in the input
     const input = screen.getByDisplayValue('name')
     fireEvent.change(input, { target: { value: 'full_name' } })
     
     // Click Save
     fireEvent.click(screen.getByText('Save Changes'))
+
+    // Verify Preview Modal appears
+    await waitFor(() => expect(screen.getByText('Preview SQL')).toBeInTheDocument())
+    
+    // Click Execute in modal
+    fireEvent.click(screen.getByText('Execute'))
 
     // Verify ALTER TABLE query was called
     await waitFor(() => {
