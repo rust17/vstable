@@ -35,7 +35,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
           is_nullable, 
           column_default,
           ordinal_position,
-          (SELECT constraint_name FROM information_schema.key_column_usage kcu 
+          (SELECT kcu.constraint_name FROM information_schema.key_column_usage kcu 
            JOIN information_schema.table_constraints tc ON kcu.constraint_name = tc.constraint_name 
            WHERE kcu.table_schema = c.table_schema AND kcu.table_name = c.table_name 
            AND kcu.column_name = c.column_name AND tc.constraint_type = 'PRIMARY KEY' LIMIT 1) as pk_constraint_name
@@ -83,17 +83,27 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
       `)
 
       if (idxRes.success) {
-        const idxs = idxRes.rows.map((row: any) => ({
-          id: crypto.randomUUID(),
-          name: row.index_name,
-          columns: row.column_names || [],
-          isUnique: row.is_unique,
-          _original: {
-            name: row.index_name,
-            columns: row.column_names || [],
-            isUnique: row.is_unique
+        const idxs = idxRes.rows.map((row: any) => {
+          let cols: string[] = []
+          if (Array.isArray(row.column_names)) {
+            cols = row.column_names
+          } else if (typeof row.column_names === 'string') {
+            // Parse PG array string: {col1,col2}
+            cols = row.column_names.replace(/^\{|\}$/g, '').split(',').map(s => s.trim().replace(/^"|"$/g, '')).filter(Boolean)
           }
-        }))
+
+          return {
+            id: crypto.randomUUID(),
+            name: row.index_name,
+            columns: cols,
+            isUnique: row.is_unique,
+            _original: {
+              name: row.index_name,
+              columns: [...cols],
+              isUnique: row.is_unique
+            }
+          }
+        })
         setIndexes(idxs)
       } else {
         // Index query might fail on older PG versions or permissions, just warn?
@@ -383,10 +393,10 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                     <td className="px-6 py-3">
                          <input 
                             data-testid={`index-columns-${i}`}
-                            value={idx.columns.join(', ')}
+                            value={(Array.isArray(idx.columns) ? idx.columns : []).join(', ')}
                             onChange={e => {
                                 const newIndexes = [...indexes]
-                                newIndexes[i].columns = e.target.value.split(',').map(s => s.trim())
+                                newIndexes[i].columns = e.target.value.split(',').map(s => s.trim()).filter(Boolean)
                                 setIndexes(newIndexes)
                             }}
                             placeholder="col1, col2"

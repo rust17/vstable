@@ -48,6 +48,26 @@ describe('StructureView Component', () => {
     expect(screen.getByDisplayValue('users_email_idx')).toBeInTheDocument()
   })
 
+  it('handles index columns returned as Postgres array strings', async () => {
+    ;(window as any).api.query.mockImplementation((id, sql) => {
+      if (sql.includes('pg_class t')) {
+        return Promise.resolve({
+          success: true,
+          rows: [
+            { index_name: 'string_idx', column_names: '{col1,col2}', is_unique: false }
+          ]
+        })
+      }
+      return Promise.resolve({ success: true, rows: [] })
+    })
+
+    render(<StructureView {...defaultProps} />)
+    await waitFor(() => expect(screen.queryByText(/Loading structure/i)).not.toBeInTheDocument())
+
+    expect(screen.getByDisplayValue('string_idx')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('col1, col2')).toBeInTheDocument()
+  })
+
   it('handles adding and deleting columns', async () => {
      ;(window as any).api.query.mockResolvedValue({ success: true, rows: [] })
      
