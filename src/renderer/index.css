@@ -53,3 +53,8 @@ body {
   overscroll-behavior: auto;
   -webkit-overflow-scrolling: touch; /* 启用 iOS/macOS 风格的平滑滚动和回弹 */
 }
+
+/* 移除所有按钮的焦点边框 */
+button:focus {
+  outline: none;
+}

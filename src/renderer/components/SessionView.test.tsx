@@ -496,4 +496,53 @@ describe('SessionView Component', () => {
       })
     })
   })
+
+  describe('Row Selection and Persistence', () => {
+    beforeEach(async () => {
+      ;(window.api.connect as any).mockResolvedValue({ success: true })
+      ;(window.api.query as any).mockImplementation((id, sql) => {
+        if (sql.includes('SELECT table_name')) return Promise.resolve({ success: true, rows: [{ table_name: 'users', table_schema: 'public' }] })
+        if (sql.includes('COUNT(*)')) return Promise.resolve({ success: true, rows: [{ count: '1' }] })
+        if (sql.includes('information_schema.columns')) return Promise.resolve({ success: true, rows: [{column_name: 'id', data_type: 'integer'}, {column_name: 'name', data_type: 'text'}] })
+        if (sql.includes('PRIMARY KEY')) return Promise.resolve({ success: true, rows: [{ column_name: 'id' }] })
+        if (sql.includes('SELECT * FROM "public"."users"')) {
+          return Promise.resolve({ success: true, rows: [{ id: 1, name: 'Alice' }], fields: [{ name: 'id' }, { name: 'name' }] })
+        }
+        return Promise.resolve({ success: true, rows: [] })
+      })
+
+      render(<SessionView {...defaultProps} />)
+      fireEvent.click(screen.getByTestId('btn-connect'))
+      await waitFor(() => expect(screen.getByTestId('table-item-users')).toBeInTheDocument())
+      fireEvent.click(screen.getByTestId('table-item-users'))
+      await waitFor(() => expect(screen.getByText('Alice')).toBeInTheDocument())
+    })
+
+    it('highlights a row when clicked', async () => {
+      const row = screen.getByText('Alice').closest('tr')
+      expect(row).not.toHaveAttribute('data-selected', 'true')
+      
+      fireEvent.click(row!)
+      expect(row).toHaveAttribute('data-selected', 'true')
+      expect(row).toHaveClass('bg-blue-100')
+    })
+
+    it('persists row highlight after closing the edit modal', async () => {
+      const aliceCell = screen.getByText('Alice')
+      const row = aliceCell.closest('tr')
+
+      // Double click to focus and open modal
+      fireEvent.doubleClick(aliceCell)
+      expect(row).toHaveAttribute('data-selected', 'true')
+      expect(screen.getByTestId('edit-textarea')).toBeInTheDocument()
+
+      // Close modal
+      fireEvent.click(screen.getByText('Cancel'))
+      
+      // Modal closed, but row should still be selected
+      expect(screen.queryByTestId('edit-textarea')).not.toBeInTheDocument()
+      expect(row).toHaveAttribute('data-selected', 'true')
+      expect(row).toHaveClass('bg-blue-100')
+    })
+  })
 })

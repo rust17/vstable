@@ -280,6 +280,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
   const [viewMode, setViewMode] = useState<'data' | 'structure'>('data')
   const [isMaximized, setIsMaximized] = useState(false)
   const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null)
+  const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null)
   const [editingCellData, setEditingCellData] = useState<{value: any, dataType?: string, onSave: (val: string) => void} | null>(null)
 
   const sidebarFilterRef = React.useRef<HTMLInputElement>(null)
@@ -391,6 +392,8 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
     if (!sql.trim() || !activeTabId) return
     setExecuting(true)
     setError('')
+    setSelectedRowIndex(null)
+    setEditingRowIndex(null)
     try {
       const result = await window.api.query(id, sql)
       if (result.success) {
@@ -468,6 +471,8 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
 
     setExecuting(true)
     setError('')
+    setSelectedRowIndex(null)
+    setEditingRowIndex(null)
     try {
       const currentTab = tabs.find(t => t.id === targetId)
       const currentFilters = currentTab?.filters || []
@@ -947,9 +952,12 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                                                                                                                                                     <tr
                                                                                                                                                       key={i}
                                                                                                                                                       data-editing={editingRowIndex === i}
-                                                                                                                                                      className={`${editingRowIndex === i ? 'bg-blue-100' : 'hover:bg-blue-50/50'} border-b border-gray-100 transition-colors cursor-context-menu`}
+                                                                                                                                                      data-selected={selectedRowIndex === i}
+                                                                                                                                                      onClick={() => setSelectedRowIndex(i)}
+                                                                                                                                                      className={`${(editingRowIndex === i || selectedRowIndex === i) ? 'bg-blue-100' : 'hover:bg-blue-50/50'} border-b border-gray-100 transition-colors cursor-context-menu`}
                                                                                                                                                       onContextMenu={(e) => {
                                                                                                                                                         e.preventDefault()
+                                                                                                                                                        setSelectedRowIndex(i)
                                                                                                                                                         setContextMenu({ x: e.clientX, y: e.clientY, row })
                                                                                                                                                       }}
                                                                                                                                                     >
@@ -963,6 +971,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                                                                                                                                                                                                 className="border-r border-gray-100 text-gray-600 whitespace-nowrap max-w-xs truncate p-0"
                                                                                                                                                                                                 onDoubleClick={() => {
                                                                                                                                                                                                   if (isEditable) {
+                                                                                                                                                                                                    setSelectedRowIndex(i)
                                                                                                                                                                                                     setEditingRowIndex(i)
                                                                                                                                                                                                     setEditingCellData({
                                                                                                                                                                                                       value: row[field.name],
