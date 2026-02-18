@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Database, Plus, Server, Play, Table as TableIcon, Settings, Edit2, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { Database, Plus, Server, Play, Table as TableIcon, Settings, Edit2, ChevronLeft, ChevronRight, X, Trash2, Check } from 'lucide-react'
 import Editor from '@monaco-editor/react'
 import { StructureView } from './StructureView'
 
@@ -96,6 +96,29 @@ const TabSwitcher = ({ isOpen, tabs, mruTabIds, selectedIndex }: { isOpen: boole
           })}
         </div>
       </div>
+    </div>
+  )
+}
+
+const ContextMenu = ({ x, y, onDelete, onClose }: { x: number, y: number, onDelete: () => void, onClose: () => void }) => {
+  useEffect(() => {
+    const handleClick = () => onClose()
+    window.addEventListener('click', handleClick)
+    return () => window.removeEventListener('click', handleClick)
+  }, [onClose])
+
+  return (
+    <div 
+      className="fixed z-[300] bg-white border border-gray-200 shadow-lg rounded-lg py-1 min-w-[140px] animate-in fade-in zoom-in-95 duration-100"
+      style={{ top: y, left: x }}
+      onClick={e => e.stopPropagation()}
+    >
+      <button 
+        onClick={() => { onDelete(); onClose() }}
+        className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium"
+      >
+        <Trash2 size={14} /> Delete Row
+      </button>
     </div>
   )
 }
@@ -214,6 +237,8 @@ interface TableTab {
   structure?: any[]
   query: string
   filters?: FilterCondition[]
+  isAddingRow?: boolean
+  newRowData?: Record<string, any>
 }
 
 export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdateTitle }) => {
@@ -236,6 +261,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
   const [searchIndex, setSearchIndex] = useState(0)
 
   const [executing, setExecuting] = useState(false)
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, row: any } | null>(null)
 
   // Track MRU
   useEffect(() => {
@@ -478,6 +504,79 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
       if (!result.success) setError(result.error || 'Query failed')
     } catch (err: any) {
       setError(err.message)
+    } finally {
+      setExecuting(false)
+    }
+  }
+
+  const handleStartAddRow = () => {
+    updateActiveTab({ isAddingRow: true, newRowData: {} })
+  }
+
+  const handleCancelAddRow = () => {
+    updateActiveTab({ isAddingRow: false, newRowData: {} })
+  }
+
+  const handleNewRowChange = (column: string, value: string) => {
+    if (!activeTab) return
+    const current = activeTab.newRowData || {}
+    updateActiveTab({ newRowData: { ...current, [column]: value } })
+  }
+
+  const handleSaveNewRow = async () => {
+    if (!activeTab) return
+    const data = activeTab.newRowData || {}
+    const columns = Object.keys(data)
+    
+    let sql = ''
+    if (columns.length === 0) {
+      sql = `INSERT INTO "${activeTab.schema}"."${activeTab.name}" DEFAULT VALUES;`
+    } else {
+      const cols = columns.map(c => `"${c}"`).join(', ')
+      const vals = columns.map(c => `'${String(data[c]).replace(/'/g, "''")}'`).join(', ')
+      sql = `INSERT INTO "${activeTab.schema}"."${activeTab.name}" (${cols}) VALUES (${vals});`
+    }
+
+    setExecuting(true)
+    try {
+      const result = await window.api.query(id, sql)
+      if (result.success) {
+        updateActiveTab({ isAddingRow: false, newRowData: {} })
+        fetchTableData(activeTab.schema!, activeTab.name, activeTab.page || 1, activeTab.pageSize || 100)
+      } else {
+        const msg = result.error || 'Insert failed'
+        setError(msg)
+        window.alert(msg)
+      }
+    } catch (err: any) {
+      setError(err.message)
+      window.alert(err.message)
+    } finally {
+      setExecuting(false)
+    }
+  }
+
+  const handleDeleteRow = async () => {
+    if (!activeTab || !activeTab.pk || !contextMenu) return
+    if (!window.confirm('Are you sure you want to delete this row?')) return
+
+    const row = contextMenu.row
+    const pkValue = row[activeTab.pk]
+    const sql = `DELETE FROM "${activeTab.schema}"."${activeTab.name}" WHERE "${activeTab.pk}" = '${String(pkValue).replace(/'/g, "''")}';`
+    
+    setExecuting(true)
+    try {
+      const result = await window.api.query(id, sql)
+      if (result.success) {
+        fetchTableData(activeTab.schema!, activeTab.name, activeTab.page || 1, activeTab.pageSize || 100)
+      } else {
+        const msg = result.error || 'Delete failed'
+        setError(msg)
+        window.alert(msg)
+      }
+    } catch (err: any) {
+      setError(err.message)
+      window.alert(err.message)
     } finally {
       setExecuting(false)
     }
@@ -780,14 +879,40 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                                                     </button>
                                                   </div>
                                                 ))}
-                                                                        <div className="flex items-center gap-2 mt-1">
-                                                                          <button
-                                                                            data-testid="btn-add-filter"
-                                                                            onClick={handleAddFilter}                                                    className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors border border-transparent hover:border-blue-100"
-                                                  >
-                                                    <Plus size={12} /> Add Filter
-                                                  </button>
-                                                  {(activeTab.filters || []).length > 0 && (
+                                                                                                                  <div className="flex items-center gap-2 mt-1">
+                                                                                                                    <button
+                                                                                                                      data-testid="btn-add-filter"
+                                                                                                                      onClick={handleAddFilter}
+                                                                                                                      className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors border border-transparent hover:border-blue-100"
+                                                                                                                    >
+                                                                                                                      <Plus size={12} /> Add Filter
+                                                                                                                    </button>
+                                                                                                                    {activeTab.isAddingRow ? (
+                                                                                                                      <>
+                                                                                                                        <button
+                                                                                                                          data-testid="btn-save-row"
+                                                                                                                          onClick={handleSaveNewRow}
+                                                                                                                          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors shadow-sm"
+                                                                                                                        >
+                                                                                                                          <Check size={12} /> Save Row
+                                                                                                                        </button>
+                                                                                                                        <button
+                                                                                                                          data-testid="btn-cancel-row"
+                                                                                                                          onClick={handleCancelAddRow}
+                                                                                                                          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded transition-colors border border-gray-200"
+                                                                                                                        >
+                                                                                                                          <X size={12} /> Cancel
+                                                                                                                        </button>
+                                                                                                                      </>
+                                                                                                                    ) : (
+                                                                                                                      <button
+                                                                                                                        data-testid="btn-add-row"
+                                                                                                                        onClick={handleStartAddRow}
+                                                                                                                        className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50 rounded transition-colors border border-transparent hover:border-green-100"
+                                                                                                                      >
+                                                                                                                        <Plus size={12} /> Add Row
+                                                                                                                      </button>
+                                                                                                                    )}                                                  {(activeTab.filters || []).length > 0 && (
                                                     <button
                                                       data-testid="btn-apply-filter"
                                                       onClick={handleApplyFilters}
@@ -822,7 +947,11 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                                                                                                                                                     <tr
                                                                                                                                                       key={i}
                                                                                                                                                       data-editing={editingRowIndex === i}
-                                                                                                                                                      className={`${editingRowIndex === i ? 'bg-blue-100' : 'hover:bg-blue-50/50'} border-b border-gray-100 transition-colors`}
+                                                                                                                                                      className={`${editingRowIndex === i ? 'bg-blue-100' : 'hover:bg-blue-50/50'} border-b border-gray-100 transition-colors cursor-context-menu`}
+                                                                                                                                                      onContextMenu={(e) => {
+                                                                                                                                                        e.preventDefault()
+                                                                                                                                                        setContextMenu({ x: e.clientX, y: e.clientY, row })
+                                                                                                                                                      }}
                                                                                                                                                     >
                                                                                                                                                       {activeTab.results!.fields.map((field, j) => {
                                                                                                                                                                                             const colInfo = activeTab.structure?.find(c => c.column_name === field.name)
@@ -855,6 +984,30 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
 
                                                                                                                                                     </tr>
                                                                                                                                                   ))}
+                                                                                                                                                  {activeTab.isAddingRow && (
+                                                                                                                                                    <tr className="bg-green-50 sticky bottom-0 z-20 shadow-sm border-t-2 border-green-200">
+                                                                                                                                                      {(activeTab.results?.fields || activeTab.structure?.map(s => ({name: s.column_name})) || []).map((field, j) => {
+                                                                                                                                                        const colInfo = activeTab.structure?.find(c => c.column_name === field.name)
+                                                                                                                                                        const isAuto = colInfo?.column_default?.startsWith('nextval') || colInfo?.data_type === 'serial'
+                                                                                                                                                        
+                                                                                                                                                        return (
+                                                                                                                                                          <td key={j} className="border-r border-green-200 p-0 min-w-[100px]">
+                                                                                                                                                            <input
+                                                                                                                                                              autoFocus={!isAuto && j === 0}
+                                                                                                                                                              disabled={!!isAuto}
+                                                                                                                                                              className={`w-full h-full px-3 py-2 text-xs bg-transparent focus:outline-none focus:bg-white placeholder:text-green-300/50 font-mono ${isAuto ? 'bg-gray-50/50 text-gray-400 cursor-not-allowed italic' : 'text-gray-700'}`}
+                                                                                                                                                              placeholder={isAuto ? '(auto)' : field.name}
+                                                                                                                                                              value={activeTab.newRowData?.[field.name] || ''}
+                                                                                                                                                              onChange={(e) => handleNewRowChange(field.name, e.target.value)}
+                                                                                                                                                              onKeyDown={(e) => {
+                                                                                                                                                                if (e.key === 'Escape') handleCancelAddRow()
+                                                                                                                                                              }}
+                                                                                                                                                            />
+                                                                                                                                                          </td>
+                                                                                                                                                        )
+                                                                                                                                                      })}
+                                                                                                                                                    </tr>
+                                                                                                                                                  )}
                                                                                                                                                 </tbody>
 
                                                                                       </table>
@@ -941,6 +1094,15 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
           )}
         </div>
       </div>
+
+      {contextMenu && (
+        <ContextMenu 
+          x={contextMenu.x} 
+          y={contextMenu.y} 
+          onDelete={handleDeleteRow} 
+          onClose={() => setContextMenu(null)} 
+        />
+      )}
 
       <DataEditModal
         isOpen={!!editingCellData}
