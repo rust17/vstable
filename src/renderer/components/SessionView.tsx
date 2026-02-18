@@ -803,9 +803,9 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                     {activeTab.type === 'query' && (
                       <div className="h-1/2 border-b border-gray-200 flex flex-col bg-white overflow-hidden">
                         <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
-                           <Play size={14} className="text-green-500" />
-                           <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">SQL Query</span>
-                           <span className="text-[10px] text-gray-400 ml-auto italic">Cmd+Enter to Run</span>
+                          <Play size={14} className="text-green-500" />
+                          <span className="text-[11px] font-bold text-gray-500 uppercase tracking-tight">SQL Query</span>
+                          <span className="text-[10px] text-gray-400 ml-auto italic">Cmd+Enter to Run</span>
                         </div>
                         <div className="flex-1">
                           <Editor
@@ -830,259 +830,260 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                               })
                             }}
                           />
-                                                </div>
-                                              </div>
-                                            )}
-                        
-                                                                {/* Filter Bar as the primary header for results */}
-                                                                {activeTab.type === 'table' && (
-                                                                  <div className="px-4 py-2 border-b border-gray-100 bg-gray-50 flex flex-col gap-2">
-                                                                    {(activeTab.filters || []).map((filter, index) => (
-                                                                      <div key={filter.id} data-testid={`filter-row-${index}`} className="flex items-center gap-2">
-                                                                        <select
-                                                                          data-testid={`filter-column-${index}`}                                                      className="text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[150px]"
-                                                      value={filter.column}
-                                                      onChange={e => handleUpdateFilter(filter.id, 'column', e.target.value)}
-                                                    >
-                                                      {activeTab.structure?.length ? activeTab.structure.map(c => (
-                                                        <option key={c.column_name} value={c.column_name}>{c.column_name}</option>
-                                                      )) : <option value="">Select column...</option>}
-                                                    </select>
-                                                    <select
-                                                      data-testid={`filter-operator-${index}`}
-                                                      className="text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-16"
-                                                      value={filter.operator}
-                                                      onChange={e => handleUpdateFilter(filter.id, 'operator', e.target.value)}
-                                                    >
-                                                      <option value="=">=</option>
-                                                      <option value="!=">!=</option>
-                                                      <option value=">">&gt;</option>
-                                                      <option value="<">&lt;</option>
-                                                      <option value=">=">&gt;=</option>
-                                                      <option value="<=">&lt;=</option>
-                                                      <option value="LIKE">LIKE</option>
-                                                      <option value="ILIKE">ILIKE</option>
-                                                    </select>
-                                                    <input
-                                                      ref={index === 0 ? filterInputRef : null}
-                                                      data-testid={`filter-value-${index}`}
-                                                      type="text"
-                                                      className="flex-1 text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                      placeholder="Value"
-                                                      value={filter.value}
-                                                      onChange={e => handleUpdateFilter(filter.id, 'value', e.target.value)}
-                                                      onKeyDown={e => {
-                                                        if (e.key === 'Enter') handleApplyFilters()
-                                                      }}
-                                                    />
-                                                    <button
-                                                      data-testid={`btn-remove-filter-${index}`}
-                                                      onClick={() => handleRemoveFilter(filter.id)}
-                                                      className="p-1 hover:bg-red-100 text-gray-400 hover:text-red-500 rounded transition-colors"
-                                                    >
-                                                      <X size={14} />
-                                                    </button>
-                                                  </div>
-                                                ))}
-                                                                                                                  <div className="flex items-center gap-2 mt-1">
-                                                                                                                    <button
-                                                                                                                      data-testid="btn-add-filter"
-                                                                                                                      onClick={handleAddFilter}
-                                                                                                                      className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors border border-transparent hover:border-blue-100"
-                                                                                                                    >
-                                                                                                                      <Plus size={12} /> Add Filter
-                                                                                                                    </button>
-                                                                                                                    {activeTab.isAddingRow ? (
-                                                                                                                      <>
-                                                                                                                        <button
-                                                                                                                          data-testid="btn-save-row"
-                                                                                                                          onClick={handleSaveNewRow}
-                                                                                                                          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors shadow-sm"
-                                                                                                                        >
-                                                                                                                          <Check size={12} /> Save Row
-                                                                                                                        </button>
-                                                                                                                        <button
-                                                                                                                          data-testid="btn-cancel-row"
-                                                                                                                          onClick={handleCancelAddRow}
-                                                                                                                          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded transition-colors border border-gray-200"
-                                                                                                                        >
-                                                                                                                          <X size={12} /> Cancel
-                                                                                                                        </button>
-                                                                                                                      </>
-                                                                                                                    ) : (
-                                                                                                                      <button
-                                                                                                                        data-testid="btn-add-row"
-                                                                                                                        onClick={handleStartAddRow}
-                                                                                                                        className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50 rounded transition-colors border border-transparent hover:border-green-100"
-                                                                                                                      >
-                                                                                                                        <Plus size={12} /> Add Row
-                                                                                                                      </button>
-                                                                                                                    )}                                                  {(activeTab.filters || []).length > 0 && (
-                                                    <button
-                                                      data-testid="btn-apply-filter"
-                                                      onClick={handleApplyFilters}
-                                                      className="px-3 py-1 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-sm"
-                                                    >
-                                                      Apply Filter
-                                                    </button>
-                                                  )}
-                                                </div>
-                                              </div>
-                                            )}
-                                            <div data-testid="results-scroll" className="flex-1 overflow-auto pb-12 elastic-scroll">                      {error && <div className="p-4 text-red-600 font-mono text-xs whitespace-pre-wrap bg-red-50/30">Error: {error}</div>}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Filter Bar as the primary header for results */}
+                    {activeTab.type === 'table' && (
+                      <div className="px-4 py-2 border-b border-gray-100 bg-gray-50 flex flex-col gap-2">
+                        {(activeTab.filters || []).map((filter, index) => (
+                          <div key={filter.id} data-testid={`filter-row-${index}`} className="flex items-center gap-2">
+                            <select
+                              data-testid={`filter-column-${index}`}
+                              className="text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[150px]"
+                              value={filter.column}
+                              onChange={e => handleUpdateFilter(filter.id, 'column', e.target.value)}
+                            >
+                              {activeTab.structure?.length ? activeTab.structure.map(c => (
+                                <option key={c.column_name} value={c.column_name}>{c.column_name}</option>
+                              )) : <option value="">Select column...</option>}
+                            </select>
+                            <select
+                              data-testid={`filter-operator-${index}`}
+                              className="text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 w-16"
+                              value={filter.operator}
+                              onChange={e => handleUpdateFilter(filter.id, 'operator', e.target.value)}
+                            >
+                              <option value="=">=</option>
+                              <option value="!=">!=</option>
+                              <option value=">">&gt;</option>
+                              <option value="<">&lt;</option>
+                              <option value=">=">&gt;=</option>
+                              <option value="<=">&lt;=</option>
+                              <option value="LIKE">LIKE</option>
+                              <option value="ILIKE">ILIKE</option>
+                            </select>
+                            <input
+                              ref={index === 0 ? filterInputRef : null}
+                              data-testid={`filter-value-${index}`}
+                              type="text"
+                              className="flex-1 text-xs border border-gray-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                              placeholder="Value"
+                              value={filter.value}
+                              onChange={e => handleUpdateFilter(filter.id, 'value', e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') handleApplyFilters()
+                              }}
+                            />
+                            <button
+                              data-testid={`btn-remove-filter-${index}`}
+                              onClick={() => handleRemoveFilter(filter.id)}
+                              className="p-1 hover:bg-red-100 text-gray-400 hover:text-red-500 rounded transition-colors"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                        <div className="flex items-center gap-2 mt-1">
+                          <button
+                            data-testid="btn-add-filter"
+                            onClick={handleAddFilter}
+                            className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded transition-colors border border-transparent hover:border-blue-100"
+                          >
+                            <Plus size={12} /> Add Filter
+                          </button>
+                          {activeTab.isAddingRow ? (
+                            <>
+                              <button
+                                data-testid="btn-save-row"
+                                onClick={handleSaveNewRow}
+                                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors shadow-sm"
+                              >
+                                <Check size={12} /> Save Row
+                              </button>
+                              <button
+                                data-testid="btn-cancel-row"
+                                onClick={handleCancelAddRow}
+                                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded transition-colors border border-gray-200"
+                              >
+                                <X size={12} /> Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              data-testid="btn-add-row"
+                              onClick={handleStartAddRow}
+                              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50 rounded transition-colors border border-transparent hover:border-green-100"
+                            >
+                              <Plus size={12} /> Add Row
+                            </button>
+                          )}
+                          {(activeTab.filters || []).length > 0 && (
+                            <button
+                              data-testid="btn-apply-filter"
+                              onClick={handleApplyFilters}
+                              className="px-3 py-1 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-sm"
+                            >
+                              Apply Filter
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    <div data-testid="results-scroll" className="flex-1 overflow-auto pb-12 elastic-scroll">
+                      {error && <div className="p-4 text-red-600 font-mono text-xs whitespace-pre-wrap bg-red-50/30">Error: {error}</div>}
                       {activeTab.results && activeTab.results.rows.length > 0 ? (
                         <table className="w-full border-collapse text-left text-xs font-mono">
                           <thead className="bg-gray-100 sticky top-0 z-10">
                             <tr>
                               {activeTab.results.fields.map((field, i) => {
                                 const colInfo = activeTab.structure?.find(c => c.column_name === field.name)
-                                                                  return (
-                                                                    <th key={i} className="px-3 py-2 border-r border-b border-gray-200 text-gray-600 font-bold whitespace-nowrap">
-                                                                      <div className="flex flex-col">
-                                                                        <span>{field.name}</span>
-                                                                        {colInfo && <span className="text-[9px] font-normal text-gray-400">{colInfo.data_type.replace(/ without time zone$/, '')}</span>}
-                                                                      </div>
-                                                                    </th>
-                                                                  )
-                                                                })}
-                                                              </tr>
-                                                            </thead>
-                                                                                                                                                <tbody>
-                                                                                                                                                  {activeTab.results.rows.map((row, i) => (
-                                                                                                                                                    <tr
-                                                                                                                                                      key={i}
-                                                                                                                                                      data-editing={editingRowIndex === i}
-                                                                                                                                                      data-selected={selectedRowIndex === i}
-                                                                                                                                                      onClick={() => setSelectedRowIndex(i)}
-                                                                                                                                                      className={`${(editingRowIndex === i || selectedRowIndex === i) ? 'bg-blue-100' : 'hover:bg-blue-50/50'} border-b border-gray-100 transition-colors cursor-context-menu`}
-                                                                                                                                                      onContextMenu={(e) => {
-                                                                                                                                                        e.preventDefault()
-                                                                                                                                                        setSelectedRowIndex(i)
-                                                                                                                                                        setContextMenu({ x: e.clientX, y: e.clientY, row })
-                                                                                                                                                      }}
-                                                                                                                                                    >
-                                                                                                                                                      {activeTab.results!.fields.map((field, j) => {
-                                                                                                                                                                                            const colInfo = activeTab.structure?.find(c => c.column_name === field.name)
-                                                                                                                                                                                            const isEditable = activeTab.type === 'table' && !!activeTab.pk && field.name !== activeTab.pk
-                                                                                                                                                                                            return (
-                                                                                                                                                                                              <td
-                                                                                                                                                                                                key={j}
-                                                                                                                                                                                                data-testid={`cell-${field.name}-${i}`}
-                                                                                                                                                                                                className="border-r border-gray-100 text-gray-600 whitespace-nowrap max-w-xs truncate p-0"
-                                                                                                                                                                                                onDoubleClick={() => {
-                                                                                                                                                                                                  if (isEditable) {
-                                                                                                                                                                                                    setSelectedRowIndex(i)
-                                                                                                                                                                                                    setEditingRowIndex(i)
-                                                                                                                                                                                                    setEditingCellData({
-                                                                                                                                                                                                      value: row[field.name],
-                                                                                                                                                                                                      dataType: colInfo?.data_type,
-                                                                                                                                                                                                      onSave: (newVal) => handleCellUpdate(row, field.name, newVal)
-                                                                                                                                                                                                    })
-                                                                                                                                                                                                  }
-                                                                                                                                                                                                }}
-                                                                                                                                                                                              >
-                                                                                                                                                                                                <EditableCell
-                                                                                                                                                                                                  value={row[field.name]}
-                                                                                                                                                                                                  dataType={colInfo?.data_type}
-                                                                                                                                                                                                  isEditable={isEditable}
-                                                                                                                                                                                                  onDoubleClick={() => {}}
-                                                                                                                                                                                                />
-                                                                                                                                                                                              </td>
-                                                                                                                                                                                            )
-                                                                                                                                                                                          })}
+                                return (
+                                  <th key={i} className="px-3 py-2 border-r border-b border-gray-200 text-gray-600 font-bold whitespace-nowrap">
+                                    <div className="flex flex-col">
+                                      <span>{field.name}</span>
+                                      {colInfo && <span className="text-[9px] font-normal text-gray-400">{colInfo.data_type.replace(/ without time zone$/, '')}</span>}
+                                    </div>
+                                  </th>
+                                )
+                              })}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {activeTab.results.rows.map((row, i) => (
+                              <tr
+                                key={i}
+                                data-editing={editingRowIndex === i}
+                                data-selected={selectedRowIndex === i}
+                                onClick={() => setSelectedRowIndex(i)}
+                                className={`${(editingRowIndex === i || selectedRowIndex === i) ? 'bg-blue-100' : 'hover:bg-blue-50/50'} border-b border-gray-100 transition-colors cursor-context-menu`}
+                                onContextMenu={(e) => {
+                                  e.preventDefault()
+                                  setSelectedRowIndex(i)
+                                  setContextMenu({ x: e.clientX, y: e.clientY, row })
+                                }}
+                              >
+                                {activeTab.results!.fields.map((field, j) => {
+                                  const colInfo = activeTab.structure?.find(c => c.column_name === field.name)
+                                  const isEditable = activeTab.type === 'table' && !!activeTab.pk && field.name !== activeTab.pk
+                                  return (
+                                    <td
+                                      key={j}
+                                      data-testid={`cell-${field.name}-${i}`}
+                                      className="border-r border-gray-100 text-gray-600 whitespace-nowrap max-w-xs truncate p-0"
+                                      onDoubleClick={() => {
+                                        if (isEditable) {
+                                          setSelectedRowIndex(i)
+                                          setEditingRowIndex(i)
+                                          setEditingCellData({
+                                            value: row[field.name],
+                                            dataType: colInfo?.data_type,
+                                            onSave: (newVal) => handleCellUpdate(row, field.name, newVal)
+                                          })
+                                        }
+                                      }}
+                                    >
+                                      <EditableCell
+                                        value={row[field.name]}
+                                        dataType={colInfo?.data_type}
+                                        isEditable={isEditable}
+                                        onDoubleClick={() => { }}
+                                      />
+                                    </td>
+                                  )
+                                })}
+                              </tr>
+                            ))}
+                            {activeTab.isAddingRow && (
+                              <tr className="bg-green-50 sticky bottom-0 z-20 shadow-sm border-t-2 border-green-200">
+                                {(activeTab.results?.fields || activeTab.structure?.map(s => ({ name: s.column_name })) || []).map((field, j) => {
+                                  const colInfo = activeTab.structure?.find(c => c.column_name === field.name)
+                                  const isAuto = colInfo?.column_default?.startsWith('nextval') || colInfo?.data_type === 'serial'
 
-                                                                                                                                                    </tr>
-                                                                                                                                                  ))}
-                                                                                                                                                  {activeTab.isAddingRow && (
-                                                                                                                                                    <tr className="bg-green-50 sticky bottom-0 z-20 shadow-sm border-t-2 border-green-200">
-                                                                                                                                                      {(activeTab.results?.fields || activeTab.structure?.map(s => ({name: s.column_name})) || []).map((field, j) => {
-                                                                                                                                                        const colInfo = activeTab.structure?.find(c => c.column_name === field.name)
-                                                                                                                                                        const isAuto = colInfo?.column_default?.startsWith('nextval') || colInfo?.data_type === 'serial'
-                                                                                                                                                        
-                                                                                                                                                        return (
-                                                                                                                                                          <td key={j} className="border-r border-green-200 p-0 min-w-[100px]">
-                                                                                                                                                            <input
-                                                                                                                                                              autoFocus={!isAuto && j === 0}
-                                                                                                                                                              disabled={!!isAuto}
-                                                                                                                                                              className={`w-full h-full px-3 py-2 text-xs bg-transparent focus:outline-none focus:bg-white placeholder:text-green-300/50 font-mono ${isAuto ? 'bg-gray-50/50 text-gray-400 cursor-not-allowed italic' : 'text-gray-700'}`}
-                                                                                                                                                              placeholder={isAuto ? '(auto)' : field.name}
-                                                                                                                                                              value={activeTab.newRowData?.[field.name] || ''}
-                                                                                                                                                              onChange={(e) => handleNewRowChange(field.name, e.target.value)}
-                                                                                                                                                              onKeyDown={(e) => {
-                                                                                                                                                                if (e.key === 'Escape') handleCancelAddRow()
-                                                                                                                                                              }}
-                                                                                                                                                            />
-                                                                                                                                                          </td>
-                                                                                                                                                        )
-                                                                                                                                                      })}
-                                                                                                                                                    </tr>
-                                                                                                                                                  )}
-                                                                                                                                                </tbody>
+                                  return (
+                                    <td key={j} className="border-r border-green-200 p-0 min-w-[100px]">
+                                      <input
+                                        autoFocus={!isAuto && j === 0}
+                                        disabled={!!isAuto}
+                                        className={`w-full h-full px-3 py-2 text-xs bg-transparent focus:outline-none focus:bg-white placeholder:text-green-300/50 font-mono ${isAuto ? 'bg-gray-50/50 text-gray-400 cursor-not-allowed italic' : 'text-gray-700'}`}
+                                        placeholder={isAuto ? '(auto)' : field.name}
+                                        value={activeTab.newRowData?.[field.name] || ''}
+                                        onChange={(e) => handleNewRowChange(field.name, e.target.value)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Escape') handleCancelAddRow()
+                                        }}
+                                      />
+                                    </td>
+                                  )
+                                })}
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      ) : <div className="p-8 text-center text-gray-300 italic text-sm">No data found</div>}
+                    </div>
 
-                                                                                      </table>
-                                                                                    ) : <div className="p-8 text-center text-gray-300 italic text-sm">No data found</div>}
-                                                                                  </div>
+                    {/* Pagination in bottom right (Only for table tabs) */}
+                    {activeTab.type === 'table' && activeTab.page !== undefined && activeTab.pageSize !== undefined && activeTab.totalRows !== undefined && (
+                      <div className="absolute bottom-4 right-4 flex items-center gap-3 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-1.5 shadow-lg z-20">
+                        <div className="flex items-center gap-1 border-r border-gray-100 pr-2 mr-1">
+                          <button
+                            data-testid="btn-prev-page"
+                            disabled={activeTab.page <= 1 || executing}
+                            onClick={() => {
+                              const p = activeTab.page! - 1
+                              fetchTableData(activeTab.schema!, activeTab.name, p, activeTab.pageSize!)
+                            }}
+                            className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 text-gray-600"
+                          >
+                            <ChevronLeft size={14} />
+                          </button>
+                          <input
+                            data-testid="input-page-number"
+                            type="number"
+                            value={activeTab.page}
+                            onChange={(e) => updateActiveTab({ page: parseInt(e.target.value) || 1 })}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                const p = Math.max(1, Math.min(activeTab.page!, Math.ceil(activeTab.totalRows! / activeTab.pageSize!)))
+                                fetchTableData(activeTab.schema!, activeTab.name, p, activeTab.pageSize!)
+                              }
+                            }}
+                            className="text-center text-xs font-medium focus:outline-none bg-transparent mx-1 no-arrows [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            style={{ width: `${String(activeTab.page).length + 1}ch` }}
+                          />
+                          <span className="text-[10px] text-gray-400">/ {Math.ceil(activeTab.totalRows / activeTab.pageSize) || 1}</span>
+                          <button
+                            data-testid="btn-next-page"
+                            disabled={activeTab.page >= Math.ceil(activeTab.totalRows / activeTab.pageSize) || executing}
+                            onClick={() => {
+                              const p = activeTab.page! + 1
+                              fetchTableData(activeTab.schema!, activeTab.name, p, activeTab.pageSize!)
+                            }}
+                            className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 text-gray-600"
+                          >
+                            <ChevronRight size={14} />
+                          </button>
+                        </div>
 
-                                                                                  {/* Pagination in bottom right (Only for table tabs) */}
-                                                                                  {activeTab.type === 'table' && activeTab.page !== undefined && activeTab.pageSize !== undefined && activeTab.totalRows !== undefined && (
-                                                                                    <div className="absolute bottom-4 right-4 flex items-center gap-3 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-1.5 shadow-lg z-20">
-                                                                                         <div className="flex items-center gap-1 border-r border-gray-100 pr-2 mr-1">
-                                                                                           <button
-                                                                                             data-testid="btn-prev-page"
-                                                                                             disabled={activeTab.page <= 1 || executing}
-                                                                                             onClick={() => {
-                                                                                               const p = activeTab.page! - 1
-                                                                                               fetchTableData(activeTab.schema!, activeTab.name, p, activeTab.pageSize!)
-                                                                                             }}
-                                                                                             className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 text-gray-600"
-                                                                                           >
-                                                                                             <ChevronLeft size={14} />
-                                                                                           </button>
-                                                                                           <input
-                                                                                             data-testid="input-page-number"
-                                                                                             type="number"
-                                                                                             value={activeTab.page}
-                                                                                             onChange={(e) => updateActiveTab({ page: parseInt(e.target.value) || 1 })}
-                                                                                             onKeyDown={(e) => {
-                                                                                               if (e.key === 'Enter') {
-                                                                                                 const p = Math.max(1, Math.min(activeTab.page!, Math.ceil(activeTab.totalRows! / activeTab.pageSize!)))
-                                                                                                 fetchTableData(activeTab.schema!, activeTab.name, p, activeTab.pageSize!)
-                                                                                               }
-                                                                                             }}
-                                                                                             className="text-center text-xs font-medium focus:outline-none bg-transparent mx-1 no-arrows [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                                                             style={{ width: `${String(activeTab.page).length + 1}ch` }}
-                                                                                           />
-                                                                                           <span className="text-[10px] text-gray-400">/ {Math.ceil(activeTab.totalRows / activeTab.pageSize) || 1}</span>
-                                                                                           <button
-                                                                                             data-testid="btn-next-page"
-                                                                                             disabled={activeTab.page >= Math.ceil(activeTab.totalRows / activeTab.pageSize) || executing}
-                                                                                             onClick={() => {
-                                                                                               const p = activeTab.page! + 1
-                                                                                               fetchTableData(activeTab.schema!, activeTab.name, p, activeTab.pageSize!)
-                                                                                             }}
-                                                                                             className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 text-gray-600"
-                                                                                           >
-                                                                                             <ChevronRight size={14} />
-                                                                                           </button>
-                                                                                         </div>
+                        <select
+                          data-testid="select-page-size"
+                          value={activeTab.pageSize}
+                          onChange={(e) => {
+                            const size = parseInt(e.target.value)
+                            fetchTableData(activeTab.schema!, activeTab.name, 1, size)
+                          }}
+                          className="text-[10px] font-medium text-gray-600 focus:outline-none bg-transparent cursor-pointer"
+                        >
+                          <option value="50">50 / page</option>
+                          <option value="100">100 / page</option>
+                          <option value="500">500 / page</option>
+                        </select>
 
-                                                           <select
-                             data-testid="select-page-size"
-                             value={activeTab.pageSize}
-                             onChange={(e) => {
-                               const size = parseInt(e.target.value)
-                               fetchTableData(activeTab.schema!, activeTab.name, 1, size)
-                             }}
-                             className="text-[10px] font-medium text-gray-600 focus:outline-none bg-transparent cursor-pointer"
-                           >
-                             <option value="50">50 / page</option>
-                             <option value="100">100 / page</option>
-                             <option value="500">500 / page</option>
-                           </select>
-
-                           <span className="text-[10px] text-gray-400 font-medium border-l border-gray-100 pl-2 ml-1">
-                             Total: {activeTab.totalRows}
-                           </span>
+                        <span className="text-[10px] text-gray-400 font-medium border-l border-gray-100 pl-2 ml-1">
+                          Total: {activeTab.totalRows}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -1105,11 +1106,11 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
       </div>
 
       {contextMenu && (
-        <ContextMenu 
-          x={contextMenu.x} 
-          y={contextMenu.y} 
-          onDelete={handleDeleteRow} 
-          onClose={() => setContextMenu(null)} 
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onDelete={handleDeleteRow}
+          onClose={() => setContextMenu(null)}
         />
       )}
 
