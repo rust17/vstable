@@ -30,7 +30,7 @@ const formatDisplayValue = (value: any, dataType?: string) => {
   return display
 }
 
-const DataEditModal = ({ isOpen, value, onClose, onSave }: { isOpen: boolean, value: string, onClose: () => void, onSave: (val: string) => void }) => {
+const DataEditModal = ({ isOpen, value, title, onClose, onSave }: { isOpen: boolean, value: string, title?: string, onClose: () => void, onSave: (val: string) => void }) => {
   const [val, setVal] = useState('')
 
   useEffect(() => {
@@ -43,7 +43,7 @@ const DataEditModal = ({ isOpen, value, onClose, onSave }: { isOpen: boolean, va
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px]" role="dialog">
       <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl border border-gray-200 flex flex-col max-h-[80vh] m-4 animate-in fade-in zoom-in duration-200">
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
-          <h3 className="font-semibold text-gray-700 flex items-center gap-2"><Edit2 size={16} className="text-blue-500" /> Edit Data</h3>
+          <h3 className="font-semibold text-gray-700 flex items-center gap-2"><Edit2 size={16} className="text-blue-500" /> {title || 'Edit Data'}</h3>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors"><X size={18} className="text-gray-400" /></button>
         </div>
         <div className="p-0 flex-1 overflow-hidden">
@@ -79,7 +79,7 @@ const TabSwitcher = ({ isOpen, tabs, mruTabIds, selectedIndex }: { isOpen: boole
           <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Switch Tab</span>
           <span className="text-[10px] text-gray-400">Ctrl + Tab to cycle</span>
         </div>
-        <div className="py-2 max-h-[60vh] overflow-y-auto elastic-scroll">
+        <div className="py-2 max-h-[60vh] overflow-y-auto elastic-scroll overscroll-y-auto">
           {mruTabIds.map((id, index) => {
             const tab = tabs.find(t => t.id === id)
             if (!tab) return null
@@ -172,7 +172,7 @@ const TableSearchModal = ({ isOpen, onClose, tables, onSelect }: { isOpen: boole
             />
           </div>
         </div>
-        <div className="max-h-[50vh] overflow-y-auto py-2 elastic-scroll">
+        <div className="max-h-[50vh] overflow-y-auto py-2 elastic-scroll overscroll-y-auto">
           {filtered.length > 0 ? filtered.map((t, i) => (
             <div
               key={`${t.table_schema}.${t.table_name}`}
@@ -420,6 +420,89 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
   useEffect(() => {
     setMruTabIds(prev => prev.filter(id => tabs.some(t => t.id === id)))
   }, [tabs])
+
+  // Global Keyboard Shortcuts
+  useEffect(() => {
+    if (!isActive) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+Tab: Switch Tab (MRU)
+      if (e.ctrlKey && e.key === 'Tab') {
+        e.preventDefault()
+        setShowTabSwitcher(true)
+        setSwitcherIndex(prev => {
+           const next = prev + 1
+           return next >= mruTabIds.length ? 0 : next
+        })
+      }
+      
+      // Cmd+P: Fuzzy Search Tables
+      if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
+        e.preventDefault()
+        setShowTableSearch(true)
+      }
+
+      // Cmd+W: Close Tab
+      if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
+        e.preventDefault()
+        if (activeTabId) {
+          handleCloseTab({ stopPropagation: () => {} } as any, activeTabId)
+        }
+      }
+
+      // Cmd+T: New Query
+      if ((e.metaKey || e.ctrlKey) && e.key === 't') {
+        e.preventDefault()
+        handleNewQuery()
+      }
+
+      // Cmd+R: Refresh
+      if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
+        e.preventDefault()
+        if (activeTabId) {
+           const tab = tabs.find(t => t.id === activeTabId)
+           if (tab && tab.type === 'table') {
+             fetchTableData(tab.schema!, tab.name, tab.page || 1, tab.pageSize || 100)
+           }
+        }
+      }
+
+      // Cmd+F: Focus Filter
+      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+        e.preventDefault()
+        if (activeTabId) {
+           const tab = tabs.find(t => t.id === activeTabId)
+           if (tab && tab.type === 'table') {
+             filterInputRef.current?.focus()
+           } else {
+             sidebarFilterRef.current?.focus()
+           }
+        } else {
+           sidebarFilterRef.current?.focus()
+        }
+      }
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Control') {
+         if (showTabSwitcher) {
+           setShowTabSwitcher(false)
+           if (mruTabIds[switcherIndex]) {
+             setActiveTabId(mruTabIds[switcherIndex])
+           }
+           setSwitcherIndex(0)
+         }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
+  }, [isActive, activeTabId, mruTabIds, showTabSwitcher, switcherIndex, tabs])
+
   const [viewMode, setViewMode] = useState<'data' | 'structure'>('data')
   const [isMaximized, setIsMaximized] = useState(false)
   const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null)
@@ -875,7 +958,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
   return (
     <div data-testid={`session-view-${id}`} className="flex h-full w-full overflow-hidden bg-white text-gray-900" style={{ display: isActive ? 'flex' : 'none' }}>
       <div className={`${isMaximized ? 'hidden' : 'w-64'} bg-gray-50 border-r border-gray-200 flex flex-col`}>
-        <div data-testid="sidebar-scroll" className="p-4 flex-1 overflow-y-auto elastic-scroll">
+        <div data-testid="sidebar-scroll" className="p-4 flex-1 overflow-y-auto elastic-scroll overscroll-y-auto">
           {isConnected && (
             <>
               <DatabaseSelector 
@@ -1165,10 +1248,15 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                               Apply Filter
                             </button>
                           )}
+                          {activeTab.pk && (
+                            <span className="ml-auto text-[10px] font-mono text-gray-400 bg-gray-100 px-2 py-1 rounded border border-gray-200 select-none" title="Primary Key">
+                              Editable (PK: {activeTab.pk})
+                            </span>
+                          )}
                         </div>
                       </div>
                     )}
-                    <div data-testid="results-scroll" className="flex-1 overflow-auto pb-12 elastic-scroll">
+                    <div data-testid="results-scroll" className="flex-1 overflow-auto pb-12 elastic-scroll overscroll-y-auto">
                       {error && <div className="p-4 text-red-600 font-mono text-xs whitespace-pre-wrap bg-red-50/30">Error: {error}</div>}
                       {activeTab.results && activeTab.results.rows.length > 0 ? (
                         <table className="w-full border-collapse text-left text-xs font-mono">
@@ -1353,6 +1441,7 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
 
       <DataEditModal
         isOpen={!!editingCellData}
+        title={activeTab?.pk ? `Editable (PK: ${activeTab.pk})` : 'Edit Data'}
         value={editingCellData ? (
           editingCellData.dataType?.includes('json') && typeof editingCellData.value === 'object'
             ? JSON.stringify(editingCellData.value, null, 2)

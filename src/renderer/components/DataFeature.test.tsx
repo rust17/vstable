@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { SessionView } from './SessionView'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 
@@ -94,8 +94,9 @@ describe('SessionView Data Features', () => {
 
     // Check for dialog (we need to implement this dialog first)
     await waitFor(() => {
-      expect(screen.getByRole('dialog')).toBeInTheDocument()
-      expect(screen.getByText('Edit Data')).toBeInTheDocument()
+      const dialog = screen.getByRole('dialog')
+      expect(dialog).toBeInTheDocument()
+      expect(within(dialog).getByText(/Edit Data|Editable/)).toBeInTheDocument()
     })
   })
 })

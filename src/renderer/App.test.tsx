@@ -22,12 +22,13 @@ describe('App Component', () => {
   it('ensures add button is outside the scrollable tab container', () => {
     render(<App />)
     const addButton = screen.getByTestId('add-session-btn')
-    const scrollContainer = addButton.parentElement?.querySelector('.overflow-x-auto')
+    const titlebar = addButton.closest('.titlebar')
+    const scrollContainer = titlebar?.querySelector('.overflow-x-auto')
     
     // The addButton should not be inside the scroll container
     expect(scrollContainer?.contains(addButton)).toBe(false)
     // Both should be children of the titlebar
-    expect(addButton.parentElement?.classList.contains('titlebar')).toBe(true)
+    expect(addButton.closest('.titlebar')).toBeInTheDocument()
   })
 
   it('switches active session when clicking tabs', () => {

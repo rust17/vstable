@@ -75,6 +75,7 @@ describe('SessionView Feature Tasks - Keyboard & Filter', () => {
       
       // Press Ctrl + Tab
       fireEvent.keyDown(window, { key: 'Tab', ctrlKey: true })
+      fireEvent.keyUp(window, { key: 'Control' })
       
       // Now 'users' should be active (assuming it cycles)
       await waitFor(() => {
