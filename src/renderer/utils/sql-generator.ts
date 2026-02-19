@@ -115,3 +115,47 @@ export const generateAlterTableSql = (
 
   return sqls
 }
+
+export const generateCreateTableSql = (
+  schema: string,
+  tableName: string,
+  columns: ColumnDefinition[],
+  indexes: IndexDefinition[]
+): string[] => {
+  const sqls: string[] = []
+  const safeSchema = `"${schema}"`
+  const safeTable = `"${tableName}"`
+  const fullTableName = `${safeSchema}.${safeTable}`
+
+  // 1. Create Table
+  const columnDefs: string[] = []
+  const pkColumns: string[] = []
+
+  columns.forEach(col => {
+    let def = `"${col.name}" ${col.type}`
+    if (!col.nullable) def += ` NOT NULL`
+    if (col.defaultValue !== null && col.defaultValue !== '') {
+       def += ` DEFAULT ${col.defaultValue}`
+    }
+    columnDefs.push(def)
+
+    if (col.isPrimaryKey) {
+      pkColumns.push(`"${col.name}"`)
+    }
+  })
+
+  if (pkColumns.length > 0) {
+    columnDefs.push(`PRIMARY KEY (${pkColumns.join(', ')})`)
+  }
+
+  sqls.push(`CREATE TABLE ${fullTableName} (\n  ${columnDefs.join(',\n  ')}\n);`)
+
+  // 2. Create Indexes
+  indexes.forEach(idx => {
+    const unique = idx.isUnique ? 'UNIQUE' : ''
+    const cols = idx.columns.map(c => `"${c}"`).join(', ')
+    sqls.push(`CREATE ${unique} INDEX "${idx.name}" ON ${fullTableName} (${cols});`)
+  })
+
+  return sqls
+}

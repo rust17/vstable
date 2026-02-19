@@ -198,6 +198,143 @@ const TableSearchModal = ({ isOpen, onClose, tables, onSelect }: { isOpen: boole
   )
 }
 
+const DatabaseSelector = ({ 
+  currentDb, 
+  databases, 
+  onSelect, 
+  onCreate, 
+  onDelete 
+}: { 
+  currentDb: string, 
+  databases: string[], 
+  onSelect: (db: string) => void,
+  onCreate: () => void,
+  onDelete: (db: string) => void
+}) => {
+  const [isOpen, setIsOpen] = useState(false)
+  
+  return (
+    <div className="relative mb-2 px-2">
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center justify-between px-3 py-2 bg-white border border-gray-200 rounded-lg cursor-pointer hover:border-blue-400 transition-colors shadow-sm group"
+      >
+        <div className="flex items-center gap-2 overflow-hidden">
+          <Database size={14} className="text-blue-600 shrink-0" />
+          <span className="text-sm font-semibold text-gray-700 truncate">{currentDb}</span>
+        </div>
+        <div className="text-gray-400 group-hover:text-blue-500">
+           <ChevronRight size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
+        </div>
+      </div>
+      
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+          <div className="absolute top-full left-2 right-2 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col max-h-[300px]">
+            <div className="overflow-y-auto flex-1 py-1">
+              {databases.map(db => (
+                <div 
+                  key={db}
+                  className={`px-3 py-2 flex items-center justify-between group/item hover:bg-gray-50 cursor-pointer ${db === currentDb ? 'bg-blue-50 text-blue-700' : 'text-gray-700'}`}
+                  onClick={() => {
+                    onSelect(db)
+                    setIsOpen(false)
+                  }}
+                >
+                  <span className="text-sm truncate flex-1">{db}</span>
+                  {db !== currentDb && (
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onDelete(db)
+                      }}
+                      className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded opacity-0 group-hover/item:opacity-100 transition-all"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  )}
+                  {db === currentDb && <Check size={12} className="text-blue-600" />}
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-gray-100 p-1 bg-gray-50">
+              <button 
+                onClick={() => {
+                  onCreate()
+                  setIsOpen(false)
+                }}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-blue-600 hover:bg-blue-100 rounded transition-colors"
+              >
+                <Plus size={12} /> Create Database
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+const SchemaSelector = ({ 
+  currentSchema, 
+  schemas, 
+  onSelect 
+}: { 
+  currentSchema: string, 
+  schemas: string[], 
+  onSelect: (schema: string) => void 
+}) => {
+  return (
+    <div className="px-2 mb-4">
+      <select
+        value={currentSchema}
+        onChange={(e) => onSelect(e.target.value)}
+        className="w-full px-2 py-1.5 bg-gray-100 border-none rounded text-xs text-gray-600 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+      >
+        {schemas.map(s => (
+          <option key={s} value={s}>{s}</option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
+const CreateDatabaseModal = ({ isOpen, onClose, onCreate }: { isOpen: boolean, onClose: () => void, onCreate: (name: string) => void }) => {
+  const [name, setName] = useState('')
+  
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-[1px]">
+      <div className="bg-white w-full max-w-sm rounded-xl shadow-2xl border border-gray-200 p-6 animate-in fade-in zoom-in duration-200">
+        <h3 className="text-lg font-bold text-gray-800 mb-4">Create Database</h3>
+        <input
+          autoFocus
+          placeholder="Database Name"
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 mb-6"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && name) onCreate(name)
+            if (e.key === 'Escape') onClose()
+          }}
+        />
+        <div className="flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+          <button 
+            disabled={!name}
+            onClick={() => onCreate(name)} 
+            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            Create
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const EditableCell = ({ value, dataType, onDoubleClick, isEditable }: { value: any, dataType?: string, onDoubleClick: () => void, isEditable: boolean }) => {
   return (
     <div
@@ -247,12 +384,18 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
   const [config, setConfig] = useState({ host: 'localhost', port: 5432, user: 'postgres', password: '', database: 'postgres' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [databases, setDatabases] = useState<string[]>([])
+  const [schemas, setSchemas] = useState<string[]>(['public'])
+  const [currentSchema, setCurrentSchema] = useState('public')
   const [tables, setTables] = useState<{table_name: string, table_schema: string}[]>([])
   const [tableFilter, setTableFilter] = useState('')
 
   const [tabs, setTabs] = useState<TableTab[]>([])
   const [activeTabId, setActiveTabId] = useState<string | null>(null)
   const [mruTabIds, setMruTabIds] = useState<string[]>([])
+  
+  const [showCreateDbModal, setShowCreateDbModal] = useState(false)
+  const [showCreateTable, setShowCreateTable] = useState(false)
   const [showTabSwitcher, setShowTabSwitcher] = useState(false)
   const [switcherIndex, setSwitcherIndex] = useState(0)
 
@@ -287,76 +430,6 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
   const filterInputRef = React.useRef<HTMLInputElement>(null)
 
   const activeTab = tabs.find(t => t.id === activeTabId)
-
-  // Keyboard Shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd + P: Fuzzy table search
-      if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
-        e.preventDefault()
-        setShowTableSearch(true)
-      }
-
-      // Cmd + F: Focus filter
-      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
-        e.preventDefault()
-        filterInputRef.current?.focus()
-      }
-
-      // Cmd + T: New Query
-      if ((e.metaKey || e.ctrlKey) && e.key === 't') {
-        e.preventDefault()
-        handleNewQuery()
-      }
-
-      // Cmd + W: Close current tab
-      if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
-        e.preventDefault()
-        if (activeTabId) handleCloseTab(e as any, activeTabId)
-      }
-
-      // Cmd + R: Refresh
-      if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
-        e.preventDefault()
-        if (activeTab) {
-          if (activeTab.type === 'table') {
-            fetchTableData(activeTab.schema!, activeTab.name, activeTab.page || 1, activeTab.pageSize || 100)
-          } else {
-            executeSql(activeTab.query)
-          }
-        }
-      }
-
-      // Ctrl + Tab: Switch Tab (MRU)
-      if (e.ctrlKey && e.key === 'Tab') {
-        e.preventDefault()
-        if (mruTabIds.length > 1) {
-          if (!showTabSwitcher) {
-            setShowTabSwitcher(true)
-            setSwitcherIndex(1)
-          } else {
-            setSwitcherIndex(prev => (prev + 1) % mruTabIds.length)
-          }
-        }
-      }
-    }
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'Control' && showTabSwitcher) {
-        const targetId = mruTabIds[switcherIndex]
-        if (targetId) setActiveTabId(targetId)
-        setShowTabSwitcher(false)
-        setSwitcherIndex(0)
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
-    }
-  }, [tabs, activeTabId, activeTab, mruTabIds, showTabSwitcher, switcherIndex])
 
   const updateActiveTab = (updates: Partial<TableTab>) => {
     if (!activeTabId) return
@@ -449,9 +522,128 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
      }
   }
 
+  const fetchDatabases = async () => {
+    const result = await window.api.query(id, `SELECT datname FROM pg_database WHERE datistemplate = false ORDER BY datname;`)
+    if (result.success && result.rows) {
+      setDatabases(result.rows.map((r: any) => r.datname))
+    }
+  }
+
+  const fetchSchemas = async () => {
+    const result = await window.api.query(id, `SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema', 'pg_catalog') ORDER BY schema_name;`)
+    if (result.success && result.rows) {
+      const list = result.rows.map((r: any) => r.schema_name)
+      setSchemas(list)
+      if (!list.includes(currentSchema)) setCurrentSchema('public')
+    }
+  }
+
   const fetchTables = async () => {
-    const result = await window.api.query(id, `SELECT table_name, table_schema FROM information_schema.tables WHERE table_schema NOT IN ('information_schema', 'pg_catalog') ORDER BY table_schema, table_name;`)
+    const result = await window.api.query(id, `SELECT table_name, table_schema FROM information_schema.tables WHERE table_schema = '${currentSchema}' ORDER BY table_name;`)
     if (result.success && result.rows) setTables(result.rows)
+  }
+
+  // Reload tables when schema changes
+  useEffect(() => {
+    if (isConnected) fetchTables()
+  }, [currentSchema, isConnected])
+
+  const handleSwitchDatabase = async (dbName: string) => {
+    if (dbName === config.database) return
+    
+    // Disconnect current
+    await window.api.disconnect(id)
+    
+    // Update config and connect to new DB
+    const newConfig = { ...config, database: dbName }
+    setConfig(newConfig)
+    
+    setLoading(true)
+    try {
+      const result = await window.api.connect(id, newConfig)
+      if (result.success) {
+        onUpdateTitle(dbName)
+        // Reset state
+        setTabs([])
+        setActiveTabId(null)
+        // Fetch new context
+        await fetchSchemas()
+        // Tables will be fetched by useEffect on currentSchema change or reset
+        setCurrentSchema('public') 
+      } else {
+        setError(result.error || 'Connection failed')
+      }
+    } catch (e: any) {
+        setError(e.message)
+    } finally {
+        setLoading(false)
+    }
+  }
+
+  const handleCreateDatabase = async (name: string) => {
+    setShowCreateDbModal(false)
+    const sql = `CREATE DATABASE "${name}";`
+    setExecuting(true)
+    try {
+        const res = await window.api.query(id, sql)
+        if (res.success) {
+            await fetchDatabases()
+            // Optional: switch to it immediately? Maybe ask user?
+            if (window.confirm(`Database "${name}" created. Switch to it?`)) {
+                handleSwitchDatabase(name)
+            }
+        } else {
+            window.alert('Failed to create database: ' + res.error)
+        }
+    } catch (e: any) {
+        window.alert(e.message)
+    } finally {
+        setExecuting(false)
+    }
+  }
+
+  const handleDeleteDatabase = async (name: string) => {
+      if (name === config.database) {
+          window.alert("Cannot delete the currently connected database. Please switch to another database first.")
+          return
+      }
+      if (!window.confirm(`Are you sure you want to DELETE database "${name}"? This cannot be undone.`)) return
+
+      setExecuting(true)
+      try {
+          const res = await window.api.query(id, `DROP DATABASE "${name}";`)
+          if (res.success) {
+              await fetchDatabases()
+          } else {
+              window.alert('Failed to delete database: ' + res.error)
+          }
+      } catch (e: any) {
+          window.alert(e.message)
+      } finally {
+          setExecuting(false)
+      }
+  }
+
+  const handleDeleteTable = async (schema: string, name: string) => {
+      if (!window.confirm(`Are you sure you want to DELETE table "${schema}"."${name}"?`)) return
+      
+      const sql = `DROP TABLE "${schema}"."${name}";`
+      setExecuting(true)
+      try {
+          const res = await window.api.query(id, sql)
+          if (res.success) {
+              // Close tab if open
+              const openTab = tabs.find(t => t.schema === schema && t.name === name)
+              if (openTab) handleCloseTab({ stopPropagation: () => {} } as any, openTab.id)
+              await fetchTables()
+          } else {
+              window.alert('Failed to delete table: ' + res.error)
+          }
+      } catch (e: any) {
+           window.alert(e.message)
+      } finally {
+          setExecuting(false)
+      }
   }
 
   const fetchStructure = async (schema: string, name: string) => {
@@ -657,7 +849,9 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
         setIsConnected(true)
         setShowConnectForm(false)
         onUpdateTitle(config.database)
-        await fetchTables()
+        await fetchDatabases()
+        await fetchSchemas()
+        // Tables will be fetched by useEffect
       } else {
         setError(result.error || 'Connection failed')
       }
@@ -682,6 +876,22 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
     <div data-testid={`session-view-${id}`} className="flex h-full w-full overflow-hidden bg-white text-gray-900" style={{ display: isActive ? 'flex' : 'none' }}>
       <div className={`${isMaximized ? 'hidden' : 'w-64'} bg-gray-50 border-r border-gray-200 flex flex-col`}>
         <div data-testid="sidebar-scroll" className="p-4 flex-1 overflow-y-auto elastic-scroll">
+          {isConnected && (
+            <>
+              <DatabaseSelector 
+                currentDb={config.database} 
+                databases={databases} 
+                onSelect={handleSwitchDatabase}
+                onCreate={() => setShowCreateDbModal(true)}
+                onDelete={handleDeleteDatabase}
+              />
+              <SchemaSelector 
+                currentSchema={currentSchema} 
+                schemas={schemas} 
+                onSelect={setCurrentSchema} 
+              />
+            </>
+          )}
           <div className="space-y-1">
             {tables.length > 0 && (
               <div className="mt-2">
@@ -695,21 +905,48 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && filteredTables.length > 0) {
                         handleTableClick(filteredTables[0].table_schema, filteredTables[0].table_name)
-                        // Optional: Clear filter after selection? Maybe better to keep it.
-                        // setTableFilter('')
                       }
                     }}
                     className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
                   />
                 </div>
-                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-2">Tables</h3>
+                <div className="flex items-center justify-between px-2 mb-2">
+                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tables</h3>
+                  <button 
+                    onClick={() => setShowCreateTable(true)}
+                    className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                    title="Create Table"
+                  >
+                    <Plus size={12} />
+                  </button>
+                </div>
                 {filteredTables.map((table, i) => (
                   <div key={i} data-testid={`table-item-${table.table_name}`} onClick={() => handleTableClick(table.table_schema, table.table_name)} className={`group flex items-center gap-2 px-2 py-1 rounded-md hover:bg-gray-200 cursor-pointer transition-colors ${activeTab?.name === table.table_name ? 'bg-gray-200 text-blue-600' : 'text-gray-600'}`}>
-                    <TableIcon size={14} className={`group-hover:text-blue-500 ${activeTab?.name === table.table_name ? 'text-blue-500' : 'text-gray-400'}`} />
-                    <span className="truncate text-sm">{table.table_name}</span>
+                    <TableIcon size={14} className={`shrink-0 group-hover:text-blue-500 ${activeTab?.name === table.table_name ? 'text-blue-500' : 'text-gray-400'}`} />
+                    <span className="truncate text-sm flex-1">{table.table_name}</span>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteTable(table.table_schema, table.table_name)
+                      }}
+                      className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-100 rounded opacity-0 group-hover:opacity-100 transition-all"
+                    >
+                      <Trash2 size={12} />
+                    </button>
                   </div>
                 ))}
               </div>
+            )}
+            {isConnected && tables.length === 0 && (
+                 <div className="mt-4 px-2 text-center">
+                    <span className="text-xs text-gray-400 italic block mb-2">No tables in schema</span>
+                    <button 
+                        onClick={() => setShowCreateTable(true)}
+                        className="text-xs text-blue-600 hover:underline flex items-center justify-center gap-1 w-full"
+                    >
+                        <Plus size={12} /> Create Table
+                    </button>
+                 </div>
             )}
           </div>
         </div>
@@ -1152,6 +1389,28 @@ export const SessionView: React.FC<SessionViewProps> = ({ id, isActive, onUpdate
           setShowTableSearch(false)
         }}
       />
+      
+      <CreateDatabaseModal
+        isOpen={showCreateDbModal}
+        onClose={() => setShowCreateDbModal(false)}
+        onCreate={handleCreateDatabase}
+      />
+
+      {showCreateTable && (
+        <div className="fixed inset-0 z-[150] bg-white animate-in slide-in-from-bottom-10 duration-200">
+           <StructureView
+             connectionId={id}
+             schema={currentSchema}
+             tableName=""
+             mode="create"
+             onClose={() => setShowCreateTable(false)}
+             onSaveSuccess={async (schema, name) => {
+               await fetchTables()
+               handleTableClick(schema, name)
+             }}
+           />
+        </div>
+      )}
     </div>
   )
 }

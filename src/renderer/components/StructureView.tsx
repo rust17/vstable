@@ -1,27 +1,56 @@
 import React, { useState, useEffect } from 'react'
 import { Plus, X, ArrowLeft, RefreshCw, Save, Database, Trash2, Key, Check, AlertCircle } from 'lucide-react'
-import { generateAlterTableSql, ColumnDefinition, IndexDefinition } from '../utils/sql-generator'
+import { generateAlterTableSql, generateCreateTableSql, ColumnDefinition, IndexDefinition } from '../utils/sql-generator'
 
 interface StructureViewProps {
   connectionId: string
   schema: string
   tableName: string
+  mode?: 'create' | 'edit'
   onClose: () => void
+  onSaveSuccess?: (schema: string, name: string) => void
 }
 
-export const StructureView: React.FC<StructureViewProps> = ({ connectionId, schema, tableName, onClose }) => {
+export const StructureView: React.FC<StructureViewProps> = ({ connectionId, schema: initialSchema, tableName: initialTableName, mode = 'edit', onClose, onSaveSuccess }) => {
   const [columns, setColumns] = useState<ColumnDefinition[]>([])
   const [indexes, setIndexes] = useState<IndexDefinition[]>([])
   const [deletedColumns, setDeletedColumns] = useState<ColumnDefinition[]>([])
   const [deletedIndexes, setDeletedIndexes] = useState<IndexDefinition[]>([])
   
-  const [loading, setLoading] = useState(true)
+  const [newTableName, setNewTableName] = useState(initialTableName || '')
+  const [newSchema, setNewSchema] = useState(initialSchema || 'public')
+  const [availableSchemas, setAvailableSchemas] = useState<string[]>([])
+
+  const [loading, setLoading] = useState(mode === 'edit')
   const [error, setError] = useState<string | null>(null)
   const [sqlPreview, setSqlPreview] = useState<string | null>(null)
   const [executing, setExecuting] = useState(false)
 
   // Fetch initial structure
   const fetchStructure = async () => {
+    if (mode === 'create') {
+        // Just fetch schemas
+        try {
+            const res = await (window as any).api.query(connectionId, `SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema', 'pg_catalog');`)
+            if (res.success && res.rows) {
+                setAvailableSchemas(res.rows.map((r: any) => r.schema_name))
+            }
+        } catch (e) {
+            console.error(e)
+        }
+        setLoading(false)
+        // Add a default ID column
+        setColumns([{
+            id: crypto.randomUUID(),
+            name: 'id',
+            type: 'serial',
+            nullable: false,
+            defaultValue: null,
+            isPrimaryKey: true
+        }])
+        return
+    }
+
     setLoading(true)
     setError(null)
     setDeletedColumns([])
@@ -40,7 +69,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
            WHERE kcu.table_schema = c.table_schema AND kcu.table_name = c.table_name 
            AND kcu.column_name = c.column_name AND tc.constraint_type = 'PRIMARY KEY' LIMIT 1) as pk_constraint_name
         FROM information_schema.columns c
-        WHERE table_schema = '${schema}' AND table_name = '${tableName}' 
+        WHERE table_schema = '${initialSchema}' AND table_name = '${initialTableName}' 
         ORDER BY ordinal_position;
       `)
 
@@ -77,7 +106,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
             JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
             JOIN pg_namespace n ON n.oid = t.relnamespace
         WHERE
-            t.relname = '${tableName}' AND n.nspname = '${schema}'
+            t.relname = '${initialTableName}' AND n.nspname = '${initialSchema}'
         GROUP BY
             i.relname, ix.indisunique;
       `)
@@ -119,7 +148,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
 
   useEffect(() => {
     fetchStructure()
-  }, [connectionId, schema, tableName])
+  }, [connectionId, initialSchema, initialTableName, mode])
 
   const handleAddColumn = () => {
     const newCol: ColumnDefinition = {
@@ -149,7 +178,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
   const handleAddIndex = () => {
     setIndexes([...indexes, {
       id: crypto.randomUUID(),
-      name: `idx_${tableName}_${indexes.length + 1}`,
+      name: `idx_${mode === 'create' ? newTableName : initialTableName}_${indexes.length + 1}`,
       columns: [],
       isUnique: false
     }])
@@ -165,9 +194,14 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
   }
 
   const generateSql = () => {
+      if (mode === 'create') {
+          if (!newTableName.trim()) return []
+          return generateCreateTableSql(newSchema, newTableName, columns, indexes)
+      }
+
       const sqls = generateAlterTableSql(
-          schema, 
-          tableName, 
+          initialSchema, 
+          initialTableName, 
           columns, 
           indexes, 
           deletedColumns, 
@@ -196,9 +230,14 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
               const res = await (window as any).api.query(connectionId, sql)
               if (!res.success) throw new Error(res.error)
           }
-          // Refresh
+          // Success
           setSqlPreview(null)
-          await fetchStructure()
+          if (mode === 'create') {
+              if (onSaveSuccess) onSaveSuccess(newSchema, newTableName)
+              onClose()
+          } else {
+             await fetchStructure()
+          }
       } catch (e: any) {
           setError(e.message)
           setSqlPreview(null) // Close modal to show error
@@ -223,21 +262,45 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
             <ArrowLeft size={18} />
           </button>
           <div className="flex flex-col">
-            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-              {tableName}
-              <span className="text-xs font-normal text-gray-400 px-2 py-0.5 bg-gray-100 rounded-full">{schema}</span>
-            </h2>
+            {mode === 'create' ? (
+                <div className="flex items-center gap-2">
+                    <select 
+                        value={newSchema} 
+                        onChange={e => setNewSchema(e.target.value)}
+                        className="text-xs font-normal text-gray-500 bg-gray-100 border-none rounded px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                        {availableSchemas.length > 0 ? availableSchemas.map(s => (
+                            <option key={s} value={s}>{s}</option>
+                        )) : <option value="public">public</option>}
+                    </select>
+                    <span className="text-gray-300">/</span>
+                    <input 
+                        autoFocus
+                        placeholder="New Table Name"
+                        value={newTableName} 
+                        onChange={e => setNewTableName(e.target.value)}
+                        className="text-lg font-bold text-gray-800 border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none bg-transparent placeholder:text-gray-300 transition-all"
+                    />
+                </div>
+            ) : (
+                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                {initialTableName}
+                <span className="text-xs font-normal text-gray-400 px-2 py-0.5 bg-gray-100 rounded-full">{initialSchema}</span>
+                </h2>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={fetchStructure} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Refresh">
-            <RefreshCw size={18} />
-          </button>
+          {mode === 'edit' && (
+             <button onClick={fetchStructure} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Refresh">
+               <RefreshCw size={18} />
+             </button>
+          )}
           <button onClick={handlePreviewSql} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
             <Database size={16} /> SQL Preview
           </button>
           <button onClick={handlePreviewSql} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition-all">
-            <Save size={16} /> Save Changes
+            <Save size={16} /> {mode === 'create' ? 'Create Table' : 'Save Changes'}
           </button>
         </div>
       </div>
