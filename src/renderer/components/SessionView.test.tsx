@@ -160,6 +160,7 @@ describe('SessionView Component', () => {
     fireEvent.change(input, { target: { value: 'Bob' } })
     
     // Click Save
+    ;(window.api.query as any).mockClear()
     fireEvent.click(screen.getByText('Save Changes'))
 
     // Verify UPDATE query was called
@@ -227,6 +228,7 @@ describe('SessionView Component', () => {
     await waitFor(() => expect(screen.getByText('Preview SQL')).toBeInTheDocument())
     
     // Click Execute in modal
+    ;(window.api.query as any).mockClear()
     fireEvent.click(screen.getByText('Execute'))
 
     // Verify ALTER TABLE query was called
@@ -308,6 +310,7 @@ describe('SessionView Component', () => {
     })
 
     it('navigates to next page', async () => {
+      (window.api.query as any).mockClear()
       const nextBtn = screen.getByTestId('btn-next-page')
       fireEvent.click(nextBtn)
 
@@ -321,6 +324,7 @@ describe('SessionView Component', () => {
       fireEvent.click(screen.getByTestId('btn-next-page'))
       await waitFor(() => expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining('OFFSET 100')))
 
+      ;(window.api.query as any).mockClear()
       const prevBtn = screen.getByTestId('btn-prev-page')
       fireEvent.click(prevBtn)
 
@@ -330,6 +334,7 @@ describe('SessionView Component', () => {
     })
 
     it('changes page size', async () => {
+      (window.api.query as any).mockClear()
       const select = screen.getByTestId('select-page-size')
       fireEvent.change(select, { target: { value: '50' } })
 
@@ -339,6 +344,7 @@ describe('SessionView Component', () => {
     })
 
     it('jumps to specific page', async () => {
+      (window.api.query as any).mockClear()
       const input = screen.getByTestId('input-page-number')
       fireEvent.change(input, { target: { value: '3' } })
       fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' })

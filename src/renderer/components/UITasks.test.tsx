@@ -24,6 +24,8 @@ describe('SessionView UI Tasks - Maximize & Rubber Band', () => {
     fireEvent.change(screen.getByTestId('input-host'), { target: { value: 'localhost' } })
     fireEvent.click(screen.getByTestId('btn-connect'))
     
+    await waitFor(() => expect(screen.queryByTestId('connection-form')).not.toBeInTheDocument())
+
     // Open a query tab
     fireEvent.click(screen.getByTestId('btn-new-query'))
     return await screen.findByTestId('tab-table-New Query')
