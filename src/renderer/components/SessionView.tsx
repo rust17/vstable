@@ -10,6 +10,7 @@ import { QueryTabPane } from './session/workspace/QueryTabPane'
 import { StructureView } from './StructureView'
 import { TabSwitcher } from './session/shared/TabSwitcher'
 import { TableSearchModal } from './session/shared/TableSearchModal'
+import { CreateDatabaseModal } from './session/shared/CreateDatabaseModal'
 
 interface SessionViewProps {
   id: string
@@ -32,6 +33,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
 
   const [showCreateTable, setShowCreateTable] = useState(false)
   const [showTableSearch, setShowTableSearch] = useState(false)
+  const [showCreateDb, setShowCreateDb] = useState(false)
   const [isMaximized, setIsMaximized] = useState(false)
 
   const activeTab = tabs.find(t => t.id === activeTabId)
@@ -40,6 +42,34 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
      if(db === config.database) return
      await disconnect()
      await connect({ ...config, database: db })
+  }
+
+  const handleCreateDatabase = async (name: string) => {
+    setShowCreateDb(false)
+    const res = await query(`CREATE DATABASE "${name}";`)
+    if (res.success) {
+        fetchDatabases()
+        if (confirm(`Database "${name}" created. Switch to it?`)) {
+            handleSwitchDatabase(name)
+        }
+    } else {
+        alert('Failed to create database: ' + res.error)
+    }
+  }
+
+  const handleDeleteDatabase = async (name: string) => {
+      if (name === config.database) {
+          alert("Cannot delete the currently connected database.")
+          return
+      }
+      if (!confirm(`Are you sure you want to DELETE database "${name}"?`)) return
+
+      const res = await query(`DROP DATABASE "${name}";`)
+      if (res.success) {
+          fetchDatabases()
+      } else {
+          alert('Failed to delete database: ' + res.error)
+      }
   }
 
   // Handle keyboard shortcuts
@@ -120,8 +150,8 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
                  }
              }}
              onSwitchDatabase={handleSwitchDatabase}
-             onCreateDatabase={() => { /* TODO */ }}
-             onDeleteDatabase={() => { /* TODO */ }}
+             onCreateDatabase={() => setShowCreateDb(true)}
+             onDeleteDatabase={handleDeleteDatabase}
              onCreateTable={() => setShowCreateTable(true)}
              onDeleteTable={async (schema, name) => {
                  if(confirm(`Delete table ${schema}.${name}?`)) {
@@ -228,6 +258,12 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
             openTable(schema, name)
             setShowTableSearch(false)
         }}
+      />
+      
+      <CreateDatabaseModal
+        isOpen={showCreateDb}
+        onClose={() => setShowCreateDb(false)}
+        onCreate={handleCreateDatabase}
       />
     </div>
   )
