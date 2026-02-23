@@ -117,17 +117,17 @@ edit:
 
 add:
     - 表结构交互易用性增强
-        - [ ] **智能输入**: 类型输入框支持模糊匹配（输入 `va` -> 自动匹配 `varchar`，`in` -> `integer`）。
-        - [ ] **类型参数可视化**: 对于 `varchar(n)`, `numeric(p,s)` 等带参数类型，提供独立的 Length / Precision / Scale 输入框，避免手动输入括号格式错误。
-        - [ ] **区分 NULL 与空串**: 默认值输入框需明确区分未设置（NULL）和空字符串（''），并在 UI 上提供 "Set to NULL" 按钮。
-        - [ ] **自增主键快捷勾选**: 提供 "Auto Increment" 复选框，自动将 `int/bigint` 转为 `SERIAL/BIGSERIAL` 或 `IDENTITY` 列。
+        - [x] **智能输入**: 类型输入框支持模糊匹配（输入 `va` -> 自动匹配 `varchar`，`in` -> `integer`）。
+        - [x] **类型参数可视化**: 对于 `varchar(n)`, `numeric(p,s)` 等带参数类型，提供独立的 Length / Precision / Scale 输入框，避免手动输入括号格式错误。
+        - [x] **区分 NULL 与空串**: 默认值输入框需明确区分未设置（NULL）和空字符串（''），并在 UI 上提供 "Set to NULL" 按钮。
+        - [x] **自增主键快捷勾选**: 提供 "Auto Increment" 复选框，自动将 `int/bigint` 转为 `SERIAL/BIGSERIAL` 或 `IDENTITY` 列。
         - [ ] **拖拽排序与插入**: 新建表时（编辑时不用），支持 "Insert Before/After" 操作；在 UI 层面支持列的拖拽排序（物理层可通过视图或重建表实现）。
         - [ ] **枚举类型向导**: 输入 `enum` 类型时，弹出交互式弹窗管理枚举值，自动生成 `CREATE TYPE`。
-        - [ ] **列默认值的表达式支持**: 提供切换开关 [ "Literal" | f(Expression) ]，支持输入 `NOW()`、`gen_random_uuid()` 等 SQL 函数作为默认值，而不被加引号转义。
-        - [ ] **交互优化**:
-            - [ ] **富交互类型选择器**: 使用 Popover 替代 datalist，分组展示类型并附带说明（如 jsonb vs json）。
-            - [ ] **右键上下文菜单**: 支持复制列配置 (Duplicate Column)、重置修改、复制 SQL 定义。
-            - [ ] **实时校验**: 输入时即刻检测列名冲突、非法字符等错误。
+        - [x] **列默认值的表达式支持**: 提供切换开关 [ "Literal" | f(Expression) ]，支持输入 `NOW()`、`gen_random_uuid()` 等 SQL 函数作为默认值，而不被加引号转义。
+        - [x] **交互优化**:
+            - [x] **富交互类型选择器**: 使用 Popover 替代 datalist，分组展示类型并附带说明（如 jsonb vs json）。
+            - [x] **右键上下文菜单**: 支持复制列配置 (Duplicate Column)、重置修改、复制 SQL 定义。
+            - [x] **实时校验**: 输入时即刻检测列名冲突、非法字符等错误。
 
 ---
 

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { Plus, X, ArrowLeft, RefreshCw, Save, Database, Trash2, Key, Check, AlertCircle } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { Plus, X, ArrowLeft, RefreshCw, Save, Database, Trash2, Key, Check, AlertCircle, Search, ChevronDown, Copy, RotateCcw, FileText } from 'lucide-react'
 import { generateAlterTableSql, generateCreateTableSql, ColumnDefinition, IndexDefinition } from '../utils/sql-generator'
 
 interface StructureViewProps {
@@ -9,6 +9,152 @@ interface StructureViewProps {
   mode?: 'create' | 'edit'
   onClose: () => void
   onSaveSuccess?: (schema: string, name: string) => void
+}
+
+interface ColumnContextMenuProps {
+  x: number
+  y: number
+  column: ColumnDefinition
+  onClose: () => void
+  onDuplicate: () => void
+  onInsertBefore: () => void
+  onInsertAfter: () => void
+  onReset: () => void
+  onCopySql: () => void
+  onDelete: () => void
+}
+
+const ColumnContextMenu: React.FC<ColumnContextMenuProps> = ({ x, y, column, onClose, onDuplicate, onInsertBefore, onInsertAfter, onReset, onCopySql, onDelete }) => {
+  useEffect(() => {
+    const handleClick = () => onClose()
+    window.addEventListener('click', handleClick)
+    return () => window.removeEventListener('click', handleClick)
+  }, [onClose])
+
+  return (
+    <div 
+      className="fixed z-[500] bg-white border border-gray-200 shadow-xl rounded-lg py-1 min-w-[180px] animate-in fade-in zoom-in-95 duration-100"
+      style={{ top: y, left: x }}
+      onClick={e => e.stopPropagation()}
+    >
+      <button onClick={() => { onDuplicate(); onClose() }} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 flex items-center gap-2">
+        <Copy size={14} className="text-gray-400" /> Duplicate Column
+      </button>
+      <button onClick={() => { onInsertBefore(); onClose() }} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 flex items-center gap-2">
+        <Plus size={14} className="text-gray-400" /> Insert Before
+      </button>
+      <button onClick={() => { onInsertAfter(); onClose() }} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 flex items-center gap-2">
+        <Plus size={14} className="text-gray-400" /> Insert After
+      </button>
+      {column._original && (
+        <button onClick={() => { onReset(); onClose() }} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 flex items-center gap-2">
+            <RotateCcw size={14} className="text-gray-400" /> Reset Changes
+        </button>
+      )}
+      <button onClick={() => { onCopySql(); onClose() }} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 flex items-center gap-2 border-b border-gray-100 mb-1 pb-2">
+        <FileText size={14} className="text-gray-400" /> Copy SQL Definition
+      </button>
+      <button onClick={() => { onDelete(); onClose() }} className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2">
+        <Trash2 size={14} /> Delete Column
+      </button>
+    </div>
+  )
+}
+
+const TYPE_GROUPS = [
+  {
+    label: 'Numeric',
+    types: ['integer', 'bigint', 'smallint', 'numeric', 'real', 'double precision', 'decimal', 'serial', 'bigserial']
+  },
+  {
+    label: 'String',
+    types: ['varchar', 'text', 'char', 'bpchar', 'uuid']
+  },
+  {
+    label: 'Date/Time',
+    types: ['timestamp', 'timestamp with time zone', 'date', 'time', 'interval']
+  },
+  {
+    label: 'JSON',
+    types: ['json', 'jsonb']
+  },
+  {
+    label: 'Binary/Other',
+    types: ['boolean', 'bytea', 'xml', 'bit', 'varbit', 'inet', 'cidr', 'macaddr']
+  }
+]
+
+const TypeSelector: React.FC<{ value: string; onChange: (val: string) => void }> = ({ value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const filteredGroups = TYPE_GROUPS.map(group => ({
+    ...group,
+    types: group.types.filter(t => t.toLowerCase().includes(search.toLowerCase()))
+  })).filter(group => group.types.length > 0)
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between gap-1 px-2 py-1 bg-transparent border-b border-transparent hover:border-gray-300 text-blue-600 font-mono text-xs transition-colors"
+      >
+        <span className="truncate">{value || 'Select Type'}</span>
+        <ChevronDown size={12} className={`shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="fixed z-[300] mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+          <div className="p-2 border-b border-gray-100 flex items-center gap-2 bg-gray-50">
+            <Search size={14} className="text-gray-400" />
+            <input 
+              autoFocus
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search type..."
+              className="w-full bg-transparent border-none outline-none text-xs"
+            />
+          </div>
+          <div className="max-h-64 overflow-auto p-1">
+            {filteredGroups.map(group => (
+              <div key={group.label} className="mb-2">
+                <div className="px-2 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">{group.label}</div>
+                <div className="grid grid-cols-1">
+                  {group.types.map(type => (
+                    <button
+                      key={type}
+                      onClick={() => {
+                        onChange(type)
+                        setIsOpen(false)
+                        setSearch('')
+                      }}
+                      className={`px-3 py-1.5 text-left text-xs hover:bg-blue-50 transition-colors rounded ${value === type ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600'}`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {filteredGroups.length === 0 && (
+              <div className="p-4 text-center text-gray-400 text-xs italic">No types found</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export const StructureView: React.FC<StructureViewProps> = ({ connectionId, schema: initialSchema, tableName: initialTableName, mode = 'edit', onClose, onSaveSuccess }) => {
@@ -25,6 +171,8 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
   const [error, setError] = useState<string | null>(null)
   const [sqlPreview, setSqlPreview] = useState<string | null>(null)
   const [executing, setExecuting] = useState(false)
+
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, colId: string } | null>(null)
 
   // Fetch initial structure
   const fetchStructure = async () => {
@@ -64,6 +212,9 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
           is_nullable, 
           column_default,
           ordinal_position,
+          character_maximum_length,
+          numeric_precision,
+          numeric_scale,
           (SELECT kcu.constraint_name FROM information_schema.key_column_usage kcu 
            JOIN information_schema.table_constraints tc ON kcu.constraint_name = tc.constraint_name 
            WHERE kcu.table_schema = c.table_schema AND kcu.table_name = c.table_name 
@@ -75,21 +226,33 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
 
       if (!colRes.success) throw new Error(colRes.error)
 
-      const cols = colRes.rows.map((row: any) => ({
-        id: crypto.randomUUID(),
-        name: row.column_name,
-        type: row.data_type,
-        nullable: row.is_nullable === 'YES',
-        defaultValue: row.column_default,
-        isPrimaryKey: !!row.pk_constraint_name,
-        _original: {
+      const cols = colRes.rows.map((row: any) => {
+        const isAuto = row.column_default?.includes('nextval')
+        const col: ColumnDefinition = {
+          id: crypto.randomUUID(),
           name: row.column_name,
           type: row.data_type,
+          length: row.character_maximum_length,
+          precision: row.numeric_precision,
+          scale: row.numeric_scale,
           nullable: row.is_nullable === 'YES',
           defaultValue: row.column_default,
-          isPrimaryKey: !!row.pk_constraint_name
+          isPrimaryKey: !!row.pk_constraint_name,
+          isAutoIncrement: isAuto,
+          _original: {
+            name: row.column_name,
+            type: row.data_type,
+            length: row.character_maximum_length,
+            precision: row.numeric_precision,
+            scale: row.numeric_scale,
+            nullable: row.is_nullable === 'YES',
+            defaultValue: row.column_default,
+            isPrimaryKey: !!row.pk_constraint_name,
+            isAutoIncrement: isAuto
+          }
         }
-      }))
+        return col
+      })
 
       setColumns(cols)
 
@@ -173,6 +336,64 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
 
   const handleColumnChange = (id: string, field: keyof ColumnDefinition, value: any) => {
     setColumns(columns.map(c => c.id === id ? { ...c, [field]: value } : c))
+  }
+
+  const handleDuplicateColumn = (id: string) => {
+    const col = columns.find(c => c.id === id)
+    if (!col) return
+    const { id: _, _original, ...rest } = col
+    setColumns([...columns, {
+      ...rest,
+      id: crypto.randomUUID(),
+      name: `${col.name}_copy`
+    }])
+  }
+
+  const handleInsertColumn = (id: string, position: 'before' | 'after') => {
+    const index = columns.findIndex(c => c.id === id)
+    if (index === -1) return
+    
+    const newCol: ColumnDefinition = {
+        id: crypto.randomUUID(),
+        name: `new_column_${columns.length + 1}`,
+        type: 'varchar',
+        nullable: true,
+        defaultValue: null,
+        isPrimaryKey: false
+    }
+    
+    const newColumns = [...columns]
+    newColumns.splice(position === 'before' ? index : index + 1, 0, newCol)
+    setColumns(newColumns)
+  }
+
+  const handleResetColumn = (id: string) => {
+    setColumns(columns.map(c => {
+      if (c.id === id && c._original) {
+        return { ...c, ...c._original }
+      }
+      return c
+    }))
+  }
+
+  const handleCopyColumnSql = (id: string) => {
+    const col = columns.find(c => c.id === id)
+    if (!col) return
+    // Simple mock for now, we could use generateAlterTableSql for a single column
+    const sql = `ALTER TABLE "${initialSchema}"."${initialTableName}" ADD COLUMN "${col.name}" ${col.type};`
+    navigator.clipboard.writeText(sql)
+  }
+
+  const getColumnError = (col: ColumnDefinition) => {
+    if (!col.name.trim()) return 'Column name is required'
+    if (columns.filter(c => c.name === col.name).length > 1) return 'Duplicate column name'
+    if (/^[0-9]/.test(col.name)) return 'Column name cannot start with a number'
+    if (/[^a-zA-Z0-9_]/.test(col.name)) return 'Column name contains illegal characters'
+    
+    const reserved = ['select', 'table', 'insert', 'update', 'delete', 'from', 'where', 'order', 'group', 'user']
+    if (reserved.includes(col.name.toLowerCase())) return 'Reserved SQL keyword'
+    
+    return null
   }
 
   const handleAddIndex = () => {
@@ -334,6 +555,8 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                   <th className="px-6 py-3 w-12">#</th>
                   <th className="px-6 py-3">Name</th>
                   <th className="px-6 py-3">Type</th>
+                  <th className="px-6 py-3 w-32">Params</th>
+                  <th className="px-6 py-3 w-20 text-center">Auto</th>
                   <th className="px-6 py-3 w-24 text-center">Nullable</th>
                   <th className="px-6 py-3 w-24 text-center">Primary</th>
                   <th className="px-6 py-3">Default</th>
@@ -341,58 +564,139 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {columns.map((col, idx) => (
-                  <tr key={col.id} className="group hover:bg-blue-50/30 transition-colors">
-                    <td className="px-6 py-3 text-gray-400 text-xs font-mono">{idx + 1}</td>
+                {columns.map((col, idx) => {
+                  const typeLower = col.type.toLowerCase()
+                  const hasLength = typeLower.includes('char') || typeLower.includes('varchar') || typeLower.includes('bit') || typeLower.includes('varbit')
+                  const hasPrecision = typeLower.includes('numeric') || typeLower.includes('decimal') || typeLower.includes('timestamp') || typeLower.includes('time')
+                  const canAutoInc = typeLower.includes('int') || typeLower.includes('serial')
+
+                  return (
+                    <tr 
+                      key={col.id} 
+                      className="group hover:bg-blue-50/30 transition-colors"
+                      onContextMenu={(e) => {
+                        e.preventDefault()
+                        setContextMenu({ x: e.clientX, y: e.clientY, colId: col.id })
+                      }}
+                    >
+                      <td className="px-6 py-3 text-gray-400 text-xs font-mono">{idx + 1}</td>
+                      <td className="px-6 py-3">
+                          <div className="relative">
+                            <input 
+                                value={col.name}
+                                onChange={e => handleColumnChange(col.id, 'name', e.target.value)}
+                                className={`w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-1 py-0.5 transition-colors font-medium ${getColumnError(col) ? 'text-red-600' : 'text-gray-700'}`}
+                            />
+                            {getColumnError(col) && (
+                                <div className="absolute left-0 -bottom-4 text-[9px] text-red-500 whitespace-nowrap bg-white px-1 shadow-sm rounded border border-red-100 flex items-center gap-1 z-10 animate-in fade-in slide-in-from-top-1">
+                                    <AlertCircle size={8} /> {getColumnError(col)}
+                                </div>
+                            )}
+                          </div>
+                      </td>
+                      <td className="px-6 py-3">
+                           <TypeSelector 
+                              value={col.type}
+                              onChange={val => handleColumnChange(col.id, 'type', val)}
+                           />
+                      </td>
+                      <td className="px-6 py-3">
+                          <div className="flex items-center gap-1">
+                              {hasLength && (
+                                  <input 
+                                      type="text"
+                                      placeholder="Len"
+                                      value={col.length || ''}
+                                      onChange={e => handleColumnChange(col.id, 'length', e.target.value)}
+                                      className="w-12 bg-gray-100/50 border border-transparent rounded px-1 py-0.5 text-[10px] focus:bg-white focus:border-blue-300 outline-none"
+                                      title="Length"
+                                  />
+                              )}
+                              {hasPrecision && (
+                                  <>
+                                      <input 
+                                          type="text"
+                                          placeholder="Prec"
+                                          value={col.precision || ''}
+                                          onChange={e => handleColumnChange(col.id, 'precision', e.target.value)}
+                                          className="w-10 bg-gray-100/50 border border-transparent rounded px-1 py-0.5 text-[10px] focus:bg-white focus:border-blue-300 outline-none"
+                                          title="Precision"
+                                      />
+                                      {(typeLower.includes('numeric') || typeLower.includes('decimal')) && (
+                                          <input 
+                                              type="text"
+                                              placeholder="Scale"
+                                              value={col.scale || ''}
+                                              onChange={e => handleColumnChange(col.id, 'scale', e.target.value)}
+                                              className="w-10 bg-gray-100/50 border border-transparent rounded px-1 py-0.5 text-[10px] focus:bg-white focus:border-blue-300 outline-none"
+                                              title="Scale"
+                                          />
+                                      )}
+                                  </>
+                              )}
+                          </div>
+                      </td>
+                      <td className="px-6 py-3 text-center">
+                          {canAutoInc && (
+                              <input 
+                                  type="checkbox"
+                                  checked={col.isAutoIncrement}
+                                  onChange={e => handleColumnChange(col.id, 'isAutoIncrement', e.target.checked)}
+                                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                              />
+                          )}
+                      </td>
+                      <td className="px-6 py-3 text-center">
+                          <input 
+                              type="checkbox"
+                              checked={col.nullable}
+                              onChange={e => handleColumnChange(col.id, 'nullable', e.target.checked)}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          />
+                      </td>
+                      <td className="px-6 py-3 text-center">
+                          <div 
+                              onClick={() => handleColumnChange(col.id, 'isPrimaryKey', !col.isPrimaryKey)}
+                              className={`flex justify-center cursor-pointer transition-colors ${col.isPrimaryKey ? 'text-amber-500' : 'text-gray-200 hover:text-gray-400'}`}
+                          >
+                              <Key size={14} fill={col.isPrimaryKey ? "currentColor" : "none"} />
+                          </div>
+                      </td>
                     <td className="px-6 py-3">
-                        <input 
-                            value={col.name}
-                            onChange={e => handleColumnChange(col.id, 'name', e.target.value)}
-                            className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-1 py-0.5 transition-colors font-medium text-gray-700"
-                        />
-                    </td>
-                    <td className="px-6 py-3">
-                         <input 
-                            value={col.type}
-                            onChange={e => handleColumnChange(col.id, 'type', e.target.value)}
-                            className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-1 py-0.5 transition-colors text-blue-600 font-mono text-xs"
-                            list="dtypes"
-                        />
-                        <datalist id="dtypes">
-                            <option value="integer" />
-                            <option value="bigint" />
-                            <option value="varchar" />
-                            <option value="text" />
-                            <option value="boolean" />
-                            <option value="timestamp" />
-                            <option value="date" />
-                            <option value="json" />
-                            <option value="jsonb" />
-                            <option value="uuid" />
-                            <option value="serial" />
-                            <option value="bigserial" />
-                        </datalist>
-                    </td>
-                    <td className="px-6 py-3 text-center">
-                        <input 
-                            type="checkbox"
-                            checked={col.nullable}
-                            onChange={e => handleColumnChange(col.id, 'nullable', e.target.checked)}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                        />
-                    </td>
-                    <td className="px-6 py-3 text-center">
-                        <div className={`flex justify-center ${col.isPrimaryKey ? 'text-amber-500' : 'text-gray-200'}`}>
-                            <Key size={14} fill={col.isPrimaryKey ? "currentColor" : "none"} />
+                        <div className="flex items-center gap-1 group/def">
+                            {col.defaultValue !== null ? (
+                                <div className="flex flex-1 items-center bg-gray-100/50 border border-gray-200 rounded px-1 transition-all focus-within:border-blue-300 focus-within:bg-white">
+                                    <input 
+                                        value={col.defaultValue}
+                                        onChange={e => handleColumnChange(col.id, 'defaultValue', e.target.value)}
+                                        placeholder="Value..."
+                                        className={`flex-1 bg-transparent border-none outline-none py-0.5 text-xs font-mono ${col.isDefaultExpression ? 'text-purple-600' : 'text-gray-700'}`}
+                                        title={col.isDefaultExpression ? 'SQL Expression' : 'Literal Value'}
+                                    />
+                                    <button 
+                                        onClick={() => handleColumnChange(col.id, 'isDefaultExpression', !col.isDefaultExpression)}
+                                        className={`px-1 text-[9px] font-bold rounded transition-colors ${col.isDefaultExpression ? 'bg-purple-100 text-purple-600' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
+                                        title="Toggle Expression/Literal"
+                                    >
+                                        {col.isDefaultExpression ? 'EXP' : 'TXT'}
+                                    </button>
+                                    <button 
+                                        onClick={() => handleColumnChange(col.id, 'defaultValue', null)}
+                                        className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                                        title="Set to NULL"
+                                    >
+                                        <X size={10} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <button 
+                                    onClick={() => handleColumnChange(col.id, 'defaultValue', '')}
+                                    className="text-[10px] text-gray-400 italic hover:text-blue-500 transition-colors px-2 py-1 border border-dashed border-gray-200 rounded w-full text-left"
+                                >
+                                    NULL (Click to set)
+                                </button>
+                            )}
                         </div>
-                    </td>
-                    <td className="px-6 py-3">
-                        <input 
-                            value={col.defaultValue || ''}
-                            onChange={e => handleColumnChange(col.id, 'defaultValue', e.target.value)}
-                            placeholder="NULL"
-                            className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-1 py-0.5 transition-colors text-gray-500 text-xs font-mono"
-                        />
                     </td>
                     <td className="px-6 py-3 text-right">
                         <button 
@@ -404,7 +708,8 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                         </button>
                     </td>
                   </tr>
-                ))}
+                )
+              })}
               </tbody>
             </table>
           </div>
@@ -522,6 +827,21 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                   </div>
               </div>
           </div>
+      )}
+
+      {contextMenu && (
+        <ColumnContextMenu 
+          x={contextMenu.x}
+          y={contextMenu.y}
+          column={columns.find(c => c.id === contextMenu.colId)!}
+          onClose={() => setContextMenu(null)}
+          onDuplicate={() => handleDuplicateColumn(contextMenu.colId)}
+          onInsertBefore={() => handleInsertColumn(contextMenu.colId, 'before')}
+          onInsertAfter={() => handleInsertColumn(contextMenu.colId, 'after')}
+          onReset={() => handleResetColumn(contextMenu.colId)}
+          onCopySql={() => handleCopyColumnSql(contextMenu.colId)}
+          onDelete={() => handleDeleteColumnWithTracking(contextMenu.colId)}
+        />
       )}
     </div>
   )

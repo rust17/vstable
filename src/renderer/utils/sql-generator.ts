@@ -2,9 +2,14 @@ export interface ColumnDefinition {
   id: string
   name: string
   type: string
+  length?: number | string | null
+  precision?: number | string | null
+  scale?: number | string | null
   nullable: boolean
   defaultValue: string | null
+  isDefaultExpression?: boolean
   isPrimaryKey: boolean
+  isAutoIncrement?: boolean
   // Original state for diffing
   _original?: Omit<ColumnDefinition, 'id' | '_original'>
 }
@@ -16,6 +21,41 @@ export interface IndexDefinition {
   isUnique: boolean
   // Original state for diffing
   _original?: Omit<IndexDefinition, 'id' | '_original'>
+}
+
+const formatType = (col: ColumnDefinition): string => {
+  let type = col.type.toLowerCase()
+  
+  // Handle Auto Increment for PG
+  if (col.isAutoIncrement) {
+    if (type === 'integer' || type === 'int' || type === 'int4') return 'SERIAL'
+    if (type === 'bigint' || type === 'int8') return 'BIGSERIAL'
+    if (type === 'smallint' || type === 'int2') return 'SMALLSERIAL'
+  }
+
+  if (col.length) {
+    return `${type}(${col.length})`
+  }
+  if (col.precision !== undefined && col.precision !== null) {
+    if (col.scale !== undefined && col.scale !== null) {
+      return `${type}(${col.precision},${col.scale})`
+    }
+    return `${type}(${col.precision})`
+  }
+  return type
+}
+
+const formatDefault = (col: ColumnDefinition): string | null => {
+  if (col.defaultValue === null || col.defaultValue === undefined) return null
+  if (col.isDefaultExpression) return col.defaultValue
+  
+  // If it's a string type and doesn't have quotes, add them
+  const typeLower = col.type.toLowerCase()
+  const isString = typeLower.includes('char') || typeLower.includes('text') || typeLower.includes('uuid')
+  if (isString && !col.defaultValue.startsWith("'")) {
+    return `'${col.defaultValue}'`
+  }
+  return col.defaultValue
 }
 
 export const generateAlterTableSql = (
@@ -47,24 +87,29 @@ export const generateAlterTableSql = (
 
   // 3. Handle Column Changes (Add / Modify)
   columns.forEach(col => {
+    const formattedType = formatType(col)
+    const formattedDefault = formatDefault(col)
+    
     if (!col._original) {
       // New Column
-      let line = `ALTER TABLE ${fullTableName} ADD COLUMN "${col.name}" ${col.type}`
+      let line = `ALTER TABLE ${fullTableName} ADD COLUMN "${col.name}" ${formattedType}`
       if (!col.nullable) line += ` NOT NULL`
-      if (col.defaultValue) line += ` DEFAULT ${col.defaultValue}`
+      if (formattedDefault !== null) line += ` DEFAULT ${formattedDefault}`
       sqls.push(line + ';')
     } else {
       // Modified Column
       const original = col._original
+      const originalFormattedType = formatType(original as ColumnDefinition)
+      const originalFormattedDefault = formatDefault(original as ColumnDefinition)
       
       // Rename
       if (col.name !== original.name) {
         sqls.push(`ALTER TABLE ${fullTableName} RENAME COLUMN "${original.name}" TO "${col.name}";`)
       }
 
-      // Type
-      if (col.type !== original.type) {
-        sqls.push(`ALTER TABLE ${fullTableName} ALTER COLUMN "${col.name}" TYPE ${col.type} USING "${col.name}"::${col.type};`)
+      // Type / Parameters change
+      if (formattedType !== originalFormattedType) {
+        sqls.push(`ALTER TABLE ${fullTableName} ALTER COLUMN "${col.name}" TYPE ${formattedType} USING "${col.name}"::${formattedType};`)
       }
 
       // Nullable
@@ -77,13 +122,11 @@ export const generateAlterTableSql = (
       }
 
       // Default
-      if (col.defaultValue !== original.defaultValue) {
-        if (col.defaultValue === null || col.defaultValue === '') {
-           if (original.defaultValue) {
-             sqls.push(`ALTER TABLE ${fullTableName} ALTER COLUMN "${col.name}" DROP DEFAULT;`)
-           }
+      if (formattedDefault !== originalFormattedDefault) {
+        if (formattedDefault === null) {
+           sqls.push(`ALTER TABLE ${fullTableName} ALTER COLUMN "${col.name}" DROP DEFAULT;`)
         } else {
-           sqls.push(`ALTER TABLE ${fullTableName} ALTER COLUMN "${col.name}" SET DEFAULT ${col.defaultValue};`)
+           sqls.push(`ALTER TABLE ${fullTableName} ALTER COLUMN "${col.name}" SET DEFAULT ${formattedDefault};`)
         }
       }
     }
@@ -132,10 +175,11 @@ export const generateCreateTableSql = (
   const pkColumns: string[] = []
 
   columns.forEach(col => {
-    let def = `"${col.name}" ${col.type}`
+    let def = `"${col.name}" ${formatType(col)}`
     if (!col.nullable) def += ` NOT NULL`
-    if (col.defaultValue !== null && col.defaultValue !== '') {
-       def += ` DEFAULT ${col.defaultValue}`
+    const formattedDefault = formatDefault(col)
+    if (formattedDefault !== null) {
+       def += ` DEFAULT ${formattedDefault}`
     }
     columnDefs.push(def)
 

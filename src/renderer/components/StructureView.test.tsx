@@ -149,4 +149,25 @@ describe('StructureView Component', () => {
         expect((window as any).api.query).toHaveBeenCalledWith('test-conn', expect.stringContaining('ADD COLUMN "age"'))
     })
   })
+
+  it('validates column names', async () => {
+    ;(window as any).api.query.mockResolvedValue({ success: true, rows: [] })
+    render(<StructureView {...defaultProps} />)
+    await waitFor(() => expect(screen.queryByText(/Loading structure/i)).not.toBeInTheDocument())
+
+    const addBtn = screen.getByRole('button', { name: /Add Column/i })
+    fireEvent.click(addBtn)
+
+    const nameInput = await screen.findByDisplayValue(/new_column_/i)
+    fireEvent.change(nameInput, { target: { value: '1startWithNumber' } })
+    
+    await waitFor(() => {
+      expect(screen.getByText(/cannot start with a number/i)).toBeInTheDocument()
+    })
+
+    fireEvent.change(nameInput, { target: { value: 'select' } })
+    await waitFor(() => {
+      expect(screen.getByText(/Reserved SQL keyword/i)).toBeInTheDocument()
+    })
+  })
 })
