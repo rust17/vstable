@@ -68,7 +68,7 @@ const TYPE_GROUPS = [
   },
   {
     label: 'String',
-    types: ['varchar', 'text', 'char', 'bpchar', 'uuid']
+    types: ['varchar', 'text', 'char', 'bpchar', 'uuid', 'enum']
   },
   {
     label: 'Date/Time',
@@ -83,6 +83,66 @@ const TYPE_GROUPS = [
     types: ['boolean', 'bytea', 'xml', 'bit', 'varbit', 'inet', 'cidr', 'macaddr']
   }
 ]
+
+const EnumManagerModal: React.FC<{ 
+    values: string[], 
+    onClose: () => void, 
+    onSave: (values: string[]) => void 
+}> = ({ values: initialValues, onClose, onSave }) => {
+    const [values, setValues] = useState<string[]>(initialValues.length > 0 ? initialValues : [''])
+
+    return (
+        <div className="fixed inset-0 z-[600] flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+            <div className="bg-white w-full max-w-md rounded-xl shadow-2xl border border-gray-200 flex flex-col animate-in fade-in zoom-in duration-200">
+                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
+                    <h3 className="font-semibold text-gray-700 flex items-center gap-2">Manage Enum Values</h3>
+                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors"><X size={18} className="text-gray-400" /></button>
+                </div>
+                <div className="p-6 space-y-3 max-h-[60vh] overflow-auto">
+                    {values.map((v, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                            <input 
+                                autoFocus={i === values.length - 1}
+                                value={v}
+                                onChange={e => {
+                                    const newVals = [...values]
+                                    newVals[i] = e.target.value
+                                    setValues(newVals)
+                                }}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') setValues([...values, ''])
+                                }}
+                                placeholder="Value..."
+                                className="flex-1 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded text-sm outline-none focus:border-blue-500 focus:bg-white transition-all"
+                            />
+                            <button 
+                                onClick={() => setValues(values.filter((_, idx) => idx !== i))}
+                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                            >
+                                <Trash2 size={14} />
+                            </button>
+                        </div>
+                    ))}
+                    <button 
+                        onClick={() => setValues([...values, ''])}
+                        className="w-full py-2 border border-dashed border-gray-300 rounded text-xs text-gray-500 hover:border-blue-400 hover:text-blue-500 transition-all flex items-center justify-center gap-1"
+                    >
+                        <Plus size={14} /> Add Value
+                    </button>
+                </div>
+                <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-white rounded-b-xl">
+                    <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
+                    <button 
+                        onClick={() => onSave(values.filter(v => v.trim()))} 
+                        className="px-6 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm transition-colors"
+                    >
+                        Save Enum
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
 
 const TypeSelector: React.FC<{ value: string; onChange: (val: string) => void }> = ({ value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false)
@@ -173,6 +233,10 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
   const [executing, setExecuting] = useState(false)
 
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, colId: string } | null>(null)
+  const [enumEditingColId, setEnumEditingColId] = useState<string | null>(null)
+
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null)
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
 
   // Fetch initial structure
   const fetchStructure = async () => {
@@ -405,6 +469,41 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
     }])
   }
 
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    if (mode !== 'create') return
+    setDraggedIdx(index)
+    e.dataTransfer.effectAllowed = 'move'
+    // Optional: make it look better during drag
+    const target = e.currentTarget as HTMLElement
+    target.style.opacity = '0.4'
+  }
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    setDraggedIdx(null)
+    setDragOverIdx(null)
+    const target = e.currentTarget as HTMLElement
+    target.style.opacity = '1'
+  }
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    if (mode !== 'create') return
+    e.preventDefault()
+    setDragOverIdx(index)
+  }
+
+  const handleDrop = (e: React.DragEvent, index: number) => {
+    if (mode !== 'create' || draggedIdx === null) return
+    e.preventDefault()
+    
+    const newCols = [...columns]
+    const [draggedItem] = newCols.splice(draggedIdx, 1)
+    newCols.splice(index, 0, draggedItem)
+    
+    setColumns(newCols)
+    setDraggedIdx(null)
+    setDragOverIdx(null)
+  }
+
   const handleDeleteIndexWithTracking = (id: string) => {
     const idx = indexes.find(i => i.id === id)
     if (!idx) return
@@ -573,13 +672,21 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                   return (
                     <tr 
                       key={col.id} 
-                      className="group hover:bg-blue-50/30 transition-colors"
+                      draggable={mode === 'create'}
+                      onDragStart={(e) => handleDragStart(e, idx)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={(e) => handleDragOver(e, idx)}
+                      onDrop={(e) => handleDrop(e, idx)}
+                      className={`group hover:bg-blue-50/30 transition-all ${dragOverIdx === idx ? 'border-t-2 border-blue-500' : ''} ${draggedIdx === idx ? 'bg-gray-100' : ''}`}
                       onContextMenu={(e) => {
                         e.preventDefault()
                         setContextMenu({ x: e.clientX, y: e.clientY, colId: col.id })
                       }}
                     >
-                      <td className="px-6 py-3 text-gray-400 text-xs font-mono">{idx + 1}</td>
+                      <td className="px-6 py-3 text-gray-400 text-xs font-mono cursor-move flex items-center gap-2">
+                        {mode === 'create' && <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"><div className="w-3 h-0.5 bg-gray-300"></div><div className="w-3 h-0.5 bg-gray-300"></div><div className="w-3 h-0.5 bg-gray-300"></div></div>}
+                        {idx + 1}
+                      </td>
                       <td className="px-6 py-3">
                           <div className="relative">
                             <input 
@@ -595,10 +702,24 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                           </div>
                       </td>
                       <td className="px-6 py-3">
-                           <TypeSelector 
-                              value={col.type}
-                              onChange={val => handleColumnChange(col.id, 'type', val)}
-                           />
+                           <div className="flex items-center gap-1">
+                                <TypeSelector 
+                                    value={col.type}
+                                    onChange={val => {
+                                        handleColumnChange(col.id, 'type', val)
+                                        if (val === 'enum') setEnumEditingColId(col.id)
+                                    }}
+                                />
+                                {col.type === 'enum' && (
+                                    <button 
+                                        onClick={() => setEnumEditingColId(col.id)}
+                                        className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+                                        title="Manage Enum Values"
+                                    >
+                                        <Plus size={12} />
+                                    </button>
+                                )}
+                           </div>
                       </td>
                       <td className="px-6 py-3">
                           <div className="flex items-center gap-1">
@@ -843,6 +964,18 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
           onDelete={() => handleDeleteColumnWithTracking(contextMenu.colId)}
         />
       )}
+
+      {enumEditingColId && (
+          <EnumManagerModal 
+            values={columns.find(c => c.id === enumEditingColId)?.enumValues || []}
+            onClose={() => setEnumEditingColId(null)}
+            onSave={(vals) => {
+                handleColumnChange(enumEditingColId, 'enumValues', vals)
+                setEnumEditingColId(null)
+            }}
+          />
+      )}
     </div>
   )
 }
+

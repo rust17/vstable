@@ -2,6 +2,7 @@ export interface ColumnDefinition {
   id: string
   name: string
   type: string
+  enumValues?: string[]
   length?: number | string | null
   precision?: number | string | null
   scale?: number | string | null
@@ -23,9 +24,14 @@ export interface IndexDefinition {
   _original?: Omit<IndexDefinition, 'id' | '_original'>
 }
 
-const formatType = (col: ColumnDefinition): string => {
+const formatType = (col: ColumnDefinition, tableName?: string): string => {
   let type = col.type.toLowerCase()
   
+  if (type === 'enum' && col.enumValues && col.enumValues.length > 0) {
+    // For simplicity, we use a naming convention for the custom enum type
+    return `"${tableName || 'table'}_${col.name}_enum"`
+  }
+
   // Handle Auto Increment for PG
   if (col.isAutoIncrement) {
     if (type === 'integer' || type === 'int' || type === 'int4') return 'SERIAL'
@@ -51,7 +57,7 @@ const formatDefault = (col: ColumnDefinition): string | null => {
   
   // If it's a string type and doesn't have quotes, add them
   const typeLower = col.type.toLowerCase()
-  const isString = typeLower.includes('char') || typeLower.includes('text') || typeLower.includes('uuid')
+  const isString = typeLower.includes('char') || typeLower.includes('text') || typeLower.includes('uuid') || typeLower === 'enum'
   if (isString && !col.defaultValue.startsWith("'")) {
     return `'${col.defaultValue}'`
   }
@@ -87,9 +93,14 @@ export const generateAlterTableSql = (
 
   // 3. Handle Column Changes (Add / Modify)
   columns.forEach(col => {
-    const formattedType = formatType(col)
+    const formattedType = formatType(col, tableName)
     const formattedDefault = formatDefault(col)
     
+    if (col.type.toLowerCase() === 'enum' && col.enumValues && col.enumValues.length > 0) {
+      const typeName = formattedType
+      sqls.push(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '${typeName.replace(/"/g, '')}') THEN CREATE TYPE ${safeSchema}.${typeName} AS ENUM (${col.enumValues.map(v => `'${v}'`).join(', ')}); END IF; END $$;`)
+    }
+
     if (!col._original) {
       // New Column
       let line = `ALTER TABLE ${fullTableName} ADD COLUMN "${col.name}" ${formattedType}`
@@ -99,7 +110,7 @@ export const generateAlterTableSql = (
     } else {
       // Modified Column
       const original = col._original
-      const originalFormattedType = formatType(original as ColumnDefinition)
+      const originalFormattedType = formatType(original as ColumnDefinition, tableName)
       const originalFormattedDefault = formatDefault(original as ColumnDefinition)
       
       // Rename
@@ -170,12 +181,20 @@ export const generateCreateTableSql = (
   const safeTable = `"${tableName}"`
   const fullTableName = `${safeSchema}.${safeTable}`
 
-  // 1. Create Table
+  // 1. Create Enum Types if needed
+  columns.forEach(col => {
+    if (col.type.toLowerCase() === 'enum' && col.enumValues && col.enumValues.length > 0) {
+      const typeName = formatType(col, tableName)
+      sqls.push(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '${typeName.replace(/"/g, '')}') THEN CREATE TYPE ${safeSchema}.${typeName} AS ENUM (${col.enumValues.map(v => `'${v}'`).join(', ')}); END IF; END $$;`)
+    }
+  })
+
+  // 2. Create Table
   const columnDefs: string[] = []
   const pkColumns: string[] = []
 
   columns.forEach(col => {
-    let def = `"${col.name}" ${formatType(col)}`
+    let def = `"${col.name}" ${formatType(col, tableName)}`
     if (!col.nullable) def += ` NOT NULL`
     const formattedDefault = formatDefault(col)
     if (formattedDefault !== null) {
@@ -194,7 +213,7 @@ export const generateCreateTableSql = (
 
   sqls.push(`CREATE TABLE ${fullTableName} (\n  ${columnDefs.join(',\n  ')}\n);`)
 
-  // 2. Create Indexes
+  // 3. Create Indexes
   indexes.forEach(idx => {
     const unique = idx.isUnique ? 'UNIQUE' : ''
     const cols = idx.columns.map(c => `"${c}"`).join(', ')
