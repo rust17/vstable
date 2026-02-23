@@ -99,4 +99,88 @@ describe('SessionView Data Features', () => {
       expect(within(dialog).getByText(/Edit Data|Editable/)).toBeInTheDocument()
     })
   })
+
+  it('renders null values with italic gray style', async () => {
+    ;(window.api.connect as any).mockResolvedValue({ success: true })
+    ;(window.api.query as any).mockImplementation((id, sql) => {
+      if (sql.includes('SELECT table_name')) return Promise.resolve({ success: true, rows: [{ table_name: 'test_null', table_schema: 'public' }] })
+      if (sql.includes('COUNT(*)')) return Promise.resolve({ success: true, rows: [{ count: '1' }] })
+      if (sql.includes('SELECT * FROM "public"."test_null"')) return Promise.resolve({
+        success: true,
+        rows: [{ id: 1, optional_col: null }],
+        fields: [{ name: 'id' }, { name: 'optional_col' }]
+      })
+      return Promise.resolve({ success: true, rows: [] })
+    })
+
+    render(<SessionView {...defaultProps} />)
+    fireEvent.click(screen.getByTestId('btn-connect'))
+    await waitFor(() => expect(screen.getByTestId('table-item-test_null')).toBeInTheDocument())
+    fireEvent.click(screen.getByTestId('table-item-test_null'))
+
+    await waitFor(() => {
+      const cell = screen.getByTestId('cell-optional_col-0')
+      const nullSpan = within(cell).getByText('null')
+      expect(nullSpan.className).toContain('italic')
+      expect(nullSpan.className).toContain('text-gray-300')
+    })
+  })
+
+  it('shows "No data found" when table is empty', async () => {
+    ;(window.api.connect as any).mockResolvedValue({ success: true })
+    ;(window.api.query as any).mockImplementation((id, sql) => {
+      if (sql.includes('SELECT table_name')) return Promise.resolve({ success: true, rows: [{ table_name: 'empty_table', table_schema: 'public' }] })
+      if (sql.includes('COUNT(*)')) return Promise.resolve({ success: true, rows: [{ count: '0' }] })
+      if (sql.includes('SELECT * FROM "public"."empty_table"')) return Promise.resolve({
+        success: true,
+        rows: [],
+        fields: [{ name: 'id' }]
+      })
+      return Promise.resolve({ success: true, rows: [] })
+    })
+
+    render(<SessionView {...defaultProps} />)
+    fireEvent.click(screen.getByTestId('btn-connect'))
+    await waitFor(() => expect(screen.getByTestId('table-item-empty_table')).toBeInTheDocument())
+    fireEvent.click(screen.getByTestId('table-item-empty_table'))
+
+    await waitFor(() => {
+      expect(screen.getByText('No data found')).toBeInTheDocument()
+    })
+  })
+
+  it('updates data when page changes', async () => {
+    ;(window.api.connect as any).mockResolvedValue({ success: true })
+    let queryCount = 0
+    ;(window.api.query as any).mockImplementation((id, sql) => {
+      if (sql.includes('SELECT table_name')) return Promise.resolve({ success: true, rows: [{ table_name: 'paged_table', table_schema: 'public' }] })
+      if (sql.includes('COUNT(*)')) return Promise.resolve({ success: true, rows: [{ count: '250' }] })
+      if (sql.includes('SELECT * FROM "public"."paged_table"')) {
+        queryCount++
+        if (sql.includes('OFFSET 100')) {
+          return Promise.resolve({ success: true, rows: [{ id: 101 }], fields: [{ name: 'id' }] })
+        }
+        return Promise.resolve({ success: true, rows: [{ id: 1 }], fields: [{ name: 'id' }] })
+      }
+      return Promise.resolve({ success: true, rows: [] })
+    })
+
+    render(<SessionView {...defaultProps} />)
+    fireEvent.click(screen.getByTestId('btn-connect'))
+    await waitFor(() => screen.getByTestId('table-item-paged_table'))
+    fireEvent.click(screen.getByTestId('table-item-paged_table'))
+
+    // Initial load (Page 1)
+    await waitFor(() => expect(screen.getByTestId('cell-id-0').textContent).toBe('1'))
+
+    // Change to Page 2 (assuming default pageSize 100)
+    const nextBtn = screen.getByTestId('next-page')
+    fireEvent.click(nextBtn)
+
+    // Wait for Page 2 data
+    await waitFor(() => {
+      expect(screen.getByTestId('cell-id-0').textContent).toBe('101')
+      expect(queryCount).toBeGreaterThan(1)
+    })
+  })
 })

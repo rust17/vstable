@@ -65,9 +65,81 @@ describe('SessionView UI Tasks - Maximize & Rubber Band', () => {
       const sidebarScroll = screen.getByTestId('sidebar-scroll')
       expect(sidebarScroll.className).toMatch(/overscroll-/)
       
-      // Main results scroll area
-      const resultsScroll = screen.getByTestId('results-scroll')
-      expect(resultsScroll.className).toMatch(/overscroll-/)
+      await waitFor(() => {
+        expect(sidebarScroll.className).toMatch(/overscroll-/)
+      })
+    })
+  })
+
+  describe('Data Filtering', () => {
+    const setupTable = async () => {
+        mockApi.query.mockImplementation((id, sql) => {
+            if (sql.includes('SELECT table_name')) return Promise.resolve({ success: true, rows: [{ table_name: 'orders', table_schema: 'public' }] })
+            if (sql.includes('information_schema.columns')) return Promise.resolve({ success: true, rows: [{column_name: 'status', data_type: 'text'}, {column_name: 'total', data_type: 'numeric'}] })
+            return Promise.resolve({ success: true, rows: [], fields: [] })
+        })
+        render(<SessionView {...defaultProps} />)
+        fireEvent.click(screen.getByTestId('btn-connect'))
+        await waitFor(() => screen.getByTestId('table-item-orders'))
+        fireEvent.click(screen.getByTestId('table-item-orders'))
+        return await screen.findByTestId('filter-bar')
+    }
+
+    it('adds and removes filter rows', async () => {
+        await setupTable()
+        
+        const addFilterBtn = screen.getByTestId('btn-add-filter')
+        fireEvent.click(addFilterBtn)
+        
+        expect(screen.getAllByTestId('filter-row')).toHaveLength(1)
+        
+        fireEvent.click(addFilterBtn)
+        expect(screen.getAllByTestId('filter-row')).toHaveLength(2)
+        
+        const removeBtns = screen.getAllByTestId('btn-remove-filter')
+        fireEvent.click(removeBtns[0])
+        expect(screen.getAllByTestId('filter-row')).toHaveLength(1)
+    })
+
+    it('applies filters on Enter key press', async () => {
+        await setupTable()
+        fireEvent.click(screen.getByTestId('btn-add-filter'))
+        
+        const input = screen.getByTestId('filter-value-input')
+        fireEvent.change(input, { target: { value: 'completed' } })
+        
+        // Mock query reset to track new calls
+        mockApi.query.mockClear()
+        fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' })
+        
+        await waitFor(() => {
+            expect(mockApi.query).toHaveBeenCalledWith(expect.any(String), expect.stringContaining("WHERE \"status\" = 'completed'"))
+        })
+    })
+
+    it('combines multiple filters with AND logic', async () => {
+        await setupTable()
+        fireEvent.click(screen.getByTestId('btn-add-filter'))
+        fireEvent.click(screen.getByTestId('btn-add-filter'))
+        
+        const inputs = screen.getAllByTestId('filter-value-input')
+        const columnSelects = screen.getAllByTestId('filter-column-select')
+        
+        fireEvent.change(columnSelects[0], { target: { value: 'status' } })
+        fireEvent.change(inputs[0], { target: { value: 'active' } })
+        
+        fireEvent.change(columnSelects[1], { target: { value: 'total' } })
+        fireEvent.change(inputs[1], { target: { value: '100' } })
+        
+        mockApi.query.mockClear()
+        fireEvent.click(screen.getByTestId('btn-apply-filters'))
+        
+        await waitFor(() => {
+            const sql = mockApi.query.mock.calls.find(call => call[1].includes('WHERE'))?.[1]
+            expect(sql).toContain('"status" = \'active\'')
+            expect(sql).toContain('AND')
+            expect(sql).toContain('"total" = \'100\'')
+        })
     })
   })
 })

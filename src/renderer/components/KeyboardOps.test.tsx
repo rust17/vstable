@@ -137,4 +137,90 @@ describe('Keyboard Operations in SessionView', () => {
     // Sidebar should be visible
     expect(screen.getByTestId('sidebar-scroll').parentElement).not.toHaveClass('hidden')
   })
+
+  it('handles Cmd+F to focus first filter input', async () => {
+    ;(window.api.connect as any).mockResolvedValue({ success: true })
+    ;(window.api.query as any).mockImplementation((id, sql) => {
+      if (sql.includes('SELECT table_name')) return Promise.resolve({ success: true, rows: [{ table_name: 'users', table_schema: 'public' }] })
+      if (sql.includes('information_schema.columns')) return Promise.resolve({ success: true, rows: [{column_name: 'name', data_type: 'text'}] })
+      return Promise.resolve({ success: true, rows: [], fields: [] })
+    })
+
+    render(<SessionView {...defaultProps} />)
+    fireEvent.click(screen.getByTestId('btn-connect'))
+    await waitFor(() => screen.getByTestId('table-item-users'))
+    fireEvent.click(screen.getByTestId('table-item-users'))
+    
+    // Ensure filter exists
+    fireEvent.click(screen.getByTestId('btn-add-filter'))
+    const input = screen.getByTestId('filter-value-input')
+
+    // Press Cmd + F
+    fireEvent.keyDown(window, { key: 'f', metaKey: true })
+
+    expect(document.activeElement).toBe(input)
+  })
+
+  it('handles Cmd+R to refresh current table', async () => {
+    let queryCount = 0
+    ;(window.api.connect as any).mockResolvedValue({ success: true })
+    ;(window.api.query as any).mockImplementation((id, sql) => {
+      if (sql.includes('SELECT table_name')) return Promise.resolve({ success: true, rows: [{ table_name: 'users', table_schema: 'public' }] })
+      if (sql.includes('SELECT * FROM "public"."users"')) {
+          queryCount++
+          return Promise.resolve({ success: true, rows: [], fields: [] })
+      }
+      return Promise.resolve({ success: true, rows: [], fields: [] })
+    })
+
+    render(<SessionView {...defaultProps} />)
+    fireEvent.click(screen.getByTestId('btn-connect'))
+    await waitFor(() => screen.getByTestId('table-item-users'))
+    fireEvent.click(screen.getByTestId('table-item-users'))
+    
+    await waitFor(() => expect(queryCount).toBe(1))
+
+    // Press Cmd + R
+    fireEvent.keyDown(window, { key: 'r', metaKey: true })
+
+    await waitFor(() => expect(queryCount).toBe(2))
+  })
+
+  it('handles Cmd+T to open new query tab', async () => {
+    ;(window.api.connect as any).mockResolvedValue({ success: true })
+    ;(window.api.query as any).mockImplementation(() => Promise.resolve({ success: true, rows: [], fields: [] }))
+
+    render(<SessionView {...defaultProps} />)
+    fireEvent.click(screen.getByTestId('btn-connect'))
+    
+    // Press Cmd + T
+    fireEvent.keyDown(window, { key: 't', metaKey: true })
+
+    await waitFor(() => {
+        expect(screen.getByTestId('tab-table-New Query')).toBeInTheDocument()
+    })
+  })
+
+  it('handles Cmd+W to close current tab', async () => {
+    ;(window.api.connect as any).mockResolvedValue({ success: true })
+    ;(window.api.query as any).mockImplementation((id, sql) => {
+        if (sql.includes('SELECT table_name')) return Promise.resolve({ success: true, rows: [{ table_name: 't1', table_schema: 'public' }] })
+        return Promise.resolve({ success: true, rows: [], fields: [] })
+    })
+
+    render(<SessionView {...defaultProps} />)
+    fireEvent.click(screen.getByTestId('btn-connect'))
+    await waitFor(() => screen.getByTestId('table-item-t1'))
+    fireEvent.click(screen.getByTestId('table-item-t1'))
+    
+    const tab = await screen.findByTestId('tab-table-t1')
+    expect(tab).toBeInTheDocument()
+
+    // Press Cmd + W
+    fireEvent.keyDown(window, { key: 'w', metaKey: true })
+
+    await waitFor(() => {
+        expect(screen.queryByTestId('tab-table-t1')).not.toBeInTheDocument()
+    })
+  })
 })

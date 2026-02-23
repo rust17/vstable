@@ -122,4 +122,81 @@ describe('SessionView Table Operations', () => {
         expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining("DELETE FROM \"public\".\"users\" WHERE \"id\" = '1'"))
     })
   })
+
+  it('updates a cell value on double click and save', async () => {
+    await setupConnected()
+
+    const aliceCell = screen.getByText('Alice')
+    fireEvent.doubleClick(aliceCell)
+
+    // Modal should appear
+    const modal = await screen.findByRole('dialog')
+    const textarea = within(modal).getByRole('textbox')
+    fireEvent.change(textarea, { target: { value: 'Alice Smith' } })
+
+    const saveBtn = screen.getByText('Save Changes')
+    fireEvent.click(saveBtn)
+
+    await waitFor(() => {
+        expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining("UPDATE \"public\".\"users\" SET \"name\" = 'Alice Smith' WHERE \"id\" = '1'"))
+    })
+  })
+
+  it('cancels cell update when Esc is pressed', async () => {
+    await setupConnected()
+
+    const aliceCell = screen.getByText('Alice')
+    fireEvent.doubleClick(aliceCell)
+
+    const modal = await screen.findByRole('dialog')
+    fireEvent.keyDown(modal, { key: 'Escape', code: 'Escape' })
+
+    await waitFor(() => {
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+  })
+
+  it('disables serial columns in Add Row mode', async () => {
+    await setupConnected()
+
+    fireEvent.click(screen.getByTestId('btn-add-row'))
+
+    const idInput = screen.getByPlaceholderText('(auto)')
+    expect(idInput).toBeDisabled()
+    expect(idInput).toHaveAttribute('placeholder', '(auto)')
+  })
+
+  it('disables edit/delete for tables without primary key', async () => {
+    // Override query to return no PK
+    (window.api.query as any).mockImplementation((id, sql) => {
+        if (sql.includes('SELECT table_name')) return Promise.resolve({ success: true, rows: [{ table_name: 'no_pk', table_schema: 'public' }] })
+        if (sql.includes('COUNT(*)')) return Promise.resolve({ success: true, rows: [{ count: '1' }] })
+        if (sql.includes('PRIMARY KEY')) return Promise.resolve({ success: true, rows: [] }) // No PK
+        if (sql.includes('SELECT * FROM "public"."no_pk"')) return Promise.resolve({
+            success: true,
+            rows: [{ name: 'Data' }],
+            fields: [{ name: 'name' }]
+        })
+        return Promise.resolve({ success: true, rows: [] })
+    })
+
+    render(<SessionView {...defaultProps} />)
+    fireEvent.click(screen.getByTestId('btn-connect'))
+    await waitFor(() => screen.getByTestId('table-item-no_pk'))
+    fireEvent.click(screen.getByTestId('table-item-no_pk'))
+
+    const cell = await screen.findByText('Data')
+    fireEvent.doubleClick(cell)
+    
+    // Should NOT show dialog because no PK
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    // Context menu should not show "Delete Row" or it should be disabled/not working
+    fireEvent.contextMenu(cell.closest('tr')!)
+    const deleteBtn = screen.queryByText('Delete Row')
+    if (deleteBtn) {
+        fireEvent.click(deleteBtn)
+        expect(window.api.query).not.toHaveBeenCalledWith('test-session', expect.stringContaining("DELETE FROM"))
+    }
+  })
 })
