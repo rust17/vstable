@@ -271,21 +271,25 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
       // Fetch columns
       const colRes = await (window as any).api.query(connectionId, `
         SELECT 
-          column_name, 
-          data_type, 
-          is_nullable, 
-          column_default,
-          ordinal_position,
-          character_maximum_length,
-          numeric_precision,
-          numeric_scale,
+          c.column_name, 
+          c.data_type, 
+          c.is_nullable, 
+          c.column_default,
+          c.ordinal_position,
+          c.character_maximum_length,
+          c.numeric_precision,
+          c.numeric_scale,
+          c.is_identity,
+          pg_catalog.col_description(t.oid, c.ordinal_position) as column_comment,
           (SELECT kcu.constraint_name FROM information_schema.key_column_usage kcu 
            JOIN information_schema.table_constraints tc ON kcu.constraint_name = tc.constraint_name 
            WHERE kcu.table_schema = c.table_schema AND kcu.table_name = c.table_name 
            AND kcu.column_name = c.column_name AND tc.constraint_type = 'PRIMARY KEY' LIMIT 1) as pk_constraint_name
         FROM information_schema.columns c
-        WHERE table_schema = '${initialSchema}' AND table_name = '${initialTableName}' 
-        ORDER BY ordinal_position;
+        JOIN pg_class t ON t.relname = c.table_name
+        JOIN pg_namespace n ON n.oid = t.relnamespace AND n.nspname = c.table_schema
+        WHERE c.table_schema = '${initialSchema}' AND c.table_name = '${initialTableName}' 
+        ORDER BY c.ordinal_position;
       `)
 
       if (!colRes.success) throw new Error(colRes.error)
@@ -303,6 +307,9 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
           defaultValue: row.column_default,
           isPrimaryKey: !!row.pk_constraint_name,
           isAutoIncrement: isAuto,
+          isIdentity: row.is_identity === 'YES',
+          comment: row.column_comment || '',
+          pkConstraintName: row.pk_constraint_name,
           _original: {
             name: row.column_name,
             type: row.data_type,
@@ -312,7 +319,10 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
             nullable: row.is_nullable === 'YES',
             defaultValue: row.column_default,
             isPrimaryKey: !!row.pk_constraint_name,
-            isAutoIncrement: isAuto
+            isAutoIncrement: isAuto,
+            isIdentity: row.is_identity === 'YES',
+            comment: row.column_comment || '',
+            pkConstraintName: row.pk_constraint_name
           }
         }
         return col
@@ -399,6 +409,15 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
   }
 
   const handleColumnChange = (id: string, field: keyof ColumnDefinition, value: any) => {
+    const col = columns.find(c => c.id === id)
+    if (field === 'name' && col) {
+      const oldName = col.name
+      const newName = value
+      setIndexes(prev => prev.map(idx => ({
+        ...idx,
+        columns: idx.columns.map(c => c === oldName ? newName : c)
+      })))
+    }
     setColumns(columns.map(c => c.id === id ? { ...c, [field]: value } : c))
   }
 
@@ -656,14 +675,17 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                   <th className="px-6 py-3">Type</th>
                   <th className="px-6 py-3 w-32">Params</th>
                   <th className="px-6 py-3 w-20 text-center">Auto</th>
+                  <th className="px-6 py-3 w-20 text-center">ID</th>
                   <th className="px-6 py-3 w-24 text-center">Nullable</th>
                   <th className="px-6 py-3 w-24 text-center">Primary</th>
                   <th className="px-6 py-3">Default</th>
+                  <th className="px-6 py-3">Comment</th>
                   <th className="px-6 py-3 w-16"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {columns.map((col, idx) => {
+                  if (!col.type) return null
                   const typeLower = col.type.toLowerCase()
                   const hasLength = typeLower.includes('char') || typeLower.includes('varchar') || typeLower.includes('bit') || typeLower.includes('varbit')
                   const hasPrecision = typeLower.includes('numeric') || typeLower.includes('decimal') || typeLower.includes('timestamp') || typeLower.includes('time')
@@ -768,6 +790,17 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                           )}
                       </td>
                       <td className="px-6 py-3 text-center">
+                          {canAutoInc && (
+                              <input 
+                                  type="checkbox"
+                                  checked={col.isIdentity}
+                                  onChange={e => handleColumnChange(col.id, 'isIdentity', e.target.checked)}
+                                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                  title="GENERATED BY DEFAULT AS IDENTITY"
+                              />
+                          )}
+                      </td>
+                      <td className="px-6 py-3 text-center">
                           <input 
                               type="checkbox"
                               checked={col.nullable}
@@ -818,6 +851,14 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                                 </button>
                             )}
                         </div>
+                    </td>
+                    <td className="px-6 py-3">
+                        <input 
+                            value={col.comment || ''}
+                            onChange={e => handleColumnChange(col.id, 'comment', e.target.value)}
+                            placeholder="Comment..."
+                            className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-1 py-0.5 transition-colors text-xs text-gray-500"
+                        />
                     </td>
                     <td className="px-6 py-3 text-right">
                         <button 
