@@ -24,12 +24,7 @@ export const useWorkspace = (initialTabs: TableTab[] = []) => {
   }, [tabs])
 
   const openTable = useCallback((schema: string, name: string) => {
-    const existingTab = tabs.find(t => t.name === name && t.schema === schema)
-    if (existingTab) {
-      setActiveTabId(existingTab.id)
-      return existingTab
-    }
-
+    // We allow multiple tabs for the same table now to support isolation
     const tabId = crypto.randomUUID()
     const newTab: TableTab = {
       id: tabId,

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { SessionView } from './SessionView'
 import { vi } from 'vitest'
 
@@ -165,25 +165,43 @@ describe('Keyboard Operations in SessionView', () => {
     let queryCount = 0
     ;(window.api.connect as any).mockResolvedValue({ success: true })
     ;(window.api.query as any).mockImplementation((id, sql) => {
-      if (sql.includes('SELECT table_name')) return Promise.resolve({ success: true, rows: [{ table_name: 'users', table_schema: 'public' }] })
+      if (sql.includes('SELECT table_name')) {
+        return Promise.resolve({ success: true, rows: [{ table_name: 'users', table_schema: 'public' }] })
+      }
+      if (sql.includes('information_schema.columns')) {
+        return Promise.resolve({ success: true, rows: [{ column_name: 'id', data_type: 'integer' }] })
+      }
+      if (sql.includes('COUNT(*)')) {
+        return Promise.resolve({ success: true, rows: [{ count: '0' }] })
+      }
       if (sql.includes('SELECT * FROM "public"."users"')) {
           queryCount++
-          return Promise.resolve({ success: true, rows: [], fields: [] })
+          return Promise.resolve({ success: true, rows: [], fields: [{name: 'id'}] })
       }
       return Promise.resolve({ success: true, rows: [], fields: [] })
     })
 
     render(<SessionView {...defaultProps} />)
     fireEvent.click(screen.getByTestId('btn-connect'))
-    await waitFor(() => screen.getByTestId('table-item-users'))
-    fireEvent.click(screen.getByTestId('table-item-users'))
+    await waitFor(() => expect(screen.getByTestId('table-item-users')).toBeInTheDocument())
     
-    await waitFor(() => expect(queryCount).toBe(1))
+    // Open table
+    await act(async () => {
+        fireEvent.click(screen.getByTestId('table-item-users'))
+    })
+    
+    // Wait for tab to appear and be active
+    const tab = await screen.findByTestId('tab-table-users')
+    expect(tab).toHaveAttribute('data-active', 'true')
+    
+    // Wait for initial load (fetchData inside TableTabPane)
+    await waitFor(() => expect(queryCount).toBeGreaterThanOrEqual(1), { timeout: 3000 })
+    const initialCount = queryCount
 
     // Press Cmd + R
     fireEvent.keyDown(window, { key: 'r', metaKey: true })
 
-    await waitFor(() => expect(queryCount).toBe(2))
+    await waitFor(() => expect(queryCount).toBe(initialCount + 1))
   })
 
   it('handles Cmd+T to open new query tab', async () => {

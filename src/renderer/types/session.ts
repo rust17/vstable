@@ -28,6 +28,8 @@ export interface TableTab {
   filters?: FilterCondition[]
   isAddingRow?: boolean
   newRowData?: Record<string, any>
+  refreshKey?: number
+  focusKey?: number
 }
 
 export interface FilterCondition {

@@ -86,6 +86,16 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
             e.preventDefault()
             openQuery()
         }
+        // Cmd+R: Refresh
+        if ((e.metaKey || e.ctrlKey) && e.key === 'r' && activeTabId) {
+            e.preventDefault()
+            updateTab(activeTabId, { refreshKey: Date.now() })
+        }
+        // Cmd+F: Focus Filter
+        if ((e.metaKey || e.ctrlKey) && e.key === 'f' && activeTabId) {
+            e.preventDefault()
+            updateTab(activeTabId, { focusKey: Date.now() })
+        }
         // Cmd+P: Fuzzy Search
         if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
             e.preventDefault()
@@ -169,8 +179,18 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
          {/* Tab Bar */}
-         <div className="border-b border-gray-100 flex items-center px-4 justify-between bg-gray-50/50 h-10 gap-2">
-            <div className="flex items-center gap-1 overflow-x-auto no-drag scrollbar-hide flex-1">
+         <div 
+            className="border-b border-gray-100 flex items-center px-4 justify-between bg-gray-50/50 h-10 gap-2 select-none"
+            onDoubleClick={(e) => {
+                if (e.target === e.currentTarget) setIsMaximized(!isMaximized)
+            }}
+         >
+            <div 
+                className="flex items-center gap-1 overflow-x-auto no-drag scrollbar-hide flex-1 h-full"
+                onDoubleClick={(e) => {
+                    if (e.target === e.currentTarget) setIsMaximized(!isMaximized)
+                }}
+            >
                 {tabs.map(tab => (
                     <div
                         key={tab.id}

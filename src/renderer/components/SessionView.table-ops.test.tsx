@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { SessionView } from './SessionView'
 import { vi } from 'vitest'
 
@@ -192,11 +192,14 @@ describe('SessionView Table Operations', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
     // Context menu should not show "Delete Row" or it should be disabled/not working
-    fireEvent.contextMenu(cell.closest('tr')!)
-    const deleteBtn = screen.queryByText('Delete Row')
-    if (deleteBtn) {
-        fireEvent.click(deleteBtn)
-        expect(window.api.query).not.toHaveBeenCalledWith('test-session', expect.stringContaining("DELETE FROM"))
+    const row = cell.closest('tr')
+    if (row) {
+        fireEvent.contextMenu(row)
+        const deleteBtn = screen.queryByText('Delete Row')
+        if (deleteBtn) {
+            fireEvent.click(deleteBtn)
+            expect(window.api.query).not.toHaveBeenCalledWith('test-session', expect.stringContaining("DELETE FROM"))
+        }
     }
   })
 })

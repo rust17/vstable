@@ -28,7 +28,14 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
     if (isActive && !tab.results && viewMode === 'data') {
       fetchData(tab.page || 1, tab.pageSize || 100, tab.filters || [])
     }
-  }, [isActive, tab.id])
+  }, [isActive, tab.id, fetchData])
+
+  // Handle refresh and focus shortcuts
+  useEffect(() => {
+    if (isActive && tab.refreshKey) {
+        handleRefresh()
+    }
+  }, [tab.refreshKey])
 
   const handlePageChange = (newPage: number) => {
     onUpdateTab({ page: newPage })
@@ -147,6 +154,7 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
         onCancelAddRow={handleCancelAddRow}
         onSaveRow={handleSaveNewRow}
         pk={tab.pk}
+        focusKey={tab.focusKey}
       />
 
       <ResultGrid
@@ -186,6 +194,7 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
           isOpen={!!editingCell}
           onClose={() => setEditingCell(null)}
           value={getEditValue()}
+          dataType={editingCell?.dataType}
           title={tab.pk ? `Editable (PK: ${tab.pk})` : 'Edit Data'}
           onSave={handleCellUpdate}
       />
