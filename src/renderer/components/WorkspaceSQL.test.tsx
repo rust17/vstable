@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { SessionView } from './SessionView'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import React from 'react'
@@ -51,15 +51,18 @@ describe('Workspace & SQL Runner Tests', () => {
 
       // Set filter in Tab 2
       fireEvent.click(tabs[1])
-      fireEvent.click(screen.getByTestId('btn-add-filter'))
-      const input = screen.getByTestId('filter-value-input')
+      const tab2Content = screen.getByTestId('active-tab-content')
+      fireEvent.click(within(tab2Content).getByTestId('btn-add-filter'))
+      
+      const input = within(tab2Content).getByTestId('filter-value-input')
       fireEvent.change(input, { target: { value: 'test-filter' } })
       
       // Switch back to Tab 1
       fireEvent.click(tabs[0])
       
-      // Verify Tab 1 doesn't have the filter
-      expect(screen.queryByDisplayValue('test-filter')).not.toBeInTheDocument()
+      // Verify Tab 1 content doesn't have the filter
+      const tab1Content = screen.getByTestId('active-tab-content')
+      expect(within(tab1Content).queryByDisplayValue('test-filter')).not.toBeInTheDocument()
     })
 
     it('shows empty state "Select a table..." when all tabs are closed', async () => {

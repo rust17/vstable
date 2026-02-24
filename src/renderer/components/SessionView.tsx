@@ -106,6 +106,8 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
             e.preventDefault()
             setShowTabSwitcher(true)
             setSwitcherIndex(prev => {
+               // On first press of Ctrl+Tab, we want to go to the NEXT MRU tab (index 1)
+               if (!showTabSwitcher) return mruTabIds.length > 1 ? 1 : 0
                const next = prev + 1
                return next >= mruTabIds.length ? 0 : next
             })
@@ -116,8 +118,9 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
       if (e.key === 'Control') {
          if (showTabSwitcher) {
            setShowTabSwitcher(false)
-           if (mruTabIds[switcherIndex]) {
-             setActiveTabId(mruTabIds[switcherIndex])
+           const selectedId = mruTabIds[switcherIndex]
+           if (selectedId && tabs.some(t => t.id === selectedId)) {
+             setActiveTabId(selectedId)
            }
            setSwitcherIndex(0)
          }
@@ -223,7 +226,12 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
          {/* Tab Content */}
          <div className="flex-1 flex flex-col overflow-hidden relative bg-white">
             {tabs.map(tab => (
-                <div key={tab.id} className="w-full h-full" style={{ display: activeTabId === tab.id ? 'block' : 'none' }}>
+                <div 
+                  key={tab.id} 
+                  data-testid={activeTabId === tab.id ? 'active-tab-content' : `inactive-tab-content-${tab.id}`}
+                  className="w-full h-full" 
+                  style={{ display: activeTabId === tab.id ? 'block' : 'none' }}
+                >
                     {tab.type === 'table' ? (
                         <TableTabPane 
                             tab={tab} 

@@ -53,14 +53,14 @@ describe('Keyboard Operations in SessionView', () => {
     
     // TabSwitcher should be open, showing t2 as selected (index 1)
     expect(screen.getByText('Switch Tab')).toBeInTheDocument()
-    const t2InSwitcher = screen.getAllByText('t2').find(el => el.closest('.fixed'))
-    expect(t2InSwitcher?.closest('div')).toHaveClass('bg-blue-600')
+    const t2InSwitcher = screen.getAllByText('t2').find(el => el.closest('[data-active-item="true"]'))
+    expect(t2InSwitcher).toBeInTheDocument()
 
     // Press Tab again while holding Ctrl
     fireEvent.keyDown(window, { key: 'Tab', ctrlKey: true })
     // Now t1 should be selected
-    const t1InSwitcher = screen.getAllByText('t1').find(el => el.closest('.fixed'))
-    expect(t1InSwitcher?.closest('div')).toHaveClass('bg-blue-600')
+    const t1InSwitcher = screen.getAllByText('t1').find(el => el.closest('[data-active-item="true"]'))
+    expect(t1InSwitcher).toBeInTheDocument()
 
     // Release Control
     fireEvent.keyUp(window, { key: 'Control' })

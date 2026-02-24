@@ -64,11 +64,13 @@ export const useWorkspace = (initialTabs: TableTab[] = []) => {
     setTabs(prev => {
       const newTabs = prev.filter(t => t.id !== tabId)
       if (activeTabId === tabId) {
-        setActiveTabId(newTabs.length > 0 ? newTabs[newTabs.length - 1].id : null)
+        // Find next MRU tab that still exists
+        const nextMruId = mruTabIds.find(id => id !== tabId && newTabs.some(t => t.id === id))
+        setActiveTabId(nextMruId || (newTabs.length > 0 ? newTabs[newTabs.length - 1].id : null))
       }
       return newTabs
     })
-  }, [activeTabId])
+  }, [activeTabId, mruTabIds])
 
   const updateTab = useCallback((tabId: string, updates: Partial<TableTab>) => {
     setTabs(prev => prev.map(t => t.id === tabId ? { ...t, ...updates } : t))

@@ -37,6 +37,14 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
     }
   }, [tab.refreshKey])
 
+  useEffect(() => {
+    if (isActive && tab.focusKey) {
+        if (!tab.filters || tab.filters.length === 0) {
+            handleAddFilter()
+        }
+    }
+  }, [tab.focusKey])
+
   const handlePageChange = (newPage: number) => {
     onUpdateTab({ page: newPage })
     fetchData(newPage, tab.pageSize || 100, tab.filters || [])
