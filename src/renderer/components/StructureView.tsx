@@ -217,6 +217,77 @@ const TypeSelector: React.FC<{ value: string; onChange: (val: string) => void }>
   )
 }
 
+const ColumnMultiSelect: React.FC<{ 
+  allColumns: string[]; 
+  selectedColumns: string[]; 
+  onChange: (cols: string[]) => void 
+}> = ({ allColumns, selectedColumns, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className="min-h-[28px] w-full px-2 py-1 bg-gray-100/50 border border-transparent rounded hover:bg-gray-100 cursor-pointer flex flex-wrap gap-1 items-center"
+      >
+        {selectedColumns.length > 0 ? selectedColumns.map(c => (
+          <span key={c} className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-medium flex items-center gap-1">
+            {c}
+            <X 
+              size={10} 
+              className="hover:text-purple-900" 
+              onClick={(e) => {
+                e.stopPropagation()
+                onChange(selectedColumns.filter(sc => sc !== c))
+              }} 
+            />
+          </span>
+        )) : <span className="text-gray-400 text-xs">Select columns...</span>}
+      </div>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 z-[100] mt-1 bg-white border border-gray-200 rounded-lg shadow-xl py-1 max-h-48 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+          {allColumns.map(col => (
+            <div 
+              key={col}
+              onClick={() => {
+                if (selectedColumns.includes(col)) {
+                  onChange(selectedColumns.filter(c => c !== col))
+                } else {
+                  onChange([...selectedColumns, col])
+                }
+              }}
+              className="px-3 py-1.5 hover:bg-gray-50 flex items-center gap-2 cursor-pointer transition-colors"
+            >
+              <input 
+                type="checkbox" 
+                checked={selectedColumns.includes(col)}
+                readOnly
+                className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+              />
+              <span className="text-xs text-gray-700">{col}</span>
+            </div>
+          ))}
+          {allColumns.length === 0 && (
+            <div className="px-3 py-2 text-xs text-gray-400 italic text-center">No columns available</div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export const StructureView: React.FC<StructureViewProps> = ({ connectionId, schema: initialSchema, tableName: initialTableName, mode = 'edit', onClose, onSaveSuccess }) => {
   const [columns, setColumns] = useState<ColumnDefinition[]>([])
   const [indexes, setIndexes] = useState<IndexDefinition[]>([])
@@ -593,13 +664,10 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
   )
 
   return (
-    <div className="flex flex-col h-full bg-gray-50/50">
+    <div className="flex flex-col h-full bg-gray-50/50 select-text">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200">
+      <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200 mt-2">
         <div className="flex items-center gap-4">
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors" title="Back to Data">
-            <ArrowLeft size={18} />
-          </button>
           <div className="flex flex-col">
             {mode === 'create' ? (
                 <div className="flex items-center gap-2">
@@ -656,7 +724,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
 
         {/* Columns Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/30 select-text">
             <h3 className="font-semibold text-gray-700 flex items-center gap-2">
                 <div className="w-1 h-4 bg-blue-500 rounded-full"></div>
                 Columns
@@ -668,10 +736,10 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
           
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
+              <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100 select-text">
                 <tr>
                   <th className="px-6 py-3 w-12">#</th>
-                  <th className="px-6 py-3">Name</th>
+                  <th className="px-6 py-3 min-w-[200px]">Name</th>
                   <th className="px-6 py-3">Type</th>
                   <th className="px-6 py-3 w-32">Params</th>
                   <th className="px-6 py-3 w-20 text-center">Auto</th>
@@ -884,7 +952,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
 
         {/* Indexes Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/30 select-text">
             <h3 className="font-semibold text-gray-700 flex items-center gap-2">
                 <div className="w-1 h-4 bg-purple-500 rounded-full"></div>
                 Indexes
@@ -895,7 +963,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100">
+              <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100 select-text">
                 <tr>
                   <th className="px-6 py-3 w-12">#</th>
                   <th className="px-6 py-3">Name</th>
@@ -921,17 +989,15 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                         />
                     </td>
                     <td className="px-6 py-3">
-                         <input 
-                            data-testid={`index-columns-${i}`}
-                            value={(Array.isArray(idx.columns) ? idx.columns : []).join(', ')}
-                            onChange={e => {
+                         <ColumnMultiSelect 
+                            allColumns={columns.map(c => c.name).filter(Boolean)}
+                            selectedColumns={Array.isArray(idx.columns) ? idx.columns : []}
+                            onChange={(cols) => {
                                 const newIndexes = [...indexes]
-                                newIndexes[i].columns = e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+                                newIndexes[i].columns = cols
                                 setIndexes(newIndexes)
                             }}
-                            placeholder="col1, col2"
-                            className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-purple-500 focus:outline-none px-1 py-0.5 transition-colors text-gray-500 text-xs font-mono"
-                        />
+                         />
                     </td>
                     <td className="px-6 py-3 text-center">
                         <input 

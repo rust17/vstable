@@ -86,8 +86,8 @@ describe('SessionView Component', () => {
     await waitFor(() => expect(screen.queryByTestId('connection-form')).not.toBeInTheDocument())
 
     // MUST open a query tab to see the editor
-    await waitFor(() => expect(screen.getByTestId('btn-new-query')).toBeInTheDocument())
-    fireEvent.click(screen.getByTestId('btn-new-query'))
+    // Open a New Query tab via Cmd+T
+    fireEvent.keyDown(window, { key: 't', metaKey: true })
     await waitFor(() => expect(screen.getByText(/New Query/i)).toBeInTheDocument())
 
     // Enter query
@@ -253,8 +253,8 @@ describe('SessionView Component', () => {
     await waitFor(() => expect(screen.queryByTestId('connection-form')).not.toBeInTheDocument())
 
     // Open a New Query tab
-    await waitFor(() => expect(screen.getByTestId('btn-new-query')).toBeInTheDocument())
-    fireEvent.click(screen.getByTestId('btn-new-query'))
+    // Open a New Query tab via Cmd+T
+    fireEvent.keyDown(window, { key: 't', metaKey: true })
     await waitFor(() => expect(screen.getByText(/New Query/i)).toBeInTheDocument())
 
     // The command key is KeyMod.CtrlCmd | KeyCode.Enter = 2048 | 3 = 2051

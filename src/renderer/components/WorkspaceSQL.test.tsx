@@ -86,8 +86,8 @@ describe('Workspace & SQL Runner Tests', () => {
     it('executes simple SELECT 1 and displays results', async () => {
       await setupConnected()
 
-      // Open new query tab
-      fireEvent.click(screen.getByTestId('btn-new-query'))
+      // Open new query tab via Cmd+T
+      fireEvent.keyDown(window, { key: 't', metaKey: true })
       const queryTab = await screen.findByTestId('tab-table-New Query')
       expect(queryTab).toHaveAttribute('data-active', 'true')
 
@@ -111,7 +111,7 @@ describe('Workspace & SQL Runner Tests', () => {
     it('displays error message when SQL is invalid', async () => {
       await setupConnected()
 
-      fireEvent.click(screen.getByTestId('btn-new-query'))
+      fireEvent.keyDown(window, { key: 't', metaKey: true })
       
       // Mock error
       ;(window.api.query as any).mockResolvedValue({
@@ -129,7 +129,7 @@ describe('Workspace & SQL Runner Tests', () => {
 
     it('triggers execution on Cmd+Enter shortcut', async () => {
       await setupConnected()
-      fireEvent.click(screen.getByTestId('btn-new-query'))
+      fireEvent.keyDown(window, { key: 't', metaKey: true })
 
       // Note: Triggering Cmd+Enter on window because SessionView listens globally
       // but Monaco usually intercepts it. For this test we check if the global listener or 
@@ -150,7 +150,7 @@ describe('Workspace & SQL Runner Tests', () => {
 
     it('executes only selected text when "Run" is clicked', async () => {
       await setupConnected()
-      fireEvent.click(screen.getByTestId('btn-new-query'))
+      fireEvent.keyDown(window, { key: 't', metaKey: true })
 
       // We expect the implementation to check for selection.
       // For this test, we'll mock what we can or just document the expectation.

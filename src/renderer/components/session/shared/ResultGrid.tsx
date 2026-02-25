@@ -34,19 +34,29 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
   if (error) return <div className="p-4 text-red-600 font-mono text-xs whitespace-pre-wrap bg-red-50/30">Error: {error}</div>
 
   return (
-    <div data-testid="results-scroll" className="flex-1 overflow-auto pb-12 elastic-scroll overscroll-y-auto">
+    <div 
+        data-testid="results-scroll" 
+        className="flex-1 overflow-auto pb-12 elastic-scroll overscroll-y-auto"
+        onContextMenu={(e) => {
+            if (e.target === e.currentTarget) {
+                e.preventDefault()
+                setSelectedRowIndex(null)
+                if (onContextMenu) onContextMenu(e, null)
+            }
+        }}
+    >
       {(!rows || rows.length === 0) && !isAddingRow ? (
-        <div className="p-8 text-center text-gray-300 italic text-sm">No data found</div>
+        <div className="p-8 text-center text-gray-300 italic text-sm h-full">No data found</div>
       ) : (
       <table className="w-full border-collapse text-left text-xs font-mono">
-        <thead className="bg-gray-100 sticky top-0 z-10">
+        <thead className="bg-gray-100 sticky top-0 z-10 select-text">
           <tr>
             {fields.map((field, i) => {
               const colInfo = structure?.find(c => c.column_name === field.name)
               return (
                 <th key={i} className="px-3 py-2 border-r border-b border-gray-200 text-gray-600 font-bold whitespace-nowrap">
                   <div className="flex flex-col">
-                    <span>{field.name}</span>
+                    <span className="cursor-text">{field.name}</span>
                     {colInfo && <span className="text-[9px] font-normal text-gray-400">{colInfo.data_type.replace(/ without time zone$/, '')}</span>}
                   </div>
                 </th>

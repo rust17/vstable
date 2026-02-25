@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Database, Table as TableIcon, Plus, Trash2, ChevronRight, Check } from 'lucide-react'
+import { Database, Table as TableIcon, Plus, Trash2, ChevronRight, Check, ChevronDown } from 'lucide-react'
 import { useSession } from '../SessionContext'
 
 interface DatabaseTreeProps {
@@ -23,6 +23,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
 }) => {
   const { config } = useSession()
   const [dbListOpen, setDbListOpen] = useState(false)
+  const [schemaListOpen, setSchemaListOpen] = useState(false)
   const [tableFilter, setTableFilter] = useState('')
 
   const filteredTables = tables.filter(table => {
@@ -36,9 +37,9 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
   })
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden p-4">
       {/* Database Selector */}
-      <div className="relative mb-2 px-2 shrink-0">
+      <div className="relative mb-2 shrink-0">
         <div 
           onClick={() => setDbListOpen(!dbListOpen)}
           className="flex items-center justify-between px-3 py-2 bg-white border border-gray-200 rounded-lg cursor-pointer hover:border-blue-400 transition-colors shadow-sm group"
@@ -55,7 +56,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
         {dbListOpen && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setDbListOpen(false)} />
-            <div className="absolute top-full left-2 right-2 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col max-h-[300px]">
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100 flex flex-col max-h-[300px]">
               <div className="overflow-y-auto flex-1 py-1">
                 {databases.map(db => (
                   <div 
@@ -99,21 +100,40 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
       </div>
 
       {/* Schema Selector */}
-      <div className="px-2 mb-4 shrink-0">
-        <select
-          value={currentSchema}
-          onChange={(e) => onSelectSchema(e.target.value)}
-          className="w-full px-2 py-1.5 bg-gray-100 border-none rounded text-xs text-gray-600 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+      <div className="relative mb-4 shrink-0">
+        <div 
+          onClick={() => setSchemaListOpen(!schemaListOpen)}
+          className="flex items-center justify-between px-3 py-1.5 bg-gray-100/50 border border-transparent rounded hover:bg-gray-100 cursor-pointer transition-colors group"
         >
-          {schemas.map(s => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
+          <span className="text-xs font-medium text-gray-500 truncate">{currentSchema}</span>
+          <ChevronDown size={12} className={`text-gray-400 transition-transform duration-200 ${schemaListOpen ? 'rotate-180' : ''}`} />
+        </div>
+
+        {schemaListOpen && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setSchemaListOpen(false)} />
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100 max-h-[200px] overflow-y-auto py-1">
+              {schemas.map(s => (
+                <div 
+                  key={s}
+                  className={`px-3 py-1.5 text-xs flex items-center justify-between hover:bg-gray-50 cursor-pointer ${s === currentSchema ? 'text-blue-600 bg-blue-50 font-medium' : 'text-gray-600'}`}
+                  onClick={() => {
+                    onSelectSchema(s)
+                    setSchemaListOpen(false)
+                  }}
+                >
+                  <span className="truncate">{s}</span>
+                  {s === currentSchema && <Check size={10} />}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Table Filter */}
       {tables.length > 0 && (
-        <div className="px-2 mb-2 shrink-0">
+        <div className="mb-2 shrink-0">
           <input
             type="text"
             placeholder="Filter tables..."
@@ -125,7 +145,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
       )}
 
       {/* Table List Header */}
-      <div className="flex items-center justify-between px-2 mb-2 shrink-0">
+      <div className="flex items-center justify-between mb-2 shrink-0">
         <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tables</h3>
         <button 
           onClick={onCreateTable}
@@ -137,7 +157,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
       </div>
 
       {/* Table List */}
-      <div className="flex-1 overflow-y-auto px-2 pb-4 space-y-1 elastic-scroll overscroll-y-auto">
+      <div className="flex-1 overflow-y-auto pb-4 space-y-1 elastic-scroll overscroll-y-auto">
         {filteredTables.map((table, i) => (
           <div 
             key={i} 
@@ -159,7 +179,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
           </div>
         ))}
         {tables.length === 0 && (
-             <div className="mt-4 px-2 text-center">
+             <div className="mt-4 text-center">
                 <span className="text-xs text-gray-400 italic block mb-2">No tables in schema</span>
                 <button 
                     onClick={onCreateTable}

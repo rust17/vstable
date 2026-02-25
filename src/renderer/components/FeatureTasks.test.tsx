@@ -152,7 +152,7 @@ describe('SessionView Feature Tasks - Keyboard & Filter', () => {
       fireEvent.keyDown(window, { key: 'f', metaKey: true })
       
       // First filter input should be focused
-      const filterInput = await screen.findByTestId('filter-value-0')
+      const filterInput = await screen.findByTestId('filter-value-input')
       expect(document.activeElement).toBe(filterInput)
     })
 
@@ -212,11 +212,11 @@ describe('SessionView Feature Tasks - Keyboard & Filter', () => {
       const operatorSelect = screen.getByTestId('filter-operator-0')
       fireEvent.change(operatorSelect, { target: { value: '=' } })
       
-      const valueInput = screen.getByTestId('filter-value-0')
+      const valueInput = screen.getByTestId('filter-value-input')
       fireEvent.change(valueInput, { target: { value: 'Alice' } })
       
-      // Click Apply
-      fireEvent.click(screen.getByTestId('btn-apply-filter'))
+      // Press Enter to apply
+      fireEvent.keyDown(valueInput, { key: 'Enter' })
       
       // Verify query includes WHERE clause
       await waitFor(() => {

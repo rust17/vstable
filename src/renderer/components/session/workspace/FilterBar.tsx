@@ -29,15 +29,15 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   }, [focusKey])
 
   return (
-    <div className="bg-gray-50 border-b border-gray-100">
+    <div className="bg-gray-50 border-b border-gray-100 flex flex-col">
       {filters.length > 0 && (
-        <div className="px-4 py-2 flex flex-col gap-1.5 border-b border-gray-100/50">
+        <div className="p-3 flex flex-col gap-2 border-b border-gray-100/50">
           {filters.map((filter, index) => (
-            <div key={filter.id} data-testid={`filter-row-${index}`} className="flex items-center gap-2">
-              <div className="flex items-center bg-white border border-gray-200 rounded overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-blue-500 transition-all">
+            <div key={filter.id} data-testid={`filter-row-${index}`} className="flex items-center gap-2 w-full">
+              <div className="flex flex-1 items-center bg-white border border-gray-200 rounded overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-blue-500 transition-all">
                 <select
                   data-testid={`filter-column-${index}`}
-                  className="text-[11px] px-2 py-1 bg-transparent border-r border-gray-100 outline-none hover:bg-gray-50 cursor-pointer min-w-[120px]"
+                  className="text-[11px] px-2 py-1.5 bg-transparent border-r border-gray-100 outline-none hover:bg-gray-50 cursor-pointer min-w-[150px]"
                   value={filter.column}
                   onChange={e => onUpdateFilter(filter.id, 'column', e.target.value)}
                 >
@@ -47,7 +47,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 </select>
                 <select
                   data-testid={`filter-operator-${index}`}
-                  className="text-[11px] px-2 py-1 bg-transparent border-r border-gray-100 outline-none hover:bg-gray-50 cursor-pointer w-16 text-center font-mono"
+                  className="text-[11px] px-2 py-1.5 bg-transparent border-r border-gray-100 outline-none hover:bg-gray-50 cursor-pointer w-20 text-center font-mono"
                   value={filter.operator}
                   onChange={e => onUpdateFilter(filter.id, 'operator', e.target.value)}
                 >
@@ -64,7 +64,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                   ref={index === 0 ? filterInputRef : null}
                   data-testid={index === 0 ? "filter-value-input" : `filter-value-${index}`}
                   type="text"
-                  className="flex-1 text-[11px] px-3 py-1 bg-transparent outline-none placeholder:text-gray-300 min-w-[200px]"
+                  className="flex-1 text-[11px] px-4 py-1.5 bg-transparent outline-none placeholder:text-gray-300"
                   placeholder="Search value..."
                   value={filter.value}
                   onChange={e => onUpdateFilter(filter.id, 'value', e.target.value)}
@@ -77,19 +77,19 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 <button
                   data-testid={`btn-remove-filter-${index}`}
                   onClick={() => onRemoveFilter(filter.id)}
-                  className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all"
+                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all"
                   title="Remove Filter"
                 >
-                  <div className="w-3 h-0.5 bg-current rounded-full"></div>
+                  <X size={14} />
                 </button>
                 {index === filters.length - 1 && (
                   <button
                     data-testid="btn-add-filter"
                     onClick={onAddFilter}
-                    className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-all"
+                    className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-all"
                     title="Add Filter"
                   >
-                    <Plus size={14} />
+                    <Plus size={16} />
                   </button>
                 )}
               </div>
@@ -98,30 +98,18 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         </div>
       )}
 
-      <div className="px-4 py-1.5 flex items-center gap-3 h-9">
+      <div className="px-4 py-1.5 flex items-center gap-3 h-10">
         {filters.length === 0 && (
           <button
             data-testid="btn-add-filter"
             onClick={onAddFilter}
-            className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            className="flex items-center gap-1 px-3 py-1 text-[11px] font-medium text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors border border-dashed border-gray-300 hover:border-blue-300"
           >
             <Plus size={14} /> Add Filter
           </button>
         )}
         
-        {filters.length > 0 && (
-          <button
-            data-testid="btn-apply-filter"
-            onClick={onApplyFilters}
-            className="px-3 py-1 text-[11px] font-bold bg-blue-600 text-white rounded hover:bg-blue-700 transition-all shadow-sm active:scale-95"
-          >
-            Apply
-          </button>
-        )}
-
-        <div className="h-4 w-px bg-gray-200 mx-1"></div>
-
-        {isAddingRow ? (
+        {isAddingRow && (
           <div className="flex items-center gap-2">
             <button
               data-testid="btn-save-row"
@@ -138,14 +126,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               Cancel
             </button>
           </div>
-        ) : (
-          <button
-            data-testid="btn-add-row"
-            onClick={onStartAddRow}
-            className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-gray-500 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
-          >
-            <Plus size={14} /> Add Row
-          </button>
         )}
 
         {pk && (

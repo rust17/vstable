@@ -26,8 +26,8 @@ describe('SessionView UI Tasks - Maximize & Rubber Band', () => {
     
     await waitFor(() => expect(screen.queryByTestId('connection-form')).not.toBeInTheDocument())
 
-    // Open a query tab
-    fireEvent.click(screen.getByTestId('btn-new-query'))
+    // Open a query tab via Cmd+T
+    fireEvent.keyDown(window, { key: 't', metaKey: true })
     return await screen.findByTestId('tab-table-New Query')
   }
 
@@ -91,14 +91,14 @@ describe('SessionView UI Tasks - Maximize & Rubber Band', () => {
         const addFilterBtn = screen.getByTestId('btn-add-filter')
         fireEvent.click(addFilterBtn)
         
-        expect(screen.getAllByTestId('filter-row')).toHaveLength(1)
+        expect(screen.getAllByTestId(/^filter-row-/)).toHaveLength(1)
         
         fireEvent.click(addFilterBtn)
-        expect(screen.getAllByTestId('filter-row')).toHaveLength(2)
+        expect(screen.getAllByTestId(/^filter-row-/)).toHaveLength(2)
         
-        const removeBtns = screen.getAllByTestId('btn-remove-filter')
+        const removeBtns = screen.getAllByTestId(/^btn-remove-filter-/)
         fireEvent.click(removeBtns[0])
-        expect(screen.getAllByTestId('filter-row')).toHaveLength(1)
+        expect(screen.getAllByTestId(/^filter-row-/)).toHaveLength(1)
     })
 
     it('applies filters on Enter key press', async () => {
@@ -122,8 +122,8 @@ describe('SessionView UI Tasks - Maximize & Rubber Band', () => {
         fireEvent.click(screen.getByTestId('btn-add-filter'))
         fireEvent.click(screen.getByTestId('btn-add-filter'))
         
-        const inputs = screen.getAllByTestId('filter-value-input')
-        const columnSelects = screen.getAllByTestId('filter-column-select')
+        const inputs = [screen.getByTestId('filter-value-input'), screen.getByTestId('filter-value-1')]
+        const columnSelects = [screen.getByTestId('filter-column-0'), screen.getByTestId('filter-column-1')]
         
         fireEvent.change(columnSelects[0], { target: { value: 'status' } })
         fireEvent.change(inputs[0], { target: { value: 'active' } })
@@ -132,7 +132,7 @@ describe('SessionView UI Tasks - Maximize & Rubber Band', () => {
         fireEvent.change(inputs[1], { target: { value: '100' } })
         
         mockApi.query.mockClear()
-        fireEvent.click(screen.getByTestId('btn-apply-filters'))
+        fireEvent.keyDown(inputs[0], { key: 'Enter' })
         
         await waitFor(() => {
             const sql = mockApi.query.mock.calls.find(call => call[1].includes('WHERE'))?.[1]

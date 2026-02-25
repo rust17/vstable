@@ -65,7 +65,8 @@ describe('StructureView Component', () => {
     await waitFor(() => expect(screen.queryByText(/Loading structure/i)).not.toBeInTheDocument())
 
     expect(screen.getByDisplayValue('string_idx')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('col1, col2')).toBeInTheDocument()
+    expect(screen.getByText('col1')).toBeInTheDocument()
+    expect(screen.getByText('col2')).toBeInTheDocument()
   })
 
   it('handles adding and deleting columns', async () => {

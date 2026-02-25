@@ -15,10 +15,13 @@ export interface ConnectionConfig {
 
 export interface TableTab {
   id: string
-  type: 'table' | 'query'
+  type: 'table' | 'query' | 'structure'
   schema?: string
   name: string
   pk?: string | null
+  mode?: 'create' | 'edit'
+  initialSchema?: string
+  initialTableName?: string
   page?: number
   pageSize?: number
   totalRows?: number

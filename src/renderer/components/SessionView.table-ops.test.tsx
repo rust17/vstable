@@ -63,8 +63,10 @@ describe('SessionView Table Operations', () => {
   it('adds a new row', async () => {
     await setupConnected()
 
-    // Click Add Row
-    const addRowBtn = screen.getByTestId('btn-add-row')
+    // Start adding row via context menu
+    const grid = screen.getByTestId('results-scroll')
+    fireEvent.contextMenu(grid)
+    const addRowBtn = await screen.findByText('Add Row')
     fireEvent.click(addRowBtn)
 
     // Check for phantom row inputs
@@ -87,8 +89,11 @@ describe('SessionView Table Operations', () => {
   it('adds a new row with default values', async () => {
     await setupConnected()
 
-    // Click Add Row
-    fireEvent.click(screen.getByTestId('btn-add-row'))
+    // Click Add Row via context menu
+    const grid = screen.getByTestId('results-scroll')
+    fireEvent.contextMenu(grid)
+    const addRowBtn = await screen.findByText('Add Row')
+    fireEvent.click(addRowBtn)
 
     // Click Save Row directly without input
     fireEvent.click(screen.getByTestId('btn-save-row'))
@@ -159,7 +164,10 @@ describe('SessionView Table Operations', () => {
   it('disables serial columns in Add Row mode', async () => {
     await setupConnected()
 
-    fireEvent.click(screen.getByTestId('btn-add-row'))
+    const grid = screen.getByTestId('results-scroll')
+    fireEvent.contextMenu(grid)
+    const addRowBtn = await screen.findByText('Add Row')
+    fireEvent.click(addRowBtn)
 
     const idInput = screen.getByPlaceholderText('(auto)')
     expect(idInput).toBeDisabled()

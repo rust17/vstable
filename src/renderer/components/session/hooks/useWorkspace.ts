@@ -60,6 +60,23 @@ export const useWorkspace = (initialTabs: TableTab[] = []) => {
     return newTab
   }, [])
 
+  const openStructure = useCallback((schema?: string, name?: string, mode: 'create' | 'edit' = 'edit') => {
+    const tabId = crypto.randomUUID()
+    const newTab: TableTab = {
+        id: tabId,
+        type: 'structure',
+        name: mode === 'create' ? 'New Table' : `Structure: ${name}`,
+        mode,
+        initialSchema: schema,
+        initialTableName: name,
+        results: null, // satisfying type
+        query: '' // satisfying type
+    }
+    setTabs(prev => [...prev, newTab])
+    setActiveTabId(tabId)
+    return newTab
+  }, [])
+
   const closeTab = useCallback((tabId: string) => {
     setTabs(prev => {
       const newTabs = prev.filter(t => t.id !== tabId)
@@ -90,6 +107,7 @@ export const useWorkspace = (initialTabs: TableTab[] = []) => {
     setSwitcherIndex,
     openTable,
     openQuery,
+    openStructure,
     closeTab,
     updateTab
   }

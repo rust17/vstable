@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { Settings } from 'lucide-react'
 import { TableTab, FilterCondition } from '../../../types/session'
 import { useTableData } from '../hooks/useTableData'
 import { ResultGrid } from '../shared/ResultGrid'
@@ -14,18 +15,18 @@ interface TableTabPaneProps {
   isActive: boolean
   onUpdateTab: (updates: Partial<TableTab>) => void
   connectionId: string
+  onOpenStructure: (schema: string, name: string) => void
 }
 
-export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpdateTab, connectionId }) => {
+export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpdateTab, connectionId, onOpenStructure }) => {
   const { data, loading, error, totalRows, fetchData, deleteRow, updateCell, insertRow } = useTableData(tab)
-  const [viewMode, setViewMode] = useState<'data' | 'structure'>('data')
   
   const [editingCell, setEditingCell] = useState<{ row: any, field: string, value: any, dataType?: string } | null>(null)
-  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, row: any } | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, row: any | null } | null>(null)
 
   // Initial fetch
   useEffect(() => {
-    if (isActive && !tab.results && viewMode === 'data') {
+    if (isActive && !tab.results) {
       fetchData(tab.page || 1, tab.pageSize || 100, tab.filters || [])
     }
   }, [isActive, tab.id, fetchData])
@@ -114,22 +115,6 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
       }
   }
 
-  if (viewMode === 'structure') {
-      return (
-          <div className="flex-1 flex flex-col h-full overflow-hidden">
-             <div className="flex items-center gap-2 p-2 border-b border-gray-200 bg-gray-50">
-                 <button onClick={() => setViewMode('data')} className="text-xs text-blue-600 hover:underline">Back to Data</button>
-             </div>
-             <StructureView 
-                connectionId={connectionId}
-                schema={tab.schema || 'public'}
-                tableName={tab.name}
-                onClose={() => setViewMode('data')}
-             />
-          </div>
-      )
-  }
-  
   const getEditValue = () => {
       if (!editingCell) return ''
       const { value, dataType } = editingCell
@@ -143,11 +128,15 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-      <div className="flex justify-end px-2 py-1 bg-gray-100 border-b border-gray-200">
-         <div className="flex bg-gray-200/50 p-0.5 rounded text-[10px]">
-            <button data-testid="tab-data" onClick={() => setViewMode('data')} className={`px-2 py-0.5 rounded ${viewMode === 'data' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>Data</button>
-            <button data-testid="tab-structure" onClick={() => setViewMode('structure')} className={`px-2 py-0.5 rounded ${viewMode === 'structure' ? 'bg-white shadow text-blue-600' : 'text-gray-500'}`}>Structure</button>
-         </div>
+      <div className="flex justify-end px-4 py-1.5 bg-gray-100/50 border-b border-gray-200">
+         <button 
+            data-testid="tab-structure" 
+            onClick={() => onOpenStructure(tab.schema || 'public', tab.name)} 
+            className="flex items-center gap-1.5 px-3 py-1 text-[11px] font-medium text-gray-500 hover:text-blue-600 hover:bg-white rounded transition-all border border-transparent hover:border-gray-200 hover:shadow-sm"
+         >
+            <Settings size={12} />
+            <span>Edit Structure</span>
+         </button>
       </div>
 
       <FilterBar
@@ -181,9 +170,7 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
             }
         }}
         onContextMenu={(e, row) => {
-           if (tab.pk) {
-               setContextMenu({ x: e.clientX, y: e.clientY, row })
-           }
+           setContextMenu({ x: e.clientX, y: e.clientY, row })
         }}
       />
 
@@ -217,11 +204,17 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
                       deleteRow(tab.pk, contextMenu.row[tab.pk]).then(res => {
                           if(res.success) handleRefresh()
                           else alert(res.error)
+                          setContextMenu(null)
                       })
                   }
               }
           }}
+          onAdd={() => {
+              handleStartAddRow()
+              setContextMenu(null)
+          }}
           onClose={() => setContextMenu(null)}
+          isRowSelected={!!contextMenu.row}
         />
       )}
     </div>

@@ -22,7 +22,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
   const { isConnected, config, sessionId, query, connect, disconnect } = useSession()
   const { 
     tabs, activeTabId, setActiveTabId, 
-    openTable, openQuery, closeTab, updateTab,
+    openTable, openQuery, openStructure, closeTab, updateTab,
     mruTabIds, showTabSwitcher, setShowTabSwitcher, switcherIndex, setSwitcherIndex
   } = useWorkspace()
   
@@ -31,12 +31,41 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
     fetchDatabases, fetchTables 
   } = useDatabaseMetadata()
 
-  const [showCreateTable, setShowCreateTable] = useState(false)
   const [showTableSearch, setShowTableSearch] = useState(false)
   const [showCreateDb, setShowCreateDb] = useState(false)
   const [isMaximized, setIsMaximized] = useState(false)
+  const [sidebarWidth, setSidebarWidth] = useState(256)
+  const [isResizing, setIsResizing] = useState(false)
 
   const activeTab = tabs.find(t => t.id === activeTabId)
+
+  // Update window title
+  useEffect(() => {
+    if (isActive && config.database) {
+      document.title = `${config.database} - QuickPG`
+    }
+  }, [isActive, config.database])
+
+  // Handle resizing
+  useEffect(() => {
+    if (!isResizing) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const newWidth = Math.max(150, Math.min(600, e.clientX))
+      setSidebarWidth(newWidth)
+    }
+
+    const handleMouseUp = () => {
+      setIsResizing(false)
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isResizing])
 
   const handleSwitchDatabase = async (db: string) => {
      if(db === config.database) return
@@ -142,8 +171,8 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
   return (
     <div data-testid={`session-view-${sessionId}`} className="flex h-full w-full overflow-hidden bg-white text-gray-900" style={{ display: isActive ? 'flex' : 'none' }}>
       {/* Sidebar */}
-      <div className={`${isMaximized ? 'hidden' : 'w-64'} bg-gray-50 border-r border-gray-200 flex flex-col`}>
-        <div data-testid="sidebar-scroll" className="p-4 flex-1 overflow-y-auto elastic-scroll overscroll-y-auto">
+      <div className={`${isMaximized ? 'hidden' : ''} bg-gray-50 border-r border-gray-200 flex flex-col relative`} style={{ width: isMaximized ? 0 : sidebarWidth }}>
+        <div data-testid="sidebar-scroll" className="flex-1 overflow-y-auto elastic-scroll overscroll-y-auto">
            <DatabaseTree
              databases={databases}
              schemas={schemas}
@@ -165,7 +194,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
              onSwitchDatabase={handleSwitchDatabase}
              onCreateDatabase={() => setShowCreateDb(true)}
              onDeleteDatabase={handleDeleteDatabase}
-             onCreateTable={() => setShowCreateTable(true)}
+             onCreateTable={() => openStructure(currentSchema, '', 'create')}
              onDeleteTable={async (schema, name) => {
                  if(confirm(`Delete table ${schema}.${name}?`)) {
                      await query(`DROP TABLE "${schema}"."${name}"`)
@@ -177,6 +206,12 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
         <div className="p-4 border-t border-gray-200 flex gap-2">
             <Settings size={16} className="text-gray-400 cursor-pointer hover:text-gray-600" />
         </div>
+
+        {/* Resize Handle */}
+        <div 
+           onMouseDown={() => setIsResizing(true)}
+           className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-400/50 transition-colors z-50 ${isResizing ? 'bg-blue-500' : ''}`}
+        />
       </div>
 
       {/* Main Content */}
@@ -203,7 +238,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
                         onDoubleClick={() => setIsMaximized(!isMaximized)}
                         className={`group flex items-center gap-2 px-3 py-1 text-[11px] font-medium rounded-md cursor-pointer transition-all border ${activeTabId === tab.id ? 'bg-white text-blue-600 shadow-sm border-gray-200' : 'bg-transparent text-gray-500 hover:bg-gray-200 border-transparent'}`}
                     >
-                        {tab.type === 'table' ? <TableIcon size={12} /> : <Play size={12} />}
+                        {tab.type === 'table' ? <TableIcon size={12} /> : tab.type === 'query' ? <Play size={12} /> : <Settings size={12} />}
                         <span className="truncate max-w-[100px]">{tab.name}</span>
                         <button
                             data-testid={`close-tab-${tab.name}`}
@@ -214,12 +249,6 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
                         </button>
                     </div>
                 ))}
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-                <button data-testid="btn-new-query" onClick={openQuery} className="p-1.5 hover:bg-gray-200 rounded-md text-gray-500 transition-colors flex items-center gap-1" title="New SQL Query">
-                    <Play size={14} />
-                    <span className="text-[10px] font-medium">Query</span>
-                </button>
             </div>
          </div>
 
@@ -238,12 +267,30 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
                             isActive={activeTabId === tab.id} 
                             onUpdateTab={(updates) => updateTab(tab.id, updates)} 
                             connectionId={sessionId}
+                            onOpenStructure={(schema, name) => openStructure(schema, name, 'edit')}
                         />
-                    ) : (
+                    ) : tab.type === 'query' ? (
                         <QueryTabPane 
                             tab={tab} 
                             isActive={activeTabId === tab.id} 
                             onUpdateTab={(updates) => updateTab(tab.id, updates)} 
+                        />
+                    ) : (
+                        <StructureView
+                            connectionId={sessionId}
+                            schema={tab.initialSchema || currentSchema}
+                            tableName={tab.initialTableName || ''}
+                            mode={tab.mode || 'edit'}
+                            onClose={() => closeTab(tab.id)}
+                            onSaveSuccess={(schema, name) => {
+                                updateTab(tab.id, { 
+                                    mode: 'edit', 
+                                    name: `Structure: ${name}`,
+                                    initialSchema: schema,
+                                    initialTableName: name
+                                })
+                                fetchTables()
+                            }}
                         />
                     )}
                 </div>
@@ -255,21 +302,6 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
             )}
          </div>
       </div>
-
-      {showCreateTable && (
-        <div className="fixed inset-0 z-[150] bg-white animate-in slide-in-from-bottom-10 duration-200">
-           <StructureView
-             connectionId={sessionId}
-             schema={currentSchema}
-             tableName=""
-             mode="create"
-             onClose={() => setShowCreateTable(false)}
-             onSaveSuccess={(schema, name) => {
-                 openTable(schema, name)
-             }}
-           />
-        </div>
-      )}
 
       <TabSwitcher 
         isOpen={showTabSwitcher}
