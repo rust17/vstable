@@ -164,7 +164,7 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
         }}
       />
 
-      <div className="flex justify-between items-center px-4 py-2 border-t border-gray-200 bg-gray-50 shrink-0">
+      <div className="h-12 flex justify-between items-center px-4 border-t border-gray-200 bg-gray-50 shrink-0">
         <div className="flex-1"></div>
         <PaginationControl
           page={tab.page || 1}
