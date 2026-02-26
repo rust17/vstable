@@ -2,6 +2,7 @@ import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { dbManager } from './db-manager'
+import * as store from './store'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -44,6 +45,24 @@ ipcMain.handle('db:disconnect', async (_, id) => {
 
 ipcMain.handle('db:query', async (_, { id, sql, params }) => {
   return await dbManager.query(id, sql, params)
+})
+
+// 存储 IPC 处理
+ipcMain.handle('store:get-all', () => {
+  const connections = store.getSavedConnections()
+  // 返回时解密密码，方便前端填充（仅在 IPC 通道传输）
+  return connections.map(c => ({
+    ...c,
+    password: c.encryptedPassword ? store.decryptPassword(c.encryptedPassword) : ''
+  }))
+})
+
+ipcMain.handle('store:save', (_, config) => {
+  store.saveConnection(config)
+})
+
+ipcMain.handle('store:delete', (_, id) => {
+  store.deleteConnection(id)
 })
 
 ipcMain.handle('window:toggle-maximize', (event) => {

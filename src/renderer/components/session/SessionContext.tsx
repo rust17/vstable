@@ -44,6 +44,11 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ id, onUpdateTi
       if (result.success) {
         setIsConnected(true)
         setConfig(newConfig)
+        // 连接成功后自动保存配置
+        await (window as any).api.saveConnection(newConfig)
+        if (onUpdateTitle) {
+          onUpdateTitle(newConfig.name || newConfig.host)
+        }
       } else {
         setError(result.error || 'Connection failed')
       }

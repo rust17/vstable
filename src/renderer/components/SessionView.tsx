@@ -172,7 +172,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
     <div data-testid={`session-view-${sessionId}`} className="flex h-full w-full overflow-hidden bg-white text-gray-900" style={{ display: isActive ? 'flex' : 'none' }}>
       {/* Sidebar */}
       <div className={`${isMaximized ? 'hidden' : ''} bg-gray-50 border-r border-gray-200 flex flex-col relative`} style={{ width: isMaximized ? 0 : sidebarWidth }}>
-        <div data-testid="sidebar-scroll" className="flex-1 overflow-y-auto elastic-scroll overscroll-y-auto">
+        <div className="flex-1 min-h-0 overflow-hidden">
            <DatabaseTree
              databases={databases}
              schemas={schemas}
@@ -218,13 +218,13 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
       <div className="flex-1 flex flex-col min-w-0">
          {/* Tab Bar */}
          <div 
-            className="border-b border-gray-100 flex items-center px-4 justify-between bg-gray-50/50 h-10 gap-2 select-none"
+            className="border-b border-gray-200 flex items-center px-2 justify-between bg-gray-50 h-10 gap-2 select-none overflow-hidden"
             onDoubleClick={(e) => {
                 if (e.target === e.currentTarget) setIsMaximized(!isMaximized)
             }}
          >
             <div 
-                className="flex items-center gap-1 overflow-x-auto no-drag scrollbar-hide flex-1 h-full"
+                className="flex items-end gap-0.5 overflow-x-auto no-drag scrollbar-hide flex-1 h-full"
                 onDoubleClick={(e) => {
                     if (e.target === e.currentTarget) setIsMaximized(!isMaximized)
                 }}
@@ -236,14 +236,14 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
                         data-active={activeTabId === tab.id}
                         onClick={() => setActiveTabId(tab.id)}
                         onDoubleClick={() => setIsMaximized(!isMaximized)}
-                        className={`group flex items-center gap-2 px-3 py-1 text-[11px] font-medium rounded-md cursor-pointer transition-all border ${activeTabId === tab.id ? 'bg-white text-blue-600 shadow-sm border-gray-200' : 'bg-transparent text-gray-500 hover:bg-gray-200 border-transparent'}`}
+                        className={`group flex items-center gap-2 px-3 h-[34px] text-[11px] font-medium rounded-t-md cursor-pointer transition-all border-x border-t ${activeTabId === tab.id ? 'bg-white text-blue-600 border-gray-200 -mb-[1px] z-10' : 'bg-transparent text-gray-500 hover:bg-gray-200/50 border-transparent'}`}
                     >
-                        {tab.type === 'table' ? <TableIcon size={12} /> : tab.type === 'query' ? <Play size={12} /> : <Settings size={12} />}
-                        <span className="truncate max-w-[100px]">{tab.name}</span>
+                        {tab.type === 'table' ? <TableIcon size={12} className={activeTabId === tab.id ? 'text-blue-500' : 'text-gray-400'} /> : tab.type === 'query' ? <Play size={12} className={activeTabId === tab.id ? 'text-blue-500' : 'text-gray-400'} /> : <Settings size={12} className={activeTabId === tab.id ? 'text-blue-500' : 'text-gray-400'} />}
+                        <span className="truncate max-w-[120px]">{tab.name}</span>
                         <button
                             data-testid={`close-tab-${tab.name}`}
                             onClick={(e) => { e.stopPropagation(); closeTab(tab.id) }}
-                            className={`p-0.5 rounded-full hover:bg-gray-300 text-gray-400 hover:text-gray-700 transition-opacity ${activeTabId === tab.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                            className={`p-0.5 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-700 transition-opacity ${activeTabId === tab.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
                         >
                             <X size={10} />
                         </button>

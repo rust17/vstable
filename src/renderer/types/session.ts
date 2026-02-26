@@ -6,6 +6,8 @@ export interface QueryResult {
 }
 
 export interface ConnectionConfig {
+  id?: string
+  name?: string
   host: string
   port: number
   user: string

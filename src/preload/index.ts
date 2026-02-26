@@ -9,7 +9,11 @@ if (process.contextIsolated) {
       connect: (id, config) => ipcRenderer.invoke('db:connect', { id, config }),
       query: (id, sql, params) => ipcRenderer.invoke('db:query', { id, sql, params }),
       disconnect: (id) => ipcRenderer.invoke('db:disconnect', id),
-      toggleMaximize: () => ipcRenderer.invoke('window:toggle-maximize')
+      toggleMaximize: () => ipcRenderer.invoke('window:toggle-maximize'),
+      // Store APIs
+      getSavedConnections: () => ipcRenderer.invoke('store:get-all'),
+      saveConnection: (config) => ipcRenderer.invoke('store:save', config),
+      deleteConnection: (id) => ipcRenderer.invoke('store:delete', id)
     })
   } catch (error) {
     console.error(error)

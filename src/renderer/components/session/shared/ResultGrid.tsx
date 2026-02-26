@@ -54,10 +54,10 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
             {fields.map((field, i) => {
               const colInfo = structure?.find(c => c.column_name === field.name)
               return (
-                <th key={i} className="px-3 py-2 border-r border-b border-gray-200 text-gray-600 font-bold whitespace-nowrap">
-                  <div className="flex flex-col">
-                    <span className="cursor-text">{field.name}</span>
-                    {colInfo && <span className="text-[9px] font-normal text-gray-400">{colInfo.data_type.replace(/ without time zone$/, '')}</span>}
+                <th key={i} className="px-4 py-2.5 border-r border-b border-gray-200 whitespace-nowrap bg-gray-50/80">
+                  <div className="flex flex-col items-start gap-1">
+                    <span className="cursor-text text-gray-700 font-bold">{field.name}</span>
+                    {colInfo && <span className="text-[10px] font-medium text-gray-500 bg-gray-200/60 rounded px-1.5 py-0.5">{colInfo.data_type.replace(/ without time zone$/, '')}</span>}
                   </div>
                 </th>
               )
@@ -91,7 +91,7 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
                         }
                     }}
                   >
-                    <div className="w-full h-full px-3 py-2 cursor-pointer">
+                    <div className="w-full h-full px-4 py-2.5 cursor-pointer">
                         <div className="max-h-20 overflow-hidden text-ellipsis whitespace-nowrap">
                             {formatDisplayValue(row[field.name], colInfo?.data_type) || <span className="text-gray-300 italic">null</span>}
                         </div>
@@ -112,7 +112,7 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
                     <input
                       autoFocus={!isAuto && j === 0}
                       disabled={!!isAuto}
-                      className={`w-full h-full px-3 py-2 text-xs bg-transparent focus:outline-none focus:bg-white placeholder:text-green-300/50 font-mono ${isAuto ? 'bg-gray-50/50 text-gray-400 cursor-not-allowed italic' : 'text-gray-700'}`}
+                      className={`w-full h-full px-4 py-2.5 text-xs bg-transparent focus:outline-none focus:bg-white placeholder:text-green-300/50 font-mono ${isAuto ? 'bg-gray-50/50 text-gray-400 cursor-not-allowed italic' : 'text-gray-700'}`}
                       placeholder={isAuto ? '(auto)' : field.name}
                       value={newRowData?.[field.name] || ''}
                       onChange={(e) => onNewRowChange && onNewRowChange(field.name, e.target.value)}
