@@ -168,10 +168,10 @@ const TypeSelector: React.FC<{ value: string; onChange: (val: string) => void }>
     <div className="relative" ref={containerRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between gap-1 px-2 py-1 bg-transparent border-b border-transparent hover:border-gray-300 text-blue-600 font-mono text-xs transition-colors"
+        className="w-full flex items-center justify-between gap-1 px-1 py-0.5 bg-transparent border-b border-transparent hover:border-gray-300 text-blue-600 font-mono text-sm transition-colors"
       >
         <span className="truncate">{value || 'Select Type'}</span>
-        <ChevronDown size={12} className={`shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={14} className={`shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
@@ -773,12 +773,14 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                         setContextMenu({ x: e.clientX, y: e.clientY, colId: col.id })
                       }}
                     >
-                      <td className="px-6 py-3 text-gray-400 text-xs font-mono cursor-move flex items-center gap-2">
-                        {mode === 'create' && <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"><div className="w-3 h-0.5 bg-gray-300"></div><div className="w-3 h-0.5 bg-gray-300"></div><div className="w-3 h-0.5 bg-gray-300"></div></div>}
-                        {idx + 1}
+                      <td className="px-6 py-3">
+                        <div className="text-gray-400 text-sm font-mono cursor-move flex items-center gap-2">
+                          {mode === 'create' && <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"><div className="w-3 h-0.5 bg-gray-300"></div><div className="w-3 h-0.5 bg-gray-300"></div><div className="w-3 h-0.5 bg-gray-300"></div></div>}
+                          {idx + 1}
+                        </div>
                       </td>
                       <td className="px-6 py-3">
-                          <div className="relative">
+                          <div className="relative flex items-center">
                             <input 
                                 value={col.name}
                                 onChange={e => handleColumnChange(col.id, 'name', e.target.value)}
@@ -892,7 +894,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                                         value={col.defaultValue}
                                         onChange={e => handleColumnChange(col.id, 'defaultValue', e.target.value)}
                                         placeholder="Value..."
-                                        className={`flex-1 bg-transparent border-none outline-none py-0.5 text-xs font-mono ${col.isDefaultExpression ? 'text-purple-600' : 'text-gray-700'}`}
+                                        className={`flex-1 bg-transparent border-none outline-none py-0.5 text-sm font-mono ${col.isDefaultExpression ? 'text-purple-600' : 'text-gray-700'}`}
                                         title={col.isDefaultExpression ? 'SQL Expression' : 'Literal Value'}
                                     />
                                     <button 
@@ -921,12 +923,14 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                         </div>
                     </td>
                     <td className="px-6 py-3">
-                        <input 
-                            value={col.comment || ''}
-                            onChange={e => handleColumnChange(col.id, 'comment', e.target.value)}
-                            placeholder="Comment..."
-                            className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-1 py-0.5 transition-colors text-xs text-gray-500"
-                        />
+                        <div className="flex items-center">
+                            <input 
+                                value={col.comment || ''}
+                                onChange={e => handleColumnChange(col.id, 'comment', e.target.value)}
+                                placeholder="Comment..."
+                                className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-1 py-0.5 transition-colors text-sm text-gray-500"
+                            />
+                        </div>
                     </td>
                     <td className="px-6 py-3 text-right">
                         <button 
