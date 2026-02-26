@@ -29,30 +29,31 @@ export const ConnectionForm: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 flex bg-gray-50/50 p-6 overflow-hidden gap-6">
+    <div className="flex-1 flex bg-white overflow-hidden h-full">
       {/* Sidebar - Saved Connections */}
-      <div className="w-64 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 border-b border-gray-50 bg-gray-50/30 flex items-center gap-2 text-gray-700 font-semibold">
-          <History size={16} />
-          <span className="text-sm">Saved Connections</span>
+      <div className="w-64 flex flex-col bg-gray-50 border-r border-gray-200">
+        <div className="h-10 px-4 flex items-center gap-2 text-gray-500 font-semibold border-b border-gray-200">
+          <History size={14} />
+          <span className="text-[11px] uppercase tracking-wider">Saved Connections</span>
         </div>
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
           {savedConnections.map(c => (
-            <div 
-              key={c.id} 
+            <div
+              key={c.id}
               onClick={() => setConfig({ ...c, id: c.id })}
-              className={`group p-3 rounded-lg cursor-pointer transition-all border ${config.id === c.id ? 'bg-blue-50 border-blue-100' : 'hover:bg-gray-50 border-transparent'}`}
+              onDoubleClick={() => connect({ ...c, id: c.id })}
+              className={`group px-3 py-2 rounded-md cursor-pointer transition-all border ${config.id === c.id ? 'bg-white border-gray-200 shadow-sm' : 'hover:bg-gray-200/50 border-transparent'}`}
             >
               <div className="flex items-center justify-between">
-                <span className={`text-xs font-medium truncate ${config.id === c.id ? 'text-blue-700' : 'text-gray-700'}`}>{c.name || c.host}</span>
-                <button 
+                <span className={`text-xs font-medium truncate ${config.id === c.id ? 'text-blue-600' : 'text-gray-700'}`}>{c.name || c.host}</span>
+                <button
                   onClick={(e) => handleDelete(e, c.id)}
                   className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded transition-all"
                 >
                   <Trash2 size={12} />
                 </button>
               </div>
-              <div className="text-[10px] text-gray-400 truncate mt-0.5">{c.user}@{c.host}:{c.port}</div>
+              <div className="text-[10px] text-gray-400 truncate mt-0.5">{c.user}@{c.host}</div>
             </div>
           ))}
           {savedConnections.length === 0 && (
@@ -61,50 +62,64 @@ export const ConnectionForm: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Form */}
-      <div className="flex-1 flex items-center justify-center overflow-y-auto">
-        <form data-testid="connection-form" onSubmit={handleSubmit} className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
-          <h3 className="text-xl font-semibold mb-6 text-gray-800 flex items-center gap-2">
-              <Database className="text-blue-600" /> Connection Settings
-          </h3>
-          <div className="space-y-4">
-            <div className="grid grid-cols-4 gap-4 items-center">
-                <label className="text-sm font-medium text-gray-600 col-span-1">Name</label>
-                <input className="col-span-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" 
-                  placeholder="e.g. Local Postgres"
-                  value={config.name || ''} onChange={e => setConfig({...config, name: e.target.value})} />
+      {/* Main Form Area */}
+      <div className="flex-1 flex items-center justify-center bg-white p-12 overflow-y-auto">
+        <div className="w-full max-w-sm mb-12">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="p-2 bg-blue-50 rounded-xl">
+              <Database className="text-blue-600" size={24} />
             </div>
-            <div className="grid grid-cols-4 gap-4 items-center">
-                <label className="text-sm font-medium text-gray-600 col-span-1">Host</label>
-                <input data-testid="input-host" className="col-span-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" 
-                  value={config.host} onChange={e => setConfig({...config, host: e.target.value})} required />
-            </div>
-            <div className="grid grid-cols-4 gap-4 items-center">
-                <label className="text-sm font-medium text-gray-600 col-span-1">Port</label>
-                <input data-testid="input-port" type="number" className="col-span-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" 
-                  value={config.port} onChange={e => setConfig({...config, port: parseInt(e.target.value)})} required />
-            </div>
-            <div className="grid grid-cols-4 gap-4 items-center">
-                <label className="text-sm font-medium text-gray-600 col-span-1">User</label>
-                <input data-testid="input-user" className="col-span-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" 
-                  value={config.user} onChange={e => setConfig({...config, user: e.target.value})} required />
-            </div>
-            <div className="grid grid-cols-4 gap-4 items-center">
-                <label className="text-sm font-medium text-gray-600 col-span-1">Password</label>
-                <input data-testid="input-password" type="password" className="col-span-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" 
-                  value={config.password || ''} onChange={e => setConfig({...config, password: e.target.value})} />
-            </div>
-            <div className="grid grid-cols-4 gap-4 items-center">
-                <label className="text-sm font-medium text-gray-600 col-span-1">Database</label>
-                <input data-testid="input-database" className="col-span-3 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" 
-                  value={config.database} onChange={e => setConfig({...config, database: e.target.value})} required />
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 leading-tight">Connect to PostgreSQL</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Enter your database server credentials</p>
             </div>
           </div>
-          {error && <div className="mt-6 p-3 bg-red-50 text-red-600 text-xs rounded-lg border border-red-100">{error}</div>}
-          <button data-testid="btn-connect" type="submit" disabled={loading} className="mt-8 w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm">
-              {loading ? 'Connecting...' : 'Connect'}
-          </button>
-        </form>
+
+          <form data-testid="connection-form" onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-4">
+              <div className="grid grid-cols-4 gap-4 items-baseline">
+                  <label className="text-[11px] font-semibold text-gray-400 uppercase text-right">Name</label>
+                  <input className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-gray-300"
+                    placeholder="Local DB"
+                    value={config.name || ''} onChange={e => setConfig({...config, name: e.target.value})} />
+              </div>
+
+              <div className="grid grid-cols-4 gap-4 items-baseline">
+                  <label className="text-[11px] font-semibold text-gray-400 uppercase text-right">Host</label>
+                  <input data-testid="input-host" className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                    value={config.host} onChange={e => setConfig({...config, host: e.target.value})} required />
+              </div>
+              <div className="grid grid-cols-4 gap-4 items-baseline">
+                  <label className="text-[11px] font-semibold text-gray-400 uppercase text-right">Port</label>
+                  <input data-testid="input-port" type="number" className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                    value={config.port} onChange={e => setConfig({...config, port: parseInt(e.target.value)})} required />
+              </div>
+              <div className="grid grid-cols-4 gap-4 items-baseline">
+                  <label className="text-[11px] font-semibold text-gray-400 uppercase text-right">User</label>
+                  <input data-testid="input-user" className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                    value={config.user} onChange={e => setConfig({...config, user: e.target.value})} required />
+              </div>
+              <div className="grid grid-cols-4 gap-4 items-baseline">
+                  <label className="text-[11px] font-semibold text-gray-400 uppercase text-right">Password</label>
+                  <input data-testid="input-password" type="password" className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                    value={config.password || ''} onChange={e => setConfig({...config, password: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-4 gap-4 items-baseline">
+                  <label className="text-[11px] font-semibold text-gray-400 uppercase text-right">Database</label>
+                  <input data-testid="input-database" className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                    value={config.database} onChange={e => setConfig({...config, database: e.target.value})} required />
+              </div>
+            </div>
+
+            {error && <div className="p-3 bg-red-50 text-red-600 text-[11px] rounded border border-red-100">{error}</div>}
+
+            <div className="pt-2">
+              <button data-testid="btn-connect" type="submit" disabled={loading} className="w-full px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-all shadow-sm active:scale-[0.98]">
+                  {loading ? 'Connecting...' : 'Connect'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   )

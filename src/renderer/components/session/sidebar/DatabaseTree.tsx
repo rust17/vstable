@@ -106,11 +106,11 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
   return (
     <div className="flex flex-col h-full overflow-hidden bg-white">
       {/* Fixed Header (Aligns with Tab Bar) */}
-      <div className="shrink-0 h-10 flex items-center px-3 border-b border-gray-200 bg-gray-50">
+      <div className="shrink-0 h-11 flex items-center px-2 border-b border-gray-200 bg-[#f8f9fa]">
         <div className="relative flex-1">
           <div 
             onClick={() => setDbListOpen(!dbListOpen)}
-            className="flex items-center justify-between px-2 py-1.5 rounded-md cursor-pointer hover:bg-gray-200/50 transition-all group"
+            className="flex items-center justify-between px-2 h-8 rounded-md cursor-pointer hover:bg-gray-200/50 transition-all group"
           >
             <div className="flex items-center gap-2 overflow-hidden">
               <Database size={14} className="text-blue-500 shrink-0" />
@@ -179,7 +179,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
       </div>
 
       {/* Fixed Secondary Controls (Aligns with right FilterBar default height) */}
-      <div className="shrink-0 px-3 flex flex-col justify-center gap-2 border-b border-gray-200/60 bg-white h-[94px]">
+      <div className="shrink-0 px-3 py-2 flex flex-col justify-center gap-2 border-b border-gray-200/60 bg-white min-h-[95px]">
         {/* Schema Selector */}
         <div className="relative">
           <div 
