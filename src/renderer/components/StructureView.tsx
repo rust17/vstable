@@ -666,7 +666,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
   return (
     <div className="flex flex-col h-full bg-gray-50/50 select-text">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200 mt-2">
+      <div className="flex items-center justify-between px-6 h-[94px] bg-white border-b border-gray-200">
         <div className="flex items-center gap-4">
           <div className="flex flex-col">
             {mode === 'create' ? (
@@ -713,7 +713,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-6 space-y-8 elastic-scroll">
+      <div className="flex-1 overflow-auto px-6 pt-4 pb-6 space-y-8 elastic-scroll">
         {error && (
             <div className="p-4 bg-red-50 text-red-600 rounded-lg border border-red-100 flex items-start gap-3">
                 <AlertCircle size={18} className="mt-0.5 shrink-0" />

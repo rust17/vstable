@@ -88,7 +88,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   }, [focusKey])
 
   return (
-    <div className="bg-white border-b border-gray-200/60 flex flex-col px-4 py-2 gap-2">
+    <div className="bg-white border-b border-gray-200/60 flex flex-col px-4 py-2 gap-2 min-h-[94px] justify-center">
       {filters.length > 0 && (
         <div className="flex flex-col gap-2">
           {filters.map((filter, index) => (
