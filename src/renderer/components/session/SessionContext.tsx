@@ -7,7 +7,7 @@ interface SessionContextType {
   config: ConnectionConfig
   loading: boolean
   error: string | null
-  
+
   // Actions
   connect: (config: ConnectionConfig) => Promise<QueryResult>
   disconnect: () => Promise<void>
@@ -47,7 +47,7 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ id, onUpdateTi
         // 连接成功后自动保存配置
         await (window as any).api.saveConnection(newConfig)
         if (onUpdateTitle) {
-          onUpdateTitle(newConfig.name || newConfig.host)
+          onUpdateTitle(newConfig.database || newConfig.host)
         }
       } else {
         setError(result.error || 'Connection failed')
@@ -73,7 +73,7 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ id, onUpdateTi
   const query = async (sql: string, params?: any[]) => {
     try {
       // Clear error on new query? Maybe component specific
-      // setError(null) 
+      // setError(null)
       const result = params
         ? await (window as any).api.query(id, sql, params)
         : await (window as any).api.query(id, sql)
