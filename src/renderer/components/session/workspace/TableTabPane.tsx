@@ -62,7 +62,7 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
 
   // Filter handlers
   const handleAddFilter = () => {
-    const newFilter: FilterCondition = { id: crypto.randomUUID(), column: '', operator: '=', value: '' }
+    const newFilter: FilterCondition = { id: crypto.randomUUID(), column: '', operator: '=', value: '', enabled: true }
     if (tab.structure && tab.structure.length > 0) {
       newFilter.column = tab.structure[0].column_name
     }
@@ -75,7 +75,7 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
     onUpdateTab({ filters: newFilters })
   }
 
-  const handleUpdateFilter = (id: string, field: keyof FilterCondition, val: string) => {
+  const handleUpdateFilter = (id: string, field: keyof FilterCondition, val: any) => {
     const newFilters = (tab.filters || []).map(f => f.id === id ? { ...f, [field]: val } : f)
     onUpdateTab({ filters: newFilters })
   }

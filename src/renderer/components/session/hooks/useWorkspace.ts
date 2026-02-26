@@ -38,7 +38,7 @@ export const useWorkspace = (initialTabs: TableTab[] = []) => {
       results: null,
       structure: [],
       query: `SELECT * FROM "${schema}"."${name}"`,
-      filters: [{ id: crypto.randomUUID(), column: '', operator: '=', value: '' }]
+      filters: [{ id: crypto.randomUUID(), column: '', operator: '=', value: '', enabled: true }]
     }
 
     setTabs(prev => [...prev, newTab])

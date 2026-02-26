@@ -9,16 +9,18 @@ interface CustomDropdownProps {
   className?: string
   listClassName?: string
   align?: 'left' | 'center'
+  testId?: string
+  disabled?: boolean
 }
 
-const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, options, onChange, className, listClassName, align = 'left' }) => {
+const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, options, onChange, className, listClassName, align = 'left', testId, disabled }) => {
   const [isOpen, setIsOpen] = useState(false)
   
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative ${className} ${disabled ? 'pointer-events-none' : ''}`} data-testid={testId}>
       <div 
-        onClick={() => setIsOpen(!isOpen)}
-        className={`px-3 py-1.5 cursor-pointer hover:bg-gray-100/50 transition-colors truncate flex items-center h-full ${align === 'center' ? 'justify-center' : ''}`}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        className={`px-3 py-1.5 cursor-pointer hover:bg-gray-100/50 transition-colors truncate flex items-center h-full ${align === 'center' ? 'justify-center' : ''} ${disabled ? 'cursor-not-allowed opacity-50' : ''}`}
       >
         {options.find(o => o.value === value)?.label || value}
       </div>
@@ -52,7 +54,7 @@ interface FilterBarProps {
   structure: any[]
   isAddingRow: boolean
   onAddFilter: () => void
-  onUpdateFilter: (id: string, field: keyof FilterCondition, val: string) => void
+  onUpdateFilter: (id: string, field: keyof FilterCondition, val: any) => void
   onRemoveFilter: (id: string) => void
   onApplyFilters: () => void
   onStartAddRow: () => void
@@ -91,28 +93,40 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         <div className="flex flex-col gap-2">
           {filters.map((filter, index) => (
             <div key={filter.id} data-testid={`filter-row-${index}`} className="flex items-center gap-2 w-full">
-              <div className="flex flex-1 items-center bg-gray-50 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-white transition-all focus-within:ring-1 focus-within:ring-blue-400/30 focus-within:bg-white focus-within:border-blue-300 overflow-visible h-[34px]">
+              <input
+                type="checkbox"
+                checked={filter.enabled}
+                onChange={e => onUpdateFilter(filter.id, 'enabled', e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer h-4 w-4"
+                title="Enable/Disable Filter"
+              />
+              <div className={`flex flex-1 items-center bg-gray-50 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-white transition-all focus-within:ring-1 focus-within:ring-blue-400/30 focus-within:bg-white focus-within:border-blue-300 overflow-visible h-[34px] ${!filter.enabled ? 'opacity-50' : ''}`}>
                 <CustomDropdown
+                  testId={`filter-column-${index}`}
                   className="text-[11px] border-r border-gray-100 min-w-[140px] font-medium text-gray-700 h-full"
                   value={filter.column}
                   options={structure.map(c => ({ label: c.column_name, value: c.column_name }))}
                   onChange={val => onUpdateFilter(filter.id, 'column', val)}
+                  disabled={!filter.enabled}
                 />
                 <CustomDropdown
+                  testId={`filter-operator-${index}`}
                   className="text-[11px] border-r border-gray-100 w-16 font-mono text-blue-600 h-full"
                   align="center"
                   value={filter.operator}
                   options={operators}
                   onChange={val => onUpdateFilter(filter.id, 'operator', val)}
+                  disabled={!filter.enabled}
                 />
                 <input
                   ref={index === 0 ? filterInputRef : null}
                   data-testid={index === 0 ? "filter-value-input" : `filter-value-${index}`}
                   type="text"
-                  className="flex-1 text-[11px] px-4 py-1.5 bg-transparent outline-none placeholder:text-gray-400 text-gray-700 h-full"
+                  className={`flex-1 text-[11px] px-4 py-1.5 bg-transparent outline-none placeholder:text-gray-400 text-gray-700 h-full ${!filter.enabled ? 'cursor-not-allowed' : ''}`}
                   placeholder="Filter by value..."
                   value={filter.value}
                   onChange={e => onUpdateFilter(filter.id, 'value', e.target.value)}
+                  disabled={!filter.enabled}
                   onKeyDown={e => {
                     if (e.key === 'Enter') onApplyFilters()
                   }}

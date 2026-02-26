@@ -21,7 +21,7 @@ export const useTableData = (tab: TableTab) => {
         
         let whereClause = ''
         if (filters.length > 0) {
-            const conditions = filters.filter(f => f.column && f.value).map(f => {
+            const conditions = filters.filter(f => f.enabled && f.column && f.value).map(f => {
             const val = f.value.replace(/'/g, "''")
             return `"${f.column}" ${f.operator} '${val}'`
             })
