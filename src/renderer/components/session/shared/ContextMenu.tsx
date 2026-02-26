@@ -8,9 +8,10 @@ interface ContextMenuProps {
   onAdd: () => void
   onClose: () => void
   isRowSelected: boolean
+  selectedCount?: number
 }
 
-export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onDelete, onAdd, onClose, isRowSelected }) => {
+export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onDelete, onAdd, onClose, isRowSelected, selectedCount = 1 }) => {
   useEffect(() => {
     const handleClick = () => onClose()
     window.addEventListener('click', handleClick)
@@ -28,7 +29,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onDelete, onAdd,
         onClick={() => { if (isRowSelected) { onDelete(); onClose(); } }}
         className={`w-full text-left px-3 py-2 text-xs flex items-center gap-2 font-medium transition-colors ${isRowSelected ? 'text-red-600 hover:bg-red-50' : 'text-gray-300 cursor-not-allowed'}`}
       >
-        <Trash2 size={14} /> Delete Row
+        <Trash2 size={14} /> {selectedCount > 1 ? `Delete ${selectedCount} Rows` : 'Delete Row'}
       </button>
       <button 
         disabled={isRowSelected}

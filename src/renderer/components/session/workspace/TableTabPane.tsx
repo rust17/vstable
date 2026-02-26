@@ -19,10 +19,10 @@ interface TableTabPaneProps {
 }
 
 export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpdateTab, connectionId, onOpenStructure }) => {
-  const { data, loading, error, totalRows, fetchData, deleteRow, updateCell, insertRow } = useTableData(tab)
+  const { data, loading, error, totalRows, fetchData, deleteRow, deleteRows, updateCell, insertRow } = useTableData(tab)
   
   const [editingCell, setEditingCell] = useState<{ row: any, field: string, value: any, dataType?: string } | null>(null)
-  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, row: any | null } | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, selectedRows: any[] } | null>(null)
 
   // Initial fetch
   useEffect(() => {
@@ -159,8 +159,8 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
                 setEditingCell({ row, field, value: val, dataType: type })
             }
         }}
-        onContextMenu={(e, row) => {
-           setContextMenu({ x: e.clientX, y: e.clientY, row })
+        onContextMenu={(e, selectedRows) => {
+           setContextMenu({ x: e.clientX, y: e.clientY, selectedRows })
         }}
       />
 
@@ -189,10 +189,16 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
         <ContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
+          selectedCount={contextMenu.selectedRows.length}
           onDelete={() => {
-              if (tab.pk && contextMenu.row) {
-                  if (window.confirm('Are you sure you want to delete this row?')) {
-                      deleteRow(tab.pk, contextMenu.row[tab.pk]).then(res => {
+              if (tab.pk && contextMenu.selectedRows.length > 0) {
+                  const message = contextMenu.selectedRows.length > 1 
+                      ? `Are you sure you want to delete these ${contextMenu.selectedRows.length} rows?` 
+                      : 'Are you sure you want to delete this row?'
+                  
+                  if (window.confirm(message)) {
+                      const pkValues = contextMenu.selectedRows.map(r => r[tab.pk!])
+                      deleteRows(tab.pk, pkValues).then(res => {
                           if(res.success) handleRefresh()
                           else alert(res.error)
                           setContextMenu(null)
@@ -205,7 +211,7 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
               setContextMenu(null)
           }}
           onClose={() => setContextMenu(null)}
-          isRowSelected={!!contextMenu.row}
+          isRowSelected={contextMenu.selectedRows.length > 0}
         />
       )}
     </div>

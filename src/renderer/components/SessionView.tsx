@@ -86,19 +86,26 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
     }
   }
 
-  const handleDeleteDatabase = async (name: string) => {
-      if (name === config.database) {
+  const handleDeleteDatabase = async (name: string | string[]) => {
+      const names = Array.isArray(name) ? name : [name]
+      if (names.includes(config.database)) {
           alert("Cannot delete the currently connected database.")
           return
       }
-      if (!confirm(`Are you sure you want to DELETE database "${name}"?`)) return
+      const message = names.length > 1 
+          ? `Are you sure you want to DELETE ${names.length} databases?` 
+          : `Are you sure you want to DELETE database "${names[0]}"?`
+          
+      if (!confirm(message)) return
 
-      const res = await query(`DROP DATABASE "${name}";`)
-      if (res.success) {
-          fetchDatabases()
-      } else {
-          alert('Failed to delete database: ' + res.error)
+      for (const n of names) {
+          const res = await query(`DROP DATABASE "${n}";`)
+          if (!res.success) {
+              alert(`Failed to delete database "${n}": ` + res.error)
+              break
+          }
       }
+      fetchDatabases()
   }
 
   // Handle keyboard shortcuts
@@ -196,9 +203,19 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
              onDeleteDatabase={handleDeleteDatabase}
              onCreateTable={() => openStructure(currentSchema, '', 'create')}
              onDeleteTable={async (schema, name) => {
-                 if(confirm(`Delete table ${schema}.${name}?`)) {
-                     await query(`DROP TABLE "${schema}"."${name}"`)
-                     fetchTables()
+                 const names = Array.isArray(name) ? name : [name]
+                 const message = names.length > 1 
+                     ? `Delete ${names.length} tables from ${schema}?` 
+                     : `Delete table ${schema}.${names[0]}?`
+                     
+                 if(confirm(message)) {
+                     const tableList = names.map(n => `"${schema}"."${n}"`).join(', ')
+                     const res = await query(`DROP TABLE ${tableList}`)
+                     if (res.success) {
+                        fetchTables()
+                     } else {
+                        alert('Failed to delete tables: ' + res.error)
+                     }
                  }
              }}
            />

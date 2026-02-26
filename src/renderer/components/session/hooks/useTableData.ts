@@ -61,6 +61,14 @@ export const useTableData = (tab: TableTab) => {
       return await query(sql)
   }
 
+  const deleteRows = async (pkColumn: string, pkValues: any[]) => {
+      const schema = tab.schema!
+      const name = tab.name
+      const vals = pkValues.map(v => `'${String(v).replace(/'/g, "''")}'`).join(', ')
+      const sql = `DELETE FROM "${schema}"."${name}" WHERE "${pkColumn}" IN (${vals});`
+      return await query(sql)
+  }
+
   const updateCell = async (pkColumn: string, pkValue: any, column: string, newValue: any) => {
       const schema = tab.schema!
       const name = tab.name
@@ -89,6 +97,7 @@ export const useTableData = (tab: TableTab) => {
     totalRows,
     fetchData,
     deleteRow,
+    deleteRows,
     updateCell,
     insertRow
   }

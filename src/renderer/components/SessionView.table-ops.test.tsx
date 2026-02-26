@@ -124,7 +124,7 @@ describe('SessionView Table Operations', () => {
     // Verify confirmation and DELETE SQL
     expect(window.confirm).toHaveBeenCalled()
     await waitFor(() => {
-        expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining("DELETE FROM \"public\".\"users\" WHERE \"id\" = '1'"))
+        expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining("DELETE FROM \"public\".\"users\" WHERE \"id\" IN ('1')"))
     })
   })
 

@@ -107,7 +107,9 @@ describe('SessionView Fix Tasks', () => {
 
     // The header should just show 'timestamp' not 'timestamp without time zone'
     await waitFor(() => {
-      const typeLabel = screen.getByText('timestamp')
+      const typeLabel = screen.getByText((content, element) => {
+        return element?.tagName.toLowerCase() === 'span' && content.trim() === 'timestamp'
+      })
       expect(typeLabel).toBeInTheDocument()
       expect(screen.queryByText('timestamp without time zone')).not.toBeInTheDocument()
     })
@@ -136,7 +138,9 @@ describe('SessionView Fix Tasks', () => {
     fireEvent.click(screen.getByTestId('table-item-users'))
 
     // Wait for PK to be loaded so the table becomes editable and the badge appears
-    await screen.findByText(/Editable \(PK: id\)/)
+    await waitFor(() => {
+      expect(screen.getByText((content) => content.includes('Editable (PK: id)'))).toBeInTheDocument()
+    }, { timeout: 3000 })
 
     const cell = await screen.findByTestId('cell-name-0')
     fireEvent.doubleClick(cell)
@@ -165,7 +169,9 @@ describe('SessionView Fix Tasks', () => {
     fireEvent.click(screen.getByTestId('table-item-users'))
 
     // Wait for PK to be loaded
-    await screen.findByText(/Editable \(PK: id\)/)
+    await waitFor(() => {
+        expect(screen.getByText((content) => content.includes('Editable (PK: id)'))).toBeInTheDocument()
+    }, { timeout: 3000 })
 
     const cell = await screen.findByTestId('cell-name-0')
     fireEvent.doubleClick(cell)
