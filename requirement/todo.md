@@ -295,6 +295,9 @@ add:
 ---
 
 add:
+    - [x] 适配支持mysql数据库
+
+add:
     - 数据表格标签
         - [ ] 鼠标放在上面应该展示表名
         - [ ] 鼠标右键应该弹出菜单，包括：Close、Close Others、Close All 和 Close Tabs to Right
