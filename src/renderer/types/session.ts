@@ -8,6 +8,7 @@ export interface QueryResult {
 export interface ConnectionConfig {
   id?: string
   name?: string
+  dialect?: 'postgres' | 'mysql'
   host: string
   port: number
   user: string

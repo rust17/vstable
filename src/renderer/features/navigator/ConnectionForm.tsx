@@ -70,13 +70,33 @@ export const ConnectionForm: React.FC = () => {
               <Database className="text-blue-600" size={24} />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900 leading-tight">Connect to PostgreSQL</h3>
+              <h3 className="text-lg font-bold text-gray-900 leading-tight">Connect to {config.dialect === 'mysql' ? 'MySQL' : 'PostgreSQL'}</h3>
               <p className="text-xs text-gray-500 mt-0.5">Enter your database server credentials</p>
             </div>
           </div>
 
           <form data-testid="connection-form" onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-4">
+              <div className="grid grid-cols-4 gap-4 items-baseline">
+                  <label className="text-[11px] font-semibold text-gray-400 uppercase text-right">Type</label>
+                  <div className="col-span-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setConfig({...config, dialect: 'postgres', port: 5432})}
+                      className={`flex-1 py-1.5 text-xs font-medium rounded-md border transition-all ${config.dialect !== 'mysql' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                    >
+                      PostgreSQL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfig({...config, dialect: 'mysql', port: 3306})}
+                      className={`flex-1 py-1.5 text-xs font-medium rounded-md border transition-all ${config.dialect === 'mysql' ? 'bg-orange-50 border-orange-200 text-orange-600' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                    >
+                      MySQL
+                    </button>
+                  </div>
+              </div>
+
               <div className="grid grid-cols-4 gap-4 items-baseline">
                   <label className="text-[11px] font-semibold text-gray-400 uppercase text-right">Name</label>
                   <input className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-gray-300"

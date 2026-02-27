@@ -1,55 +1,59 @@
-import { Pool } from 'pg'
-
-export interface QueryResult {
-  success: boolean
-  rows?: any[]
-  fields?: any[]
-  error?: string
-}
+import { BaseDriver, QueryResult } from './drivers/base-driver'
+import { PgDriver } from './drivers/pg-driver'
+import { MysqlDriver } from './drivers/mysql-driver'
 
 export class DbManager {
-  private pools: Map<string, Pool> = new Map()
+  private drivers: Map<string, BaseDriver> = new Map()
 
   async connect(id: string, config: any): Promise<QueryResult> {
     try {
-      if (this.pools.has(id)) {
-        await this.pools.get(id)!.end()
+      if (this.drivers.has(id)) {
+        await this.drivers.get(id)!.close()
+        this.drivers.delete(id)
       }
-      const pool = new Pool(config)
-      // Test connection
-      await pool.query('SELECT NOW()')
-      this.pools.set(id, pool)
-      return { success: true }
+
+      let driver: BaseDriver
+      const dialect = config.dialect || 'postgres'
+
+      if (dialect === 'mysql') {
+        driver = new MysqlDriver()
+      } else {
+        driver = new PgDriver()
+      }
+
+      const result = await driver.connect(config)
+      if (result.success) {
+        this.drivers.set(id, driver)
+      }
+      return result
     } catch (error: any) {
       return { success: false, error: error.message }
     }
   }
 
   async disconnect(id: string): Promise<QueryResult> {
-    if (this.pools.has(id)) {
-      await this.pools.get(id)!.end()
-      this.pools.delete(id)
+    const driver = this.drivers.get(id)
+    if (driver) {
+      const result = await driver.disconnect()
+      this.drivers.delete(id)
+      return result
     }
     return { success: true }
   }
 
   async query(id: string, sql: string, params?: any[]): Promise<QueryResult> {
-    const pool = this.pools.get(id)
-    if (!pool) return { success: false, error: 'No database connection' }
-    try {
-      const result = await pool.query(sql, params)
-      return { success: true, rows: result.rows, fields: result.fields }
-    } catch (error: any) {
-      return { success: false, error: error.message }
-    }
+    const driver = this.drivers.get(id)
+    if (!driver) return { success: false, error: 'No database connection' }
+    return driver.query(sql, params)
   }
 
   async closeAll(): Promise<void> {
-    for (const pool of this.pools.values()) {
-      await pool.end()
+    for (const driver of this.drivers.values()) {
+      await driver.close()
     }
-    this.pools.clear()
+    this.drivers.clear()
   }
 }
 
 export const dbManager = new DbManager()
+export type { QueryResult } from './drivers/base-driver'

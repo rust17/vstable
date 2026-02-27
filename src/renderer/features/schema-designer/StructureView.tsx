@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Plus, X, ArrowLeft, RefreshCw, Save, Database, Trash2, Key, Check, AlertCircle, Search, ChevronDown, Copy, RotateCcw, FileText } from 'lucide-react'
-import { generateAlterTableSql, generateCreateTableSql, ColumnDefinition, IndexDefinition } from '../../../core/pg/diff'
+import * as pgDiff from '../../../core/pg/diff'
+import * as mysqlDiff from '../../../core/mysql/diff'
+import { useSession } from '../../providers/SessionProvider'
+
+type ColumnDefinition = pgDiff.ColumnDefinition
+type IndexDefinition = pgDiff.IndexDefinition
 
 interface StructureViewProps {
   connectionId: string
@@ -323,13 +328,16 @@ const ColumnMultiSelect: React.FC<{
 }
 
 export const StructureView: React.FC<StructureViewProps> = ({ connectionId, schema: initialSchema, tableName: initialTableName, mode = 'edit', onClose, onSaveSuccess }) => {
+  const { config } = useSession()
+  const isMysql = config.dialect === 'mysql'
+
   const [columns, setColumns] = useState<ColumnDefinition[]>([])
   const [indexes, setIndexes] = useState<IndexDefinition[]>([])
   const [deletedColumns, setDeletedColumns] = useState<ColumnDefinition[]>([])
   const [deletedIndexes, setDeletedIndexes] = useState<IndexDefinition[]>([])
   
   const [newTableName, setNewTableName] = useState(initialTableName || '')
-  const [newSchema, setNewSchema] = useState(initialSchema || 'public')
+  const [newSchema, setNewSchema] = useState(initialSchema || (isMysql ? config.database : 'public'))
   const [availableSchemas, setAvailableSchemas] = useState<string[]>([])
 
   const [loading, setLoading] = useState(mode === 'edit')
@@ -348,9 +356,10 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
     if (mode === 'create') {
         // Just fetch schemas
         try {
-            const res = await (window as any).api.query(connectionId, `SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema', 'pg_catalog');`)
+            const sql = isMysql ? 'SHOW DATABASES;' : `SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema', 'pg_catalog');`
+            const res = await (window as any).api.query(connectionId, sql)
             if (res.success && res.rows) {
-                setAvailableSchemas(res.rows.map((r: any) => r.schema_name))
+                setAvailableSchemas(res.rows.map((r: any) => isMysql ? r.Database : r.schema_name))
             }
         } catch (e) {
             console.error(e)
@@ -360,10 +369,11 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
         setColumns([{
             id: crypto.randomUUID(),
             name: 'id',
-            type: 'serial',
+            type: isMysql ? 'int' : 'serial',
             nullable: false,
             defaultValue: null,
-            isPrimaryKey: true
+            isPrimaryKey: true,
+            isAutoIncrement: true
         }])
         return
     }
@@ -374,7 +384,9 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
     setDeletedIndexes([])
     try {
       // Fetch columns
-      const colRes = await (window as any).api.query(connectionId, `
+      const colSql = isMysql 
+        ? `SELECT column_name, data_type, is_nullable, column_default, extra, column_key, column_comment, character_maximum_length, numeric_precision, numeric_scale FROM information_schema.columns WHERE table_schema = '${initialSchema}' AND table_name = '${initialTableName}' ORDER BY ordinal_position;`
+        : `
         SELECT 
           c.column_name, 
           c.data_type, 
@@ -395,39 +407,70 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
         JOIN pg_namespace n ON n.oid = t.relnamespace AND n.nspname = c.table_schema
         WHERE c.table_schema = '${initialSchema}' AND c.table_name = '${initialTableName}' 
         ORDER BY c.ordinal_position;
-      `)
+      `
+      
+      const colRes = await (window as any).api.query(connectionId, colSql)
 
       if (!colRes.success) throw new Error(colRes.error)
 
       const cols = colRes.rows.map((row: any) => {
-        const isAuto = row.column_default?.includes('nextval')
+        let isAuto, isPk, isId, pkConstraintName, comment, length, precision, scale, type, name, nullable, defaultValue
+        
+        if (isMysql) {
+          name = row.COLUMN_NAME || row.column_name
+          type = row.DATA_TYPE || row.data_type
+          nullable = (row.IS_NULLABLE || row.is_nullable) === 'YES'
+          defaultValue = row.COLUMN_DEFAULT || row.column_default
+          isAuto = (row.EXTRA || row.extra)?.includes('auto_increment')
+          isPk = (row.COLUMN_KEY || row.column_key) === 'PRI'
+          isId = false
+          pkConstraintName = isPk ? 'PRIMARY' : undefined
+          comment = row.COLUMN_COMMENT || row.column_comment || ''
+          length = row.CHARACTER_MAXIMUM_LENGTH || row.character_maximum_length
+          precision = row.NUMERIC_PRECISION || row.numeric_precision
+          scale = row.NUMERIC_SCALE || row.numeric_scale
+        } else {
+          name = row.column_name
+          type = row.data_type
+          nullable = row.is_nullable === 'YES'
+          defaultValue = row.column_default
+          isAuto = row.column_default?.includes('nextval')
+          isPk = !!row.pk_constraint_name
+          isId = row.is_identity === 'YES'
+          pkConstraintName = row.pk_constraint_name
+          comment = row.column_comment || ''
+          length = row.character_maximum_length
+          precision = row.numeric_precision
+          scale = row.numeric_scale
+        }
+
         const col: ColumnDefinition = {
           id: crypto.randomUUID(),
-          name: row.column_name,
-          type: row.data_type,
-          length: row.character_maximum_length,
-          precision: row.numeric_precision,
-          scale: row.numeric_scale,
-          nullable: row.is_nullable === 'YES',
-          defaultValue: row.column_default,
-          isPrimaryKey: !!row.pk_constraint_name,
+          name,
+          type,
+          length,
+          precision,
+          scale,
+          nullable,
+          defaultValue,
+          isPrimaryKey: isPk,
           isAutoIncrement: isAuto,
-          isIdentity: row.is_identity === 'YES',
-          comment: row.column_comment || '',
-          pkConstraintName: row.pk_constraint_name,
+          isIdentity: isId,
+          comment,
+          pkConstraintName,
           _original: {
-            name: row.column_name,
-            type: row.data_type,
-            length: row.character_maximum_length,
-            precision: row.numeric_precision,
-            scale: row.numeric_scale,
-            nullable: row.is_nullable === 'YES',
-            defaultValue: row.column_default,
-            isPrimaryKey: !!row.pk_constraint_name,
+            name,
+            type,
+            length,
+            precision,
+            scale,
+            nullable,
+            defaultValue,
+            isPrimaryKey: isPk,
             isAutoIncrement: isAuto,
-            isIdentity: row.is_identity === 'YES',
-            comment: row.column_comment || '',
-            pkConstraintName: row.pk_constraint_name
+            isIdentity: isId,
+            comment,
+            pkConstraintName
           }
         }
         return col
@@ -436,7 +479,9 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
       setColumns(cols)
 
       // Fetch indexes
-      const idxRes = await (window as any).api.query(connectionId, `
+      const idxSql = isMysql
+        ? `SHOW INDEX FROM \`${initialTableName}\` FROM \`${initialSchema}\`;`
+        : `
         SELECT
             i.relname as index_name,
             array_agg(a.attname) as column_names,
@@ -451,33 +496,59 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
             t.relname = '${initialTableName}' AND n.nspname = '${initialSchema}'
         GROUP BY
             i.relname, ix.indisunique;
-      `)
+      `
+
+      const idxRes = await (window as any).api.query(connectionId, idxSql)
 
       if (idxRes.success) {
-        const idxs = idxRes.rows.map((row: any) => {
-          let cols: string[] = []
-          if (Array.isArray(row.column_names)) {
-            cols = row.column_names
-          } else if (typeof row.column_names === 'string') {
-            // Parse PG array string: {col1,col2}
-            cols = row.column_names.replace(/^\{|\}$/g, '').split(',').map(s => s.trim().replace(/^"|"$/g, '')).filter(Boolean)
-          }
-
-          return {
-            id: crypto.randomUUID(),
-            name: row.index_name,
-            columns: cols,
-            isUnique: row.is_unique,
-            _original: {
-              name: row.index_name,
-              columns: [...cols],
-              isUnique: row.is_unique
+        let idxs = []
+        if (isMysql) {
+          // Group by Key_name
+          const groups: Record<string, any> = {}
+          idxRes.rows.forEach((row: any) => {
+            const name = row.Key_name || row.key_name
+            if (!groups[name]) {
+              groups[name] = {
+                id: crypto.randomUUID(),
+                name,
+                columns: [],
+                isUnique: (row.Non_unique || row.non_unique) === 0 || (row.Non_unique || row.non_unique) === '0',
+                _original: {
+                   name,
+                   columns: [],
+                   isUnique: (row.Non_unique || row.non_unique) === 0 || (row.Non_unique || row.non_unique) === '0'
+                }
+              }
             }
-          }
-        })
+            const colName = row.Column_name || row.column_name
+            groups[name].columns.push(colName)
+            groups[name]._original.columns.push(colName)
+          })
+          idxs = Object.values(groups).filter(idx => idx.name !== 'PRIMARY')
+        } else {
+          idxs = idxRes.rows.map((row: any) => {
+            let cols: string[] = []
+            if (Array.isArray(row.column_names)) {
+              cols = row.column_names
+            } else if (typeof row.column_names === 'string') {
+              cols = row.column_names.replace(/^\{|\}$/g, '').split(',').map(s => s.trim().replace(/^"|"$/g, '')).filter(Boolean)
+            }
+
+            return {
+              id: crypto.randomUUID(),
+              name: row.index_name,
+              columns: cols,
+              isUnique: row.is_unique,
+              _original: {
+                name: row.index_name,
+                columns: [...cols],
+                isUnique: row.is_unique
+              }
+            }
+          })
+        }
         setIndexes(idxs)
       } else {
-        // Index query might fail on older PG versions or permissions, just warn?
         console.warn("Failed to fetch indexes", idxRes.error)
         setIndexes([])
       }
@@ -496,7 +567,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
     const newCol: ColumnDefinition = {
       id: crypto.randomUUID(),
       name: `new_column_${columns.length + 1}`,
-      type: 'varchar',
+      type: isMysql ? 'varchar' : 'varchar',
       nullable: true,
       defaultValue: null,
       isPrimaryKey: false
@@ -544,7 +615,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
     const newCol: ColumnDefinition = {
         id: crypto.randomUUID(),
         name: `new_column_${columns.length + 1}`,
-        type: 'varchar',
+        type: isMysql ? 'varchar' : 'varchar',
         nullable: true,
         defaultValue: null,
         isPrimaryKey: false
@@ -567,8 +638,8 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
   const handleCopyColumnSql = (id: string) => {
     const col = columns.find(c => c.id === id)
     if (!col) return
-    // Simple mock for now, we could use generateAlterTableSql for a single column
-    const sql = `ALTER TABLE "${initialSchema}"."${initialTableName}" ADD COLUMN "${col.name}" ${col.type};`
+    const quote = isMysql ? '`' : '"'
+    const sql = `ALTER TABLE ${quote}${initialSchema}${quote}.${quote}${initialTableName}${quote} ADD COLUMN ${quote}${col.name}${quote} ${col.type};`
     navigator.clipboard.writeText(sql)
   }
 
@@ -597,7 +668,6 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
     if (mode !== 'create') return
     setDraggedIdx(index)
     e.dataTransfer.effectAllowed = 'move'
-    // Optional: make it look better during drag
     const target = e.currentTarget as HTMLElement
     target.style.opacity = '0.4'
   }
@@ -638,12 +708,13 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
   }
 
   const generateSql = () => {
+      const diff = isMysql ? mysqlDiff : pgDiff
       if (mode === 'create') {
           if (!newTableName.trim()) return []
-          return generateCreateTableSql(newSchema, newTableName, columns, indexes)
+          return diff.generateCreateTableSql(newSchema, newTableName, columns, indexes)
       }
 
-      const sqls = generateAlterTableSql(
+      const sqls = diff.generateAlterTableSql(
           initialSchema, 
           initialTableName, 
           columns, 

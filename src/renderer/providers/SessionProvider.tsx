@@ -28,6 +28,7 @@ interface SessionProviderProps {
 export const SessionProvider: React.FC<SessionProviderProps> = ({ id, onUpdateTitle, children }) => {
   const [isConnected, setIsConnected] = useState(false)
   const [config, setConfig] = useState<ConnectionConfig>({
+    dialect: 'postgres',
     host: 'localhost',
     port: 5432,
     user: 'postgres',

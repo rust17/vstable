@@ -22,6 +22,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
   onCreateDatabase, onDeleteDatabase, onCreateTable, onDeleteTable 
 }) => {
   const { config } = useSession()
+  const isMysql = config.dialect === 'mysql'
   const [dbListOpen, setDbListOpen] = useState(false)
   const [schemaListOpen, setSchemaListOpen] = useState(false)
   const [tableFilter, setTableFilter] = useState('')
@@ -181,41 +182,43 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
       {/* Fixed Secondary Controls (Aligns with right FilterBar default height) */}
       <div className="shrink-0 px-3 py-2 flex flex-col justify-center gap-2 border-b border-gray-200/60 bg-white min-h-[95px]">
         {/* Schema Selector */}
-        <div className="relative">
-          <div 
-            onClick={() => setSchemaListOpen(!schemaListOpen)}
-            className="flex items-center justify-between px-3 h-[34px] bg-white border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition-all group"
-          >
-            <div className="flex items-center gap-2 overflow-hidden">
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-400/60" />
-              <span className="text-xs font-semibold text-gray-500 truncate">{currentSchema}</span>
-            </div>
-          </div>
-
-          {schemaListOpen && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setSchemaListOpen(false)} />
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100 max-h-[200px] overflow-y-auto py-1">
-                {schemas.map(s => (
-                  <div 
-                    key={s}
-                    className={`px-3 py-1.5 text-xs flex items-center justify-between hover:bg-gray-50 cursor-pointer ${s === currentSchema ? 'text-blue-600 bg-blue-50 font-medium' : 'text-gray-600'}`}
-                    onClick={() => {
-                      onSelectSchema(s)
-                      setSchemaListOpen(false)
-                    }}
-                  >
-                    <span className="truncate">{s}</span>
-                    {s === currentSchema && <Check size={10} />}
-                  </div>
-                ))}
+        {!isMysql && (
+          <div className="relative">
+            <div 
+              onClick={() => setSchemaListOpen(!schemaListOpen)}
+              className="flex items-center justify-between px-3 h-[34px] bg-white border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition-all group"
+            >
+              <div className="flex items-center gap-2 overflow-hidden">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-400/60" />
+                <span className="text-xs font-semibold text-gray-500 truncate">{currentSchema}</span>
               </div>
-            </>
-          )}
-        </div>
+            </div>
+
+            {schemaListOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setSchemaListOpen(false)} />
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100 max-h-[200px] overflow-y-auto py-1">
+                  {schemas.map(s => (
+                    <div 
+                      key={s}
+                      className={`px-3 py-1.5 text-xs flex items-center justify-between hover:bg-gray-50 cursor-pointer ${s === currentSchema ? 'text-blue-600 bg-blue-50 font-medium' : 'text-gray-600'}`}
+                      onClick={() => {
+                        onSelectSchema(s)
+                        setSchemaListOpen(false)
+                      }}
+                    >
+                      <span className="truncate">{s}</span>
+                      {s === currentSchema && <Check size={10} />}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Table Filter */}
-        {tables.length > 0 && (
+        {(tables.length > 0 || isMysql) && (
           <div className="shrink-0">
             <input
               type="text"
