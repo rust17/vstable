@@ -291,3 +291,10 @@ add:
         - [x] 表允许选中多行记录一起删除
     - 数据库列表
         - [x] 允许选中多个库一起删除
+
+---
+
+add:
+    - 数据表格标签
+        - [ ] 鼠标放在上面应该展示表名
+        - [ ] 鼠标右键应该弹出菜单，包括：Close、Close Others、Close All 和 Close Tabs to Right
