@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Plus, X, ArrowLeft, RefreshCw, Save, Database, Trash2, Key, Check, AlertCircle, Search, ChevronDown, Copy, RotateCcw, FileText } from 'lucide-react'
-import * as pgDiff from '../../../core/pg/diff'
-import * as mysqlDiff from '../../../core/mysql/diff'
+import { Plus, X, RefreshCw, Save, Database, Trash2, Key, Check, AlertCircle, Search, ChevronDown, Copy, RotateCcw, FileText } from 'lucide-react'
+import { DiffFactory } from '../../../core/factory'
 import { useSession } from '../../providers/SessionProvider'
-
-type ColumnDefinition = pgDiff.ColumnDefinition
-type IndexDefinition = pgDiff.IndexDefinition
+import { ColumnDefinition, IndexDefinition, Capabilities } from '../../types/session'
 
 interface StructureViewProps {
   connectionId: string
@@ -65,29 +62,6 @@ const ColumnContextMenu: React.FC<ColumnContextMenuProps> = ({ x, y, column, onC
     </div>
   )
 }
-
-const TYPE_GROUPS = [
-  {
-    label: 'Numeric',
-    types: ['integer', 'bigint', 'smallint', 'numeric', 'real', 'double precision', 'decimal', 'serial', 'bigserial']
-  },
-  {
-    label: 'String',
-    types: ['varchar', 'text', 'char', 'bpchar', 'uuid', 'enum']
-  },
-  {
-    label: 'Date/Time',
-    types: ['timestamp', 'timestamp with time zone', 'date', 'time', 'interval']
-  },
-  {
-    label: 'JSON',
-    types: ['json', 'jsonb']
-  },
-  {
-    label: 'Binary/Other',
-    types: ['boolean', 'bytea', 'xml', 'bit', 'varbit', 'inet', 'cidr', 'macaddr']
-  }
-]
 
 const EnumManagerModal: React.FC<{ 
     values: string[], 
@@ -149,7 +123,7 @@ const EnumManagerModal: React.FC<{
     )
 }
 
-const TypeSelector: React.FC<{ value: string; onChange: (val: string) => void }> = ({ value, onChange }) => {
+const TypeSelector: React.FC<{ value: string; capabilities: Capabilities | null; onChange: (val: string) => void }> = ({ value, capabilities, onChange }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
@@ -164,7 +138,8 @@ const TypeSelector: React.FC<{ value: string; onChange: (val: string) => void }>
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const filteredGroups = TYPE_GROUPS.map(group => ({
+  const groups = capabilities?.typeGroups || []
+  const filteredGroups = groups.map(group => ({
     ...group,
     types: group.types.filter(t => t.toLowerCase().includes(search.toLowerCase()))
   })).filter(group => group.types.length > 0)
@@ -247,7 +222,6 @@ const ColumnMultiSelect: React.FC<{
         const spaceBelow = window.innerHeight - rect.bottom
         const spaceAbove = rect.top
         
-        // If there's less than ~200px below and more space above, open upwards
         if (spaceBelow < 200 && spaceAbove > spaceBelow) {
             setCoords({
                 bottom: window.innerHeight - rect.top + 4,
@@ -328,8 +302,7 @@ const ColumnMultiSelect: React.FC<{
 }
 
 export const StructureView: React.FC<StructureViewProps> = ({ connectionId, schema: initialSchema, tableName: initialTableName, mode = 'edit', onClose, onSaveSuccess }) => {
-  const { config } = useSession()
-  const isMysql = config.dialect === 'mysql'
+  const { config, capabilities, buildQuery } = useSession()
 
   const [columns, setColumns] = useState<ColumnDefinition[]>([])
   const [indexes, setIndexes] = useState<IndexDefinition[]>([])
@@ -337,7 +310,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
   const [deletedIndexes, setDeletedIndexes] = useState<IndexDefinition[]>([])
   
   const [newTableName, setNewTableName] = useState(initialTableName || '')
-  const [newSchema, setNewSchema] = useState(initialSchema || (isMysql ? config.database : 'public'))
+  const [newSchema, setNewSchema] = useState(initialSchema || (capabilities?.supportsSchemas ? 'public' : config.database))
   const [availableSchemas, setAvailableSchemas] = useState<string[]>([])
 
   const [loading, setLoading] = useState(mode === 'edit')
@@ -351,25 +324,24 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null)
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
 
-  // Fetch initial structure
   const fetchStructure = async () => {
+    if (!capabilities) return
+
     if (mode === 'create') {
-        // Just fetch schemas
         try {
-            const sql = isMysql ? 'SHOW DATABASES;' : `SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema', 'pg_catalog');`
+            const sql = buildQuery(capabilities.supportsSchemas ? 'listSchemas' : 'listDatabases', {})
             const res = await (window as any).api.query(connectionId, sql)
             if (res.success && res.rows) {
-                setAvailableSchemas(res.rows.map((r: any) => isMysql ? r.Database : r.schema_name))
+                setAvailableSchemas(res.rows.map((r: any) => Object.values(r)[0]))
             }
         } catch (e) {
             console.error(e)
         }
         setLoading(false)
-        // Add a default ID column
         setColumns([{
             id: crypto.randomUUID(),
             name: 'id',
-            type: isMysql ? 'int' : 'serial',
+            type: capabilities.dialect === 'mysql' ? 'int' : 'serial',
             nullable: false,
             defaultValue: null,
             isPrimaryKey: true,
@@ -383,32 +355,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
     setDeletedColumns([])
     setDeletedIndexes([])
     try {
-      // Fetch columns
-      const colSql = isMysql 
-        ? `SELECT column_name, data_type, is_nullable, column_default, extra, column_key, column_comment, character_maximum_length, numeric_precision, numeric_scale FROM information_schema.columns WHERE table_schema = '${initialSchema}' AND table_name = '${initialTableName}' ORDER BY ordinal_position;`
-        : `
-        SELECT 
-          c.column_name, 
-          c.data_type, 
-          c.is_nullable, 
-          c.column_default,
-          c.ordinal_position,
-          c.character_maximum_length,
-          c.numeric_precision,
-          c.numeric_scale,
-          c.is_identity,
-          pg_catalog.col_description(t.oid, c.ordinal_position) as column_comment,
-          (SELECT kcu.constraint_name FROM information_schema.key_column_usage kcu 
-           JOIN information_schema.table_constraints tc ON kcu.constraint_name = tc.constraint_name 
-           WHERE kcu.table_schema = c.table_schema AND kcu.table_name = c.table_name 
-           AND kcu.column_name = c.column_name AND tc.constraint_type = 'PRIMARY KEY' LIMIT 1) as pk_constraint_name
-        FROM information_schema.columns c
-        JOIN pg_class t ON t.relname = c.table_name
-        JOIN pg_namespace n ON n.oid = t.relnamespace AND n.nspname = c.table_schema
-        WHERE c.table_schema = '${initialSchema}' AND c.table_name = '${initialTableName}' 
-        ORDER BY c.ordinal_position;
-      `
-      
+      const colSql = buildQuery('listColumns', { db: config.database, schema: initialSchema, table: initialTableName })
       const colRes = await (window as any).api.query(connectionId, colSql)
 
       if (!colRes.success) throw new Error(colRes.error)
@@ -416,7 +363,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
       const cols = colRes.rows.map((row: any) => {
         let isAuto, isPk, isId, pkConstraintName, comment, length, precision, scale, type, name, nullable, defaultValue
         
-        if (isMysql) {
+        if (capabilities.dialect === 'mysql') {
           name = row.COLUMN_NAME || row.column_name
           type = row.DATA_TYPE || row.data_type
           nullable = (row.IS_NULLABLE || row.is_nullable) === 'YES'
@@ -444,66 +391,33 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
           scale = row.numeric_scale
         }
 
-        const col: ColumnDefinition = {
+        return {
           id: crypto.randomUUID(),
-          name,
-          type,
-          length,
-          precision,
-          scale,
-          nullable,
-          defaultValue,
+          name, type, length, precision, scale, nullable, defaultValue,
           isPrimaryKey: isPk,
           isAutoIncrement: isAuto,
           isIdentity: isId,
           comment,
           pkConstraintName,
           _original: {
-            name,
-            type,
-            length,
-            precision,
-            scale,
-            nullable,
-            defaultValue,
+            name, type, length, precision, scale, nullable, defaultValue,
             isPrimaryKey: isPk,
             isAutoIncrement: isAuto,
             isIdentity: isId,
             comment,
             pkConstraintName
           }
-        }
-        return col
+        } as ColumnDefinition
       })
 
       setColumns(cols)
 
-      // Fetch indexes
-      const idxSql = isMysql
-        ? `SHOW INDEX FROM \`${initialTableName}\` FROM \`${initialSchema}\`;`
-        : `
-        SELECT
-            i.relname as index_name,
-            array_agg(a.attname) as column_names,
-            ix.indisunique as is_unique
-        FROM
-            pg_class t
-            JOIN pg_index ix ON t.oid = ix.indrelid
-            JOIN pg_class i ON i.oid = ix.indexrelid
-            JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
-            JOIN pg_namespace n ON n.oid = t.relnamespace
-        WHERE
-            t.relname = '${initialTableName}' AND n.nspname = '${initialSchema}'
-        GROUP BY
-            i.relname, ix.indisunique;
-      `
-
+      const idxSql = buildQuery('listIndexes', { db: config.database, schema: initialSchema, table: initialTableName })
       const idxRes = await (window as any).api.query(connectionId, idxSql)
 
       if (idxRes.success) {
         let idxs = []
-        if (isMysql) {
-          // Group by Key_name
+        if (capabilities.dialect === 'mysql') {
           const groups: Record<string, any> = {}
           idxRes.rows.forEach((row: any) => {
             const name = row.Key_name || row.key_name
@@ -547,9 +461,8 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
             }
           })
         }
-        setIndexes(idxs)
+        setIndexes(idxs as IndexDefinition[])
       } else {
-        console.warn("Failed to fetch indexes", idxRes.error)
         setIndexes([])
       }
     } catch (err: any) {
@@ -561,13 +474,13 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
 
   useEffect(() => {
     fetchStructure()
-  }, [connectionId, initialSchema, initialTableName, mode])
+  }, [connectionId, initialSchema, initialTableName, mode, capabilities])
 
   const handleAddColumn = () => {
     const newCol: ColumnDefinition = {
       id: crypto.randomUUID(),
       name: `new_column_${columns.length + 1}`,
-      type: isMysql ? 'varchar' : 'varchar',
+      type: capabilities?.dialect === 'mysql' ? 'varchar' : 'varchar',
       nullable: true,
       defaultValue: null,
       isPrimaryKey: false
@@ -605,7 +518,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
       ...rest,
       id: crypto.randomUUID(),
       name: `${col.name}_copy`
-    }])
+    } as any])
   }
 
   const handleInsertColumn = (id: string, position: 'before' | 'after') => {
@@ -615,7 +528,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
     const newCol: ColumnDefinition = {
         id: crypto.randomUUID(),
         name: `new_column_${columns.length + 1}`,
-        type: isMysql ? 'varchar' : 'varchar',
+        type: capabilities?.dialect === 'mysql' ? 'varchar' : 'varchar',
         nullable: true,
         defaultValue: null,
         isPrimaryKey: false
@@ -637,8 +550,8 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
 
   const handleCopyColumnSql = (id: string) => {
     const col = columns.find(c => c.id === id)
-    if (!col) return
-    const quote = isMysql ? '`' : '"'
+    if (!col || !capabilities) return
+    const quote = capabilities.quoteChar
     const sql = `ALTER TABLE ${quote}${initialSchema}${quote}.${quote}${initialTableName}${quote} ADD COLUMN ${quote}${col.name}${quote} ${col.type};`
     navigator.clipboard.writeText(sql)
   }
@@ -708,7 +621,8 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
   }
 
   const generateSql = () => {
-      const diff = isMysql ? mysqlDiff : pgDiff
+      if (!capabilities) return []
+      const diff = DiffFactory.get(capabilities.dialect)
       if (mode === 'create') {
           if (!newTableName.trim()) return []
           return diff.generateCreateTableSql(newSchema, newTableName, columns, indexes)
@@ -740,12 +654,10 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
 
       setExecuting(true)
       try {
-          // Execute each SQL
           for (const sql of sqls) {
               const res = await (window as any).api.query(connectionId, sql)
               if (!res.success) throw new Error(res.error)
           }
-          // Success
           setSqlPreview(null)
           if (mode === 'create') {
               if (onSaveSuccess) onSaveSuccess(newSchema, newTableName)
@@ -755,7 +667,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
           }
       } catch (e: any) {
           setError(e.message)
-          setSqlPreview(null) // Close modal to show error
+          setSqlPreview(null)
       } finally {
           setExecuting(false)
       }
@@ -770,7 +682,6 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
 
   return (
     <div className="flex flex-col h-full bg-white select-text">
-      {/* Header */}
       <div className="flex items-center justify-between px-6 h-[94px] bg-white border-b border-gray-200">
         <div className="flex items-center gap-4">
           <div className="flex flex-col">
@@ -783,7 +694,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                     >
                         {availableSchemas.length > 0 ? availableSchemas.map(s => (
                             <option key={s} value={s}>{s}</option>
-                        )) : <option value="public">public</option>}
+                        )) : <option value={capabilities?.supportsSchemas ? 'public' : config.database}>{capabilities?.supportsSchemas ? 'public' : config.database}</option>}
                     </select>
                     <span className="text-gray-300">/</span>
                     <input 
@@ -817,7 +728,6 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
         </div>
       </div>
 
-      {/* Content */}
       <div className="flex-1 overflow-auto space-y-8 elastic-scroll">
         {error && (
             <div className="mx-6 mt-4 p-4 bg-red-50 text-red-600 rounded-lg border border-red-100 flex items-start gap-3">
@@ -827,7 +737,6 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
             </div>
         )}
 
-        {/* Columns Section */}
         <div className="border-b border-gray-100">
           <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-[#f8f9fa] select-text">
             <h3 className="font-semibold text-gray-700 flex items-center gap-2">
@@ -902,6 +811,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                            <div className="flex items-center gap-1">
                                 <TypeSelector 
                                     value={col.type}
+                                    capabilities={capabilities}
                                     onChange={val => {
                                         handleColumnChange(col.id, 'type', val)
                                         if (val === 'enum') setEnumEditingColId(col.id)
@@ -1059,7 +969,6 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
           )}
         </div>
 
-        {/* Indexes Section */}
         <div className="bg-white border-b border-gray-100">
           <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-[#f8f9fa] select-text">
             <h3 className="font-semibold text-gray-700 flex items-center gap-2">
@@ -1141,10 +1050,9 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
               </div>
           )}
         </div>
-        <div className="h-20 shrink-0" /> {/* Bottom spacing */}
+        <div className="h-20 shrink-0" />
       </div>
 
-      {/* SQL Preview Modal */}
       {sqlPreview && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
               <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl border border-gray-200 flex flex-col max-h-[80vh] m-4 animate-in fade-in zoom-in duration-200">
@@ -1195,4 +1103,3 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
     </div>
   )
 }
-

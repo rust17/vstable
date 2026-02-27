@@ -2,54 +2,63 @@ import { useState, useEffect, useCallback } from 'react'
 import { useSession } from '../providers/SessionProvider'
 
 export const useDatabaseMetadata = () => {
-  const { sessionId, isConnected, query, config } = useSession()
+  const { sessionId, isConnected, query, config, capabilities, buildQuery } = useSession()
   const [databases, setDatabases] = useState<string[]>([])
-  const [schemas, setSchemas] = useState<string[]>(['public'])
-  const [currentSchema, setCurrentSchema] = useState('public')
+  const [schemas, setSchemas] = useState<string[]>([])
+  const [currentSchema, setCurrentSchema] = useState('')
   const [tables, setTables] = useState<{table_name: string, table_schema: string}[]>([])
 
+  // Initialize defaults based on capabilities
+  useEffect(() => {
+    if (capabilities) {
+      if (capabilities.supportsSchemas) {
+        setSchemas(['public'])
+        setCurrentSchema('public')
+      } else {
+        setSchemas([])
+        setCurrentSchema('')
+      }
+    }
+  }, [capabilities])
+
   const fetchDatabases = useCallback(async () => {
-    const isMysql = config.dialect === 'mysql'
-    const sql = isMysql 
-      ? 'SHOW DATABASES;'
-      : `SELECT datname FROM pg_database WHERE datistemplate = false ORDER BY datname;`
-    
+    if (!capabilities) return
+    const sql = buildQuery('listDatabases', {})
     const result = await query(sql)
     if (result.success && result.rows) {
-      setDatabases(result.rows.map((r: any) => isMysql ? Object.values(r)[0] : r.datname))
+      setDatabases(result.rows.map((r: any) => Object.values(r)[0]))
     }
-  }, [query, config.dialect])
+  }, [query, capabilities, buildQuery])
 
   const fetchSchemas = useCallback(async () => {
-    if (config.dialect === 'mysql') {
+    if (!capabilities || !capabilities.supportsSchemas || !capabilities.queryTemplates.listSchemas) {
       setSchemas([])
       return
     }
-    const result = await query(`SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('information_schema', 'pg_catalog') ORDER BY schema_name;`)
+    const sql = buildQuery('listSchemas', {})
+    const result = await query(sql)
     if (result.success && result.rows) {
-      const list = result.rows.map((r: any) => r.schema_name)
+      const list = result.rows.map((r: any) => Object.values(r)[0])
       setSchemas(list)
-      if (!list.includes(currentSchema)) setCurrentSchema('public')
+      if (!list.includes(currentSchema)) setCurrentSchema(list[0] || 'public')
     }
-  }, [query, currentSchema, config.dialect])
+  }, [query, currentSchema, capabilities, buildQuery])
 
   const fetchTables = useCallback(async () => {
-    const isMysql = config.dialect === 'mysql'
-    const sql = isMysql
-      ? `SHOW TABLES FROM \`${config.database}\`;`
-      : `SELECT table_name, table_schema FROM information_schema.tables WHERE table_schema = '${currentSchema}' ORDER BY table_name;`
-
+    if (!capabilities) return
+    const sql = buildQuery('listTables', { db: config.database, schema: currentSchema })
     const result = await query(sql)
     if (result.success && result.rows) {
       setTables(result.rows.map((r: any) => {
-        if (isMysql) {
-          const key = Object.keys(r)[0]
-          return { table_name: r[key], table_schema: config.database }
+        // Uniform mapping for table list
+        const vals = Object.values(r)
+        return { 
+          table_name: r.table_name || vals[0], 
+          table_schema: r.table_schema || currentSchema || config.database 
         }
-        return r
       }))
     }
-  }, [query, currentSchema, config.dialect, config.database])
+  }, [query, currentSchema, capabilities, buildQuery, config.database])
 
   useEffect(() => {
     if (isConnected) {

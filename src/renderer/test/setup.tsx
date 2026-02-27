@@ -18,11 +18,28 @@ if (typeof window !== 'undefined' && !window.crypto.randomUUID) {
 
 // Mock Electron API
 window.api = {
-  connect: vi.fn(),
+  connect: vi.fn().mockResolvedValue({ 
+    success: true, 
+    capabilities: { 
+      dialect: 'postgres', 
+      quoteChar: '"', 
+      supportsSchemas: true,
+      typeGroups: [],
+      queryTemplates: {
+        listDatabases: 'SELECT datname FROM pg_database;',
+        listSchemas: 'SELECT schema_name FROM information_schema.schemata;',
+        listTables: 'SELECT table_name FROM information_schema.tables WHERE table_schema = \'{{schema}}\';',
+        listColumns: 'SELECT column_name, data_type FROM information_schema.columns WHERE table_name = \'{{table}}\';',
+        listIndexes: 'SELECT index_name FROM pg_indexes WHERE tablename = \'{{table}}\';',
+        getPrimaryKey: 'SELECT kcu.column_name FROM information_schema.table_constraints tc JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name WHERE tc.constraint_type = \'PRIMARY KEY\' AND tc.table_name = \'{{table}}\';'
+      }
+    } 
+  }),
   query: vi.fn(),
   disconnect: vi.fn(),
   getSavedConnections: vi.fn().mockResolvedValue([]),
   deleteConnection: vi.fn().mockResolvedValue(true),
+  saveConnection: vi.fn().mockResolvedValue(true),
 }
 
 // Mock Monaco Editor

@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react'
-import { ConnectionConfig, QueryResult } from '../types/session'
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react'
+import { ConnectionConfig, QueryResult, Capabilities } from '../types/session'
 
 interface SessionContextType {
   sessionId: string
   isConnected: boolean
   config: ConnectionConfig
+  capabilities: Capabilities | null
   loading: boolean
   error: string | null
 
@@ -12,6 +13,7 @@ interface SessionContextType {
   connect: (config: ConnectionConfig) => Promise<QueryResult>
   disconnect: () => Promise<void>
   query: (sql: string, params?: any[]) => Promise<QueryResult>
+  buildQuery: (templateKey: keyof Capabilities['queryTemplates'], vars: Record<string, string>) => string
   updateTitle: (title: string) => void
   setError: (error: string | null) => void
   setConfig: (config: ConnectionConfig) => void
@@ -25,6 +27,39 @@ interface SessionProviderProps {
   children: ReactNode
 }
 
+const getInitialCapabilities = (dialect: string): Capabilities => {
+  if (dialect === 'mysql') {
+    return {
+      dialect: 'mysql',
+      quoteChar: '`',
+      supportsSchemas: false,
+      typeGroups: [],
+      queryTemplates: {
+        listDatabases: 'SHOW DATABASES;',
+        listTables: 'SHOW TABLES FROM `{{db}}`;',
+        listColumns: 'SELECT column_name FROM information_schema.columns WHERE table_schema = \'{{db}}\' AND table_name = \'{{table}}\';',
+        listIndexes: 'SHOW INDEX FROM `{{table}}` FROM `{{db}}`;',
+        getPrimaryKey: 'SELECT column_name FROM information_schema.columns WHERE table_schema = \'{{db}}\' AND table_name = \'{{table}}\' AND column_key = \'PRI\';'
+      }
+    }
+  }
+  // Default to Postgres
+  return {
+    dialect: 'postgres',
+    quoteChar: '"',
+    supportsSchemas: true,
+    typeGroups: [],
+    queryTemplates: {
+      listDatabases: 'SELECT datname FROM pg_database;',
+      listSchemas: 'SELECT schema_name FROM information_schema.schemata;',
+      listTables: 'SELECT table_name FROM information_schema.tables WHERE table_schema = \'{{schema}}\';',
+      listColumns: 'SELECT column_name, data_type FROM information_schema.columns WHERE table_name = \'{{table}}\';',
+      listIndexes: 'SELECT index_name FROM pg_index ix WHERE table_name = \'{{table}}\';',
+      getPrimaryKey: 'SELECT kcu.column_name FROM information_schema.table_constraints tc JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name WHERE tc.constraint_type = \'PRIMARY KEY\' AND tc.table_name = \'{{table}}\';'
+    }
+  }
+}
+
 export const SessionProvider: React.FC<SessionProviderProps> = ({ id, onUpdateTitle, children }) => {
   const [isConnected, setIsConnected] = useState(false)
   const [config, setConfig] = useState<ConnectionConfig>({
@@ -34,8 +69,18 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ id, onUpdateTi
     user: 'postgres',
     database: 'postgres'
   })
+  const [capabilities, setCapabilities] = useState<Capabilities | null>(getInitialCapabilities('postgres'))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const buildQuery = useCallback((templateKey: keyof Capabilities['queryTemplates'], vars: Record<string, string>): string => {
+    if (!capabilities) return ''
+    let sql = capabilities.queryTemplates[templateKey] || ''
+    Object.entries(vars).forEach(([k, v]) => {
+      sql = sql.replace(new RegExp(`{{${k}}}`, 'g'), v)
+    })
+    return sql
+  }, [capabilities])
 
   const connect = async (newConfig: ConnectionConfig) => {
     setLoading(true)
@@ -45,7 +90,11 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ id, onUpdateTi
       if (result.success) {
         setIsConnected(true)
         setConfig(newConfig)
-        // 连接成功后自动保存配置
+        if (result.capabilities) {
+           setCapabilities(result.capabilities)
+        } else {
+           setCapabilities(getInitialCapabilities(newConfig.dialect || 'postgres'))
+        }
         await (window as any).api.saveConnection(newConfig)
         if (onUpdateTitle) {
           onUpdateTitle(newConfig.database || newConfig.host)
@@ -66,6 +115,7 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ id, onUpdateTi
     try {
         await (window as any).api.disconnect(id)
         setIsConnected(false)
+        setCapabilities(getInitialCapabilities(config.dialect || 'postgres'))
     } catch (e) {
         console.error("Disconnect failed", e)
     }
@@ -73,15 +123,9 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ id, onUpdateTi
 
   const query = async (sql: string, params?: any[]) => {
     try {
-      // Clear error on new query? Maybe component specific
-      // setError(null)
       const result = params
         ? await (window as any).api.query(id, sql, params)
         : await (window as any).api.query(id, sql)
-      if (!result.success) {
-         // Optionally set global error here, but components might want to handle it locally
-         // For now, let's return it and let components decide
-      }
       return result
     } catch (err: any) {
       return { success: false, error: err.message }
@@ -93,11 +137,13 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ id, onUpdateTi
       sessionId: id,
       isConnected,
       config,
+      capabilities,
       loading,
       error,
       connect,
       disconnect,
       query,
+      buildQuery,
       updateTitle: onUpdateTitle,
       setError,
       setConfig

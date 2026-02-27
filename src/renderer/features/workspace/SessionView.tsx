@@ -19,7 +19,10 @@ interface SessionViewProps {
 }
 
 const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
-  const { isConnected, config, sessionId, query, connect, disconnect } = useSession()
+  const { isConnected, config, sessionId, query, buildQuery, connect, disconnect, capabilities } = useSession()
+  const q = capabilities?.quoteChar || '"'
+  const quote = (id: string) => `${q}${id}${q}`
+  
   const { 
     tabs, activeTabId, setActiveTabId, 
     openTable, openQuery, openStructure, closeTab, updateTab,
@@ -91,7 +94,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
 
   const handleCreateDatabase = async (name: string) => {
     setShowCreateDb(false)
-    const res = await query(`CREATE DATABASE "${name}";`)
+    const res = await query(`CREATE DATABASE ${quote(name)};`)
     if (res.success) {
         fetchDatabases()
         if (confirm(`Database "${name}" created. Switch to it?`)) {
@@ -115,7 +118,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
       if (!confirm(message)) return
 
       for (const n of names) {
-          const res = await query(`DROP DATABASE "${n}";`)
+          const res = await query(`DROP DATABASE ${quote(n)};`)
           if (!res.success) {
               alert(`Failed to delete database "${n}": ` + res.error)
               break
@@ -207,11 +210,15 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
                  const tab = openTable(schema, name)
                  // Ensure structure is loaded
                  if (!tab.structure || tab.structure.length === 0) {
-                     const res = await query(`SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = '${schema}' AND table_name = '${name}' ORDER BY ordinal_position;`)
+                     const colSql = buildQuery('listColumns', { db: config.database, schema, table: name })
+                     const res = await query(colSql)
                      if (res.success && res.rows) {
-                         const pkRes = await query(`SELECT kcu.column_name FROM information_schema.table_constraints tco JOIN information_schema.key_column_usage kcu ON kcu.constraint_name = tco.constraint_name AND kcu.constraint_schema = tco.constraint_schema WHERE tco.constraint_type = 'PRIMARY KEY' AND tco.table_schema = '${schema}' AND tco.table_name = '${name}';`)
-                         const pk = (pkRes.success && pkRes.rows && pkRes.rows.length > 0) ? pkRes.rows[0].column_name : null
-                         updateTab(tab.id, { structure: res.rows, pk })
+                         const pkSql = buildQuery('getPrimaryKey', { db: config.database, schema, table: name })
+                         const pkRes = await query(pkSql)
+                         const pk = (pkRes.success && pkRes.rows && pkRes.rows.length > 0) 
+                            ? (pkRes.rows[0].column_name || Object.values(pkRes.rows[0])[0]) 
+                            : null
+                         updateTab(tab.id, { structure: res.rows, pk: pk as string })
                      }
                  }
              }}
@@ -226,7 +233,10 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
                      : `Delete table ${schema}.${names[0]}?`
                      
                  if(confirm(message)) {
-                     const tableList = names.map(n => `"${schema}"."${n}"`).join(', ')
+                     const tableList = names.map(n => {
+                         if (capabilities?.supportsSchemas) return `${quote(schema)}.${quote(n)}`
+                         return quote(n)
+                     }).join(', ')
                      const res = await query(`DROP TABLE ${tableList}`)
                      if (res.success) {
                         fetchTables()

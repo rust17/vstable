@@ -3,6 +3,19 @@ export interface QueryResult {
   rows?: any[]
   fields?: any[]
   error?: string
+  capabilities?: Capabilities
+}
+
+export interface TypeGroup {
+  label: string
+  types: string[]
+}
+
+export interface Capabilities {
+  dialect: string
+  quoteChar: string
+  supportsSchemas: boolean
+  typeGroups: TypeGroup[]
 }
 
 export interface ConnectionConfig {

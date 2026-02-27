@@ -20,7 +20,7 @@ interface TableTabPaneProps {
 }
 
 export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpdateTab, connectionId, onOpenStructure }) => {
-  const { sessionId, query } = useSession()
+  const { sessionId, query, buildQuery, config, capabilities } = useSession()
   const { data, loading, error, totalRows, fetchData, deleteRow, deleteRows, updateCell, insertRow } = useTableData(tab)
   
   const [editingCell, setEditingCell] = useState<{ row: any, field: string, value: any, dataType?: string } | null>(null)
@@ -28,26 +28,24 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
 
   // Fetch PK if not present
   useEffect(() => {
-    if (!tab.pk && tab.name && tab.schema) {
+    if (!tab.pk && tab.name && (tab.schema || !capabilities?.supportsSchemas)) {
       const fetchPk = async () => {
-        const pkQuery = `
-          SELECT kcu.column_name
-          FROM information_schema.table_constraints tc
-          JOIN information_schema.key_column_usage kcu
-            ON tc.constraint_name = kcu.constraint_name
-            AND tc.table_schema = kcu.table_schema
-          WHERE tc.constraint_type = 'PRIMARY KEY'
-            AND tc.table_name = '${tab.name}'
-            AND tc.table_schema = '${tab.schema}';
-        `
+        const pkQuery = buildQuery('getPrimaryKey', {
+            db: config.database,
+            table: tab.name,
+            schema: tab.schema || config.database
+        })
+        if (!pkQuery) return
+
         const res = await query(pkQuery)
         if (res.success && res.rows && res.rows.length > 0) {
-          onUpdateTab({ pk: res.rows[0].column_name })
+          const pkCol = res.rows[0].column_name || Object.values(res.rows[0])[0]
+          onUpdateTab({ pk: pkCol as string })
         }
       }
       fetchPk()
     }
-  }, [tab.id, tab.name, tab.schema, tab.pk, query, onUpdateTab])
+  }, [tab.id, tab.name, tab.schema, tab.pk, query, onUpdateTab, capabilities, buildQuery, config.database])
 
   // Initial fetch
   useEffect(() => {

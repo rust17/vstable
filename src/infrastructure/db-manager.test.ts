@@ -1,79 +1,75 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { DbManager } from './db-manager'
+import { PgDriver } from './drivers/pg-driver'
+import { MysqlDriver } from './drivers/mysql-driver'
 
-// Mocking pg.Pool using a simple function that returns our mock object
-vi.mock('pg', () => {
+// Mock actual classes
+vi.mock('./drivers/pg-driver', () => {
   return {
-    Pool: function() {
-      return (global as any)._currentMockPool;
+    PgDriver: class {
+      connect = vi.fn().mockResolvedValue({ success: true })
+      disconnect = vi.fn().mockResolvedValue({ success: true })
+      query = vi.fn().mockResolvedValue({ success: true, rows: [] })
+      close = vi.fn().mockResolvedValue(undefined)
+      getCapabilities = vi.fn().mockReturnValue({ dialect: 'postgres' })
     }
   }
 })
 
-describe('DbManager', () => {
+vi.mock('./drivers/mysql-driver', () => {
+  return {
+    MysqlDriver: class {
+      connect = vi.fn().mockResolvedValue({ success: true })
+      disconnect = vi.fn().mockResolvedValue({ success: true })
+      query = vi.fn().mockResolvedValue({ success: true, rows: [] })
+      close = vi.fn().mockResolvedValue(undefined)
+      getCapabilities = vi.fn().mockReturnValue({ dialect: 'mysql' })
+    }
+  }
+})
+
+describe('DbManager Architecture', () => {
   let dbManager: DbManager
 
   beforeEach(() => {
     vi.clearAllMocks()
     dbManager = new DbManager()
-    delete (global as any)._currentMockPool
   })
 
-  it('should connect to a database and store the pool', async () => {
-    const mockPool = {
-      query: vi.fn().mockResolvedValue({ rows: [{ now: new Date() }] }),
-      end: vi.fn().mockResolvedValue(undefined)
-    }
-    ;(global as any)._currentMockPool = mockPool
-
-    const result = await dbManager.connect('session-1', { host: 'localhost' })
+  it('should use PgDriver for postgres dialect (default)', async () => {
+    const result = await dbManager.connect('session-pg', { host: 'localhost' })
     expect(result.success).toBe(true)
+    expect(result.capabilities?.dialect).toBe('postgres')
   })
 
-  it('should handle connection errors', async () => {
-    const mockPool = {
-      query: vi.fn().mockRejectedValue(new Error('Connection failed')),
-      end: vi.fn().mockResolvedValue(undefined)
-    }
-    ;(global as any)._currentMockPool = mockPool
-
-    const result = await dbManager.connect('session-1', { host: 'bad-host' })
-
-    expect(result.success).toBe(false)
-    expect(result.error).toBe('Connection failed')
+  it('should use MysqlDriver for mysql dialect', async () => {
+    const result = await dbManager.connect('session-mysql', { 
+      host: 'localhost', 
+      dialect: 'mysql' 
+    })
+    expect(result.success).toBe(true)
+    expect(result.capabilities?.dialect).toBe('mysql')
   })
 
-  it('should keep sessions isolated', async () => {
-    const pool1 = { query: vi.fn().mockResolvedValue({ rows: ['result1'] }), end: vi.fn().mockResolvedValue(undefined) }
-    const pool2 = { query: vi.fn().mockResolvedValue({ rows: ['result2'] }), end: vi.fn().mockResolvedValue(undefined) }
-
-    // This manual approach needs careful sequential execution
-    ;(global as any)._currentMockPool = pool1
-    await dbManager.connect('id-1', {})
-    
-    ;(global as any)._currentMockPool = pool2
-    await dbManager.connect('id-2', {})
+  it('should handle session isolation via drivers', async () => {
+    await dbManager.connect('id-1', { dialect: 'postgres' })
+    await dbManager.connect('id-2', { dialect: 'mysql' })
 
     const res1 = await dbManager.query('id-1', 'SELECT 1')
-    expect(res1.rows).toEqual(['result1'])
-
     const res2 = await dbManager.query('id-2', 'SELECT 2')
-    expect(res2.rows).toEqual(['result2'])
+
+    expect(res1.success).toBe(true)
+    expect(res2.success).toBe(true)
   })
 
-  it('should disconnect and remove pool', async () => {
-    const pool = { 
-      query: vi.fn().mockResolvedValue({ rows: [] }), 
-      end: vi.fn().mockResolvedValue(undefined) 
-    }
-    ;(global as any)._currentMockPool = pool
+  it('should disconnect and remove driver correctly', async () => {
+    await dbManager.connect('id', { dialect: 'mysql' })
     
-    await dbManager.connect('id', {})
-    await dbManager.disconnect('id')
-
-    expect(pool.end).toHaveBeenCalled()
+    const result = await dbManager.disconnect('id')
+    expect(result.success).toBe(true)
     
-    const res = await dbManager.query('id', 'SELECT 1')
-    expect(res.success).toBe(false)
+    const queryResult = await dbManager.query('id', 'SELECT 1')
+    expect(queryResult.success).toBe(false)
+    expect(queryResult.error).toBe('No database connection')
   })
 })

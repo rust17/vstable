@@ -3,14 +3,16 @@ import { useSession } from '../providers/SessionProvider'
 import { TableTab, FilterCondition } from '../types/session'
 
 export const useTableData = (tab: TableTab) => {
-  const { sessionId, query } = useSession()
+  const { sessionId, query, config: sessionConfig, capabilities } = useSession()
   const [data, setData] = useState<{rows: any[], fields: any[]} | null>(tab.results)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [totalRows, setTotalRows] = useState(tab.totalRows || 0)
+
+  const q = capabilities?.quoteChar || '"'
   
-  // Local state for filters/pagination if not managed by parent fully
-  // But ideally, tab state should be the source of truth
+  // Helper to quote identifiers
+  const quote = useCallback((id: string) => `${q}${id}${q}`, [q])
   
   const fetchData = useCallback(async (page: number, pageSize: number, filters: FilterCondition[]) => {
     setLoading(true)
@@ -19,31 +21,36 @@ export const useTableData = (tab: TableTab) => {
         const schema = tab.schema!
         const name = tab.name
         
+        const tableRef = capabilities?.supportsSchemas && schema 
+            ? `${quote(schema)}.${quote(name)}` 
+            : quote(name)
+
         let whereClause = ''
         if (filters.length > 0) {
             const conditions = filters.filter(f => f.enabled && f.column && f.value).map(f => {
             const val = f.value.replace(/'/g, "''")
-            return `"${f.column}" ${f.operator} '${val}'`
+            return `${quote(f.column!)} ${f.operator} '${val}'`
             })
             if (conditions.length > 0) {
             whereClause = ` WHERE ${conditions.join(' AND ')}`
             }
         }
 
-        const countRes = await query(`SELECT COUNT(*) FROM "${schema}"."${name}"${whereClause};`)
+        const countRes = await query(`SELECT COUNT(*) as count FROM ${tableRef}${whereClause};`)
         let total = 0
         if (countRes.success && countRes.rows) {
-            total = parseInt(countRes.rows[0].count || '0')
+            const row = countRes.rows[0]
+            total = parseInt(row.count || row['COUNT(*)'] || Object.values(row)[0] || '0')
         }
         setTotalRows(total)
 
         const offset = (page - 1) * pageSize
         let orderByClause = ''
         if (tab.pk) {
-            orderByClause = ` ORDER BY "${tab.pk}" ASC`
+            orderByClause = ` ORDER BY ${quote(tab.pk)} ASC`
         }
-        const q = `SELECT * FROM "${schema}"."${name}"${whereClause}${orderByClause} LIMIT ${pageSize} OFFSET ${offset};`
-        const res = await query(q)
+        const sql = `SELECT * FROM ${tableRef}${whereClause}${orderByClause} LIMIT ${pageSize} OFFSET ${offset};`
+        const res = await query(sql)
         
         if (res.success) {
             setData({ rows: res.rows || [], fields: res.fields || [] })
@@ -55,43 +62,50 @@ export const useTableData = (tab: TableTab) => {
     } finally {
         setLoading(false)
     }
-  }, [sessionId, tab.schema, tab.name, tab.pk])
+  }, [sessionId, tab.schema, tab.name, tab.pk, capabilities, quote, query])
 
   const deleteRow = async (pkColumn: string, pkValue: any) => {
       const schema = tab.schema!
       const name = tab.name
+      const tableRef = capabilities?.supportsSchemas && schema ? `${quote(schema)}.${quote(name)}` : quote(name)
       const val = String(pkValue).replace(/'/g, "''")
-      const sql = `DELETE FROM "${schema}"."${name}" WHERE "${pkColumn}" = '${val}';`
+      const sql = `DELETE FROM ${tableRef} WHERE ${quote(pkColumn)} = '${val}';`
       return await query(sql)
   }
 
   const deleteRows = async (pkColumn: string, pkValues: any[]) => {
       const schema = tab.schema!
       const name = tab.name
+      const tableRef = capabilities?.supportsSchemas && schema ? `${quote(schema)}.${quote(name)}` : quote(name)
       const vals = pkValues.map(v => `'${String(v).replace(/'/g, "''")}'`).join(', ')
-      const sql = `DELETE FROM "${schema}"."${name}" WHERE "${pkColumn}" IN (${vals});`
+      const sql = `DELETE FROM ${tableRef} WHERE ${quote(pkColumn)} IN (${vals});`
       return await query(sql)
   }
 
   const updateCell = async (pkColumn: string, pkValue: any, column: string, newValue: any) => {
       const schema = tab.schema!
       const name = tab.name
+      const tableRef = capabilities?.supportsSchemas && schema ? `${quote(schema)}.${quote(name)}` : quote(name)
       const val = String(newValue).replace(/'/g, "''")
       const pkVal = String(pkValue).replace(/'/g, "''")
-      const sql = `UPDATE "${schema}"."${name}" SET "${column}" = '${val}' WHERE "${pkColumn}" = '${pkVal}';`
+      const sql = `UPDATE ${tableRef} SET ${quote(column)} = '${val}' WHERE ${quote(pkColumn)} = '${pkVal}';`
       return await query(sql)
   }
   
   const insertRow = async (rowData: Record<string, any>) => {
       const schema = tab.schema!
       const name = tab.name
+      const tableRef = capabilities?.supportsSchemas && schema ? `${quote(schema)}.${quote(name)}` : quote(name)
       const columns = Object.keys(rowData)
       if (columns.length === 0) {
-          return await query(`INSERT INTO "${schema}"."${name}" DEFAULT VALUES;`)
+          const sql = sessionConfig.dialect === 'mysql'
+            ? `INSERT INTO ${tableRef} () VALUES ();` 
+            : `INSERT INTO ${tableRef} DEFAULT VALUES;`
+          return await query(sql)
       }
-      const cols = columns.map(c => `"${c}"`).join(', ')
+      const cols = columns.map(c => quote(c)).join(', ')
       const vals = columns.map(c => `'${String(rowData[c]).replace(/'/g, "''")}'`).join(', ')
-      return await query(`INSERT INTO "${schema}"."${name}" (${cols}) VALUES (${vals});`)
+      return await query(`INSERT INTO ${tableRef} (${cols}) VALUES (${vals});`)
   }
 
   return {

@@ -1,11 +1,11 @@
-import { BaseDriver, QueryResult } from './drivers/base-driver'
+import { BaseDriver, QueryResult, Capabilities } from './drivers/base-driver'
 import { PgDriver } from './drivers/pg-driver'
 import { MysqlDriver } from './drivers/mysql-driver'
 
 export class DbManager {
   private drivers: Map<string, BaseDriver> = new Map()
 
-  async connect(id: string, config: any): Promise<QueryResult> {
+  async connect(id: string, config: any): Promise<QueryResult & { capabilities?: Capabilities }> {
     try {
       if (this.drivers.has(id)) {
         await this.drivers.get(id)!.close()
@@ -24,11 +24,16 @@ export class DbManager {
       const result = await driver.connect(config)
       if (result.success) {
         this.drivers.set(id, driver)
+        return { ...result, capabilities: driver.getCapabilities() }
       }
       return result
     } catch (error: any) {
       return { success: false, error: error.message }
     }
+  }
+
+  getCapabilities(id: string): Capabilities | undefined {
+    return this.drivers.get(id)?.getCapabilities()
   }
 
   async disconnect(id: string): Promise<QueryResult> {

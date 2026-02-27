@@ -1,7 +1,7 @@
-
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { StructureView } from './StructureView'
 import { vi } from 'vitest'
+import { SessionProvider } from '../../providers/SessionProvider'
 
 describe('StructureView Component', () => {
   const defaultProps = {
@@ -9,6 +9,14 @@ describe('StructureView Component', () => {
     schema: 'public',
     tableName: 'users',
     onClose: vi.fn(),
+  }
+
+  const renderWithProvider = (ui: React.ReactElement) => {
+    return render(
+      <SessionProvider id="test-session" onUpdateTitle={vi.fn()}>
+        {ui}
+      </SessionProvider>
+    )
   }
 
   beforeEach(() => {
@@ -40,7 +48,7 @@ describe('StructureView Component', () => {
       return Promise.resolve({ success: true, rows: [] })
     })
 
-    render(<StructureView {...defaultProps} />)
+    renderWithProvider(<StructureView {...defaultProps} />)
     await waitFor(() => expect(screen.queryByText(/Loading structure/i)).not.toBeInTheDocument())
 
     expect(screen.getByDisplayValue('id')).toBeInTheDocument()
@@ -61,7 +69,7 @@ describe('StructureView Component', () => {
       return Promise.resolve({ success: true, rows: [] })
     })
 
-    render(<StructureView {...defaultProps} />)
+    renderWithProvider(<StructureView {...defaultProps} />)
     await waitFor(() => expect(screen.queryByText(/Loading structure/i)).not.toBeInTheDocument())
 
     expect(screen.getByDisplayValue('string_idx')).toBeInTheDocument()
@@ -72,7 +80,7 @@ describe('StructureView Component', () => {
   it('handles adding and deleting columns', async () => {
      ;(window as any).api.query.mockResolvedValue({ success: true, rows: [] })
      
-     render(<StructureView {...defaultProps} />)
+     renderWithProvider(<StructureView {...defaultProps} />)
      await waitFor(() => expect(screen.queryByText(/Loading structure/i)).not.toBeInTheDocument())
 
      const addBtn = screen.getByRole('button', { name: /Add Column/i })
@@ -94,7 +102,7 @@ describe('StructureView Component', () => {
   it('handles adding and deleting indexes', async () => {
     ;(window as any).api.query.mockResolvedValue({ success: true, rows: [] })
     
-    render(<StructureView {...defaultProps} />)
+    renderWithProvider(<StructureView {...defaultProps} />)
     await waitFor(() => expect(screen.queryByText(/Loading structure/i)).not.toBeInTheDocument())
 
     fireEvent.click(screen.getByTestId('btn-add-index'))
@@ -123,7 +131,7 @@ describe('StructureView Component', () => {
         return Promise.resolve({ success: true, rows: [] })
     })
 
-    render(<StructureView {...defaultProps} />)
+    renderWithProvider(<StructureView {...defaultProps} />)
     await waitFor(() => expect(screen.queryByText(/Loading structure/i)).not.toBeInTheDocument())
 
     const addBtn = screen.getByRole('button', { name: /Add Column/i })
@@ -153,7 +161,7 @@ describe('StructureView Component', () => {
 
   it('validates column names', async () => {
     ;(window as any).api.query.mockResolvedValue({ success: true, rows: [] })
-    render(<StructureView {...defaultProps} />)
+    renderWithProvider(<StructureView {...defaultProps} />)
     await waitFor(() => expect(screen.queryByText(/Loading structure/i)).not.toBeInTheDocument())
 
     const addBtn = screen.getByRole('button', { name: /Add Column/i })
@@ -185,7 +193,7 @@ describe('StructureView Component', () => {
       return Promise.resolve({ success: true, rows: [] })
     })
 
-    render(<StructureView {...defaultProps} />)
+    renderWithProvider(<StructureView {...defaultProps} />)
     await waitFor(() => expect(screen.queryByText(/Loading structure/i)).not.toBeInTheDocument())
 
     expect(screen.getByDisplayValue('Primary ID')).toBeInTheDocument()
