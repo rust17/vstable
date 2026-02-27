@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Plus, X, ArrowLeft, RefreshCw, Save, Database, Trash2, Key, Check, AlertCircle, Search, ChevronDown, Copy, RotateCcw, FileText } from 'lucide-react'
-import { generateAlterTableSql, generateCreateTableSql, ColumnDefinition, IndexDefinition } from '../utils/sql-generator'
+import { generateAlterTableSql, generateCreateTableSql, ColumnDefinition, IndexDefinition } from '../../../core/pg/diff'
 
 interface StructureViewProps {
   connectionId: string

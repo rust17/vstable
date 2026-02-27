@@ -1,22 +1,32 @@
-# 数据表格功能实现原理总结
+# QuickPG 架构实现原理 (v2.0)
 
-## 核心架构
-- **主进程 (Main Process)**: `DbManager` 通过 `pg` 连接池管理数据库连接，执行原生 SQL。
-- **通信层 (IPC)**: `preload/index.ts` 暴露 `connect`, `query` 等接口；渲染进程通过 `SessionContext` 封装调用。
-- **状态管理**: `useWorkspace` 维护标签页（Tab）生命周期及其持久化状态（分页、过滤）；`useTableData` 负责单一表格的数据流与 DML 操作。
+## 核心架构：引擎与透镜 (Engine & Lens)
+遵循“逻辑引擎化、视图功能区化”原则，实现 PostgreSQL 领域逻辑与 UI 框架的彻底解耦。
 
-## 关键模块实现
-- **数据加载与分页**: `useTableData` 动态拼接 `SELECT ... LIMIT ... OFFSET`，并同步执行 `COUNT` 获取总行数。
-- **过滤系统**: `FilterBar` 管理条件列表，`useTableData` 将其解析为 `WHERE` 子句（包含字符串转义防御）。
-- **数据编辑 (DML)**: 
-    - **更新/删除**: 强依赖表元数据中的主键（PK）。通过 `UPDATE/DELETE ... WHERE "pk" = 'val'` 确保操作精确性。
-    - **新增**: 在 `ResultGrid` 底部渲染输入行，自动识别 `serial` 等自增字段。
-- **结构管理 (DDL)**: `sql-generator.ts` 采用 **Diff 算法** 对比 `_original` 状态，生成精确的 `ALTER TABLE` 语句序列（涵盖重命名、类型转换、索引变更）。
-- **元数据驱动**: 深度依赖 PostgreSQL 的 `information_schema` 获取列类型、约束和注释，驱动 UI 渲染逻辑。
+### 1. 领域引擎层 (Core Engine) - `src/core/`
+- **纯逻辑实现**：不依赖 React/Electron，负责 PG 协议相关的核心计算。
+- **Diff 引擎 (`pg/diff.ts`)**：对比表结构状态，生成精确的 `ALTER TABLE` 语句序列。
+- **数据格式化 (`pg/format.ts`)**：处理 JSON 序列化、时间戳友好显示等类型转换。
 
-## 辅助逻辑
-- **格式化**: `format.ts` 处理 `JSON` 序列化和 `Timestamp` 友好显示。
-- **交互渲染**: `ResultGrid` 实现粘性表头、单元格双击编辑、右键上下文菜单。
+### 2. 基础设施层 (Infrastructure) - `src/infrastructure/`
+- **物理连接 (`main/db-manager.ts`)**：主进程通过 `pg.Pool` 管理连接池，支持多会话隔离。
+- **通信桥梁**：通过 `preload` 暴露原生接口，渲染进程通过 `providers/SessionProvider` 进行 IPC 封装。
+
+### 3. 表现层 (Renderer) - `src/renderer/`
+- **功能区 (Features)**：按业务领域聚合，实现功能闭环。
+    - `navigator/`: 数据库树形导航、连接管理。
+    - `workspace/`: Tab 生命周期管理、SQL 编辑器分屏。
+    - `schema-designer/`: 表结构可视化设计（驱动 Core Diff 引擎）。
+    - `data-viewer/`: 高性能数据查看与 DML 操作。
+- **UI 原子库 (UI Kit)**：
+    - `atoms/`: 基础交互单元（Button, Pagination）。
+    - `overlays/`: 全局层（Modal, ContextMenu）。
+    - `data-grid/`: 独立的高性能表格渲染引擎。
+- **状态中心 (Providers)**：`SessionProvider` 维护全局连接上下文。
+
+## 关键流程
+- **数据加载**：`useTableData` 钩子 -> `SessionProvider.query` -> IPC -> `DbManager`。
+- **结构变更**：`SchemaDesigner` 收集状态 -> `core/pg/diff` 计算 SQL -> 用户预览并执行。
 
 ---
-*遵循原则：如无必要，勿增实体。*
+*遵循原则：逻辑引擎化、功能区组织。如无必要，勿增实体。*

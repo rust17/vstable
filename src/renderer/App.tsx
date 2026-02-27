@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Plus, X } from 'lucide-react'
-import { SessionView } from './components/SessionView'
+import { SessionView } from './features/workspace/SessionView'
 
 interface Session {
   id: string

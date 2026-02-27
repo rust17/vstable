@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
-import { SessionView } from './SessionView'
+import { SessionView } from '@renderer/features/workspace/SessionView'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 
 describe('SessionView Data Features', () => {

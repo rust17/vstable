@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Database, Table as TableIcon, Plus, Trash2, Check } from 'lucide-react'
-import { useSession } from '../SessionContext'
+import { useSession } from '../../providers/SessionProvider'
 
 interface DatabaseTreeProps {
   databases: string[]

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { TableTab, FilterCondition } from '../../../types/session'
+import { TableTab, FilterCondition } from '../types/session'
 
 export const useWorkspace = (initialTabs: TableTab[] = []) => {
   const [tabs, setTabs] = useState<TableTab[]>(initialTabs)

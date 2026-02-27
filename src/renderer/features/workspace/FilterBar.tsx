@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react'
 import { Plus, X, Check, Settings } from 'lucide-react'
-import { FilterCondition } from '../../../types/session'
+import { FilterCondition } from '../../types/session'
 
 interface CustomDropdownProps {
   value: string

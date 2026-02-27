@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useSession } from '../SessionContext'
+import { useSession } from '../providers/SessionProvider'
 
 export const useDatabaseMetadata = () => {
   const { sessionId, isConnected, query, config } = useSession()

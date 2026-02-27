@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateAlterTableSql, generateCreateTableSql, ColumnDefinition, IndexDefinition } from './sql-generator'
+import { generateAlterTableSql, generateCreateTableSql, ColumnDefinition, IndexDefinition } from './diff'
 
 describe('Table Structure Change - SQL Generation', () => {
   const schema = 'public'

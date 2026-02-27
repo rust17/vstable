@@ -9,7 +9,9 @@ export default defineConfig({
     globals: true,
     setupFiles: 'src/renderer/test/setup.tsx',
     alias: {
-      '@renderer': resolve(__dirname, 'src/renderer')
+      '@renderer': resolve(__dirname, 'src/renderer'),
+      '@core': resolve(__dirname, 'src/core'),
+      '@infrastructure': resolve(__dirname, 'src/infrastructure')
     }
   }
 })

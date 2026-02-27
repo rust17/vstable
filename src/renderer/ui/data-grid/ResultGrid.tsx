@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { formatDisplayValue } from '../../../utils/format'
+import { formatDisplayValue } from '../../../core/pg/format'
 
 interface SelectionBox {
   startX: number

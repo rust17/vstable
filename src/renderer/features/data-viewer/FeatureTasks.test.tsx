@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { SessionView } from './SessionView'
+import { SessionView } from '@renderer/features/workspace/SessionView'
 import React from 'react'
 
 // Mock the window.api is already done in setup.tsx, we just get references

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react'
-import { ConnectionConfig, QueryResult } from '../../../types/session'
+import { ConnectionConfig, QueryResult } from '../types/session'
 
 interface SessionContextType {
   sessionId: string
