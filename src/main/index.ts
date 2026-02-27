@@ -1,7 +1,7 @@
 import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { dbManager } from '../infrastructure/main/db-manager'
+import { dbManager } from '../infrastructure/db-manager'
 import * as store from './store'
 
 function createWindow(): void {
