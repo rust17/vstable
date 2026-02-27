@@ -54,6 +54,31 @@ describe('SessionView Component', () => {
       await waitFor(() => expect(screen.getByTestId('tab-table-users')).toBeInTheDocument())
     })
 
+    it('does not open a second tab when the same table is clicked twice', async () => {
+      fireEvent.click(screen.getByTestId('table-item-users'))
+      await waitFor(() => expect(screen.getAllByTestId('tab-table-users')).toHaveLength(1))
+      
+      fireEvent.click(screen.getByTestId('table-item-users'))
+      // Wait to ensure no second tab appears
+      await new Promise(resolve => setTimeout(resolve, 50))
+      expect(screen.getAllByTestId('tab-table-users')).toHaveLength(1)
+    })
+
+    it('does not open duplicate structure tabs for the same table', async () => {
+      fireEvent.click(screen.getByTestId('table-item-users'))
+      await waitFor(() => expect(screen.getByTestId('tab-table-users')).toBeInTheDocument())
+      
+      const structureBtn = await screen.findByTestId('tab-structure')
+      fireEvent.click(structureBtn)
+      await waitFor(() => expect(screen.getByTestId('tab-table-Structure: users')).toBeInTheDocument())
+      
+      // Click again
+      fireEvent.click(structureBtn)
+      // Wait to ensure no second tab appears
+      await new Promise(resolve => setTimeout(resolve, 50))
+      expect(screen.getAllByTestId('tab-table-Structure: users')).toHaveLength(1)
+    })
+
     it('displays column data types in the table header', async () => {
       fireEvent.click(screen.getByTestId('table-item-users'))
       await waitFor(() => {

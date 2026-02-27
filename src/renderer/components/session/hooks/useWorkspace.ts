@@ -24,7 +24,13 @@ export const useWorkspace = (initialTabs: TableTab[] = []) => {
   }, [tabs])
 
   const openTable = useCallback((schema: string, name: string) => {
-    // We allow multiple tabs for the same table now to support isolation
+    // Check if tab already exists for this table
+    const existingTab = tabs.find(t => t.type === 'table' && t.schema === schema && t.name === name)
+    if (existingTab) {
+      setActiveTabId(existingTab.id)
+      return existingTab
+    }
+
     const tabId = crypto.randomUUID()
     const newTab: TableTab = {
       id: tabId,
@@ -61,6 +67,14 @@ export const useWorkspace = (initialTabs: TableTab[] = []) => {
   }, [])
 
   const openStructure = useCallback((schema?: string, name?: string, mode: 'create' | 'edit' = 'edit') => {
+    if (mode === 'edit' && schema && name) {
+        const existingTab = tabs.find(t => t.type === 'structure' && t.initialSchema === schema && t.initialTableName === name)
+        if (existingTab) {
+            setActiveTabId(existingTab.id)
+            return existingTab
+        }
+    }
+
     const tabId = crypto.randomUUID()
     const newTab: TableTab = {
         id: tabId,
@@ -75,7 +89,7 @@ export const useWorkspace = (initialTabs: TableTab[] = []) => {
     setTabs(prev => [...prev, newTab])
     setActiveTabId(tabId)
     return newTab
-  }, [])
+  }, [tabs])
 
   const closeTab = useCallback((tabId: string) => {
     setTabs(prev => {
