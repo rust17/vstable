@@ -12,10 +12,6 @@ describe('Workspace & SQL Runner Tests', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    ;(window as any).api = {
-      connect: vi.fn(),
-      query: vi.fn(),
-    }
   })
 
   const setupConnected = async () => {

@@ -30,18 +30,14 @@ describe('SessionView Feature Tasks - Keyboard & Filter', () => {
       if (s.includes('information_schema.columns')) {
         return Promise.resolve({ success: true, rows: [{ column_name: 'id', data_type: 'integer' }, { column_name: 'name', data_type: 'text' }] })
       }
-      if (s.includes('select * from') && !s.includes('limit')) {
-         // This might be the fetchTableData count query or actual data query
+      if (s.includes('primary key')) {
+        return Promise.resolve({ success: true, rows: [{ column_name: 'id' }] })
+      }
+      if (s.includes('from "public"."users"')) {
          if (s.includes('count(*)')) {
            return Promise.resolve({ success: true, rows: [{ count: '1' }] })
          }
          return Promise.resolve({ success: true, rows: [{ id: 1, name: 'Alice' }], fields: [{ name: 'id' }, { name: 'name' }] })
-      }
-      if (s.includes('limit')) {
-        return Promise.resolve({ success: true, rows: [{ id: 1, name: 'Alice' }], fields: [{ name: 'id' }, { name: 'name' }] })
-      }
-      if (s.includes('primary key')) {
-        return Promise.resolve({ success: true, rows: [{ column_name: 'id' }] })
       }
       return Promise.resolve({ success: true, rows: [] })
     })
@@ -127,7 +123,8 @@ describe('SessionView Feature Tasks - Keyboard & Filter', () => {
       fireEvent.click(screen.getByTestId('table-item-users'))
       await waitFor(() => expect(screen.getByTestId('tab-table-users')).toBeInTheDocument())
       
-      const initialQueryCount = mockApi.query.mock.calls.length
+      // Clear mocks to start fresh for the refresh check
+      mockApi.query.mockClear()
       
       // Press Cmd + R
       fireEvent.keyDown(window, { key: 'r', metaKey: true })
@@ -138,7 +135,7 @@ describe('SessionView Feature Tasks - Keyboard & Filter', () => {
         const selectQueries = mockApi.query.mock.calls.filter(call => 
           call[1].includes('SELECT * FROM "public"."users"')
         )
-        expect(selectQueries.length).toBeGreaterThan(1)
+        expect(selectQueries.length).toBeGreaterThan(0)
       })
     })
 
@@ -148,12 +145,15 @@ describe('SessionView Feature Tasks - Keyboard & Filter', () => {
       fireEvent.click(screen.getByTestId('table-item-users'))
       await waitFor(() => expect(screen.getByTestId('tab-table-users')).toBeInTheDocument())
       
+      // Wait for table to be ready
+      await screen.findByTestId('cell-name-0')
+
       // Press Cmd + F
       fireEvent.keyDown(window, { key: 'f', metaKey: true })
       
       // First filter input should be focused
       const filterInput = await screen.findByTestId('filter-value-input')
-      expect(document.activeElement).toBe(filterInput)
+      await waitFor(() => expect(document.activeElement).toBe(filterInput))
     })
 
     it('handles Esc and Cmd + Enter in Edit Modal', async () => {
@@ -163,20 +163,20 @@ describe('SessionView Feature Tasks - Keyboard & Filter', () => {
       await waitFor(() => expect(screen.getByTestId('cell-name-0')).toBeInTheDocument())
       
       // Open modal
-      fireEvent.doubleClick(screen.getByTestId('cell-name-0'))
+      fireEvent.doubleClick(screen.getByTestId('cell-name-0').firstChild as HTMLElement)
       const modal = await screen.findByTestId('edit-textarea')
       expect(modal).toBeInTheDocument()
       
       // Test ESC to cancel
-      fireEvent.keyDown(modal, { key: 'Escape' })
+      fireEvent.keyDown(modal.parentElement!.parentElement!, { key: 'Escape' })
       await waitFor(() => expect(screen.queryByTestId('edit-textarea')).not.toBeInTheDocument())
       
       // Open again
-      fireEvent.doubleClick(screen.getByTestId('cell-name-0'))
+      fireEvent.doubleClick(screen.getByTestId('cell-name-0').firstChild as HTMLElement)
       const modal2 = await screen.findByTestId('edit-textarea')
       
       // Test Cmd + Enter to save
-      fireEvent.keyDown(modal2, { key: 'Enter', metaKey: true })
+      fireEvent.keyDown(modal2.parentElement!.parentElement!, { key: 'Enter', metaKey: true })
       await waitFor(() => expect(screen.queryByTestId('edit-textarea')).not.toBeInTheDocument())
     })
   })
@@ -206,11 +206,10 @@ describe('SessionView Feature Tasks - Keyboard & Filter', () => {
       fireEvent.click(screen.getByTestId('table-item-users'))
       
       // Set filter values
-      const columnSelect = await screen.findByTestId('filter-column-0')
-      fireEvent.change(columnSelect, { target: { value: 'name' } })
-      
-      const operatorSelect = screen.getByTestId('filter-operator-0')
-      fireEvent.change(operatorSelect, { target: { value: '=' } })
+      const columnDropdown = await screen.findByTestId('filter-column-0')
+      fireEvent.click(columnDropdown.firstChild as HTMLElement)
+      const nameOption = screen.getAllByText('name').find(el => el.className.includes('text-xs'))
+      fireEvent.click(nameOption!)
       
       const valueInput = screen.getByTestId('filter-value-input')
       fireEvent.change(valueInput, { target: { value: 'Alice' } })
@@ -221,6 +220,7 @@ describe('SessionView Feature Tasks - Keyboard & Filter', () => {
       // Verify query includes WHERE clause
       await waitFor(() => {
         const lastQuery = mockApi.query.mock.calls.find(call => call[1].includes('SELECT * FROM "public"."users"') && call[1].includes('WHERE'))
+        expect(lastQuery).toBeDefined()
         expect(lastQuery[1]).toContain("WHERE \"name\" = 'Alice'")
       })
     })

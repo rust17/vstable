@@ -21,6 +21,8 @@ window.api = {
   connect: vi.fn(),
   query: vi.fn(),
   disconnect: vi.fn(),
+  getSavedConnections: vi.fn().mockResolvedValue([]),
+  deleteConnection: vi.fn().mockResolvedValue(true),
 }
 
 // Mock Monaco Editor

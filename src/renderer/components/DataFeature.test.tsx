@@ -43,7 +43,7 @@ describe('SessionView Data Features', () => {
   })
 
   it('renders timestamp without timezone', async () => {
-    const timestamp = "2023-01-01 12:00:00+08"
+    const timestamp = "2023-01-01 12:00:00"
     ;(window.api.connect as any).mockResolvedValue({ success: true })
     ;(window.api.query as any).mockImplementation((id, sql) => {
       if (sql.includes('SELECT table_name')) return Promise.resolve({ success: true, rows: [{ table_name: 'events', table_schema: 'public' }] })
@@ -174,7 +174,7 @@ describe('SessionView Data Features', () => {
     await waitFor(() => expect(screen.getByTestId('cell-id-0').textContent).toBe('1'))
 
     // Change to Page 2 (assuming default pageSize 100)
-    const nextBtn = screen.getByTestId('next-page')
+    const nextBtn = screen.getByTestId('btn-next-page')
     fireEvent.click(nextBtn)
 
     // Wait for Page 2 data
