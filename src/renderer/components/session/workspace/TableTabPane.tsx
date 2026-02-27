@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Settings } from 'lucide-react'
 import { TableTab, FilterCondition } from '../../../types/session'
+import { useSession } from '../SessionContext'
 import { useTableData } from '../hooks/useTableData'
 import { ResultGrid } from '../shared/ResultGrid'
 import { PaginationControl } from '../shared/PaginationControl'
@@ -19,17 +20,51 @@ interface TableTabPaneProps {
 }
 
 export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpdateTab, connectionId, onOpenStructure }) => {
+  const { sessionId, query } = useSession()
   const { data, loading, error, totalRows, fetchData, deleteRow, deleteRows, updateCell, insertRow } = useTableData(tab)
   
   const [editingCell, setEditingCell] = useState<{ row: any, field: string, value: any, dataType?: string } | null>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, selectedRows: any[] } | null>(null)
 
+  // Fetch PK if not present
+  useEffect(() => {
+    if (!tab.pk && tab.name && tab.schema) {
+      const fetchPk = async () => {
+        const pkQuery = `
+          SELECT kcu.column_name
+          FROM information_schema.table_constraints tc
+          JOIN information_schema.key_column_usage kcu
+            ON tc.constraint_name = kcu.constraint_name
+            AND tc.table_schema = kcu.table_schema
+          WHERE tc.constraint_type = 'PRIMARY KEY'
+            AND tc.table_name = '${tab.name}'
+            AND tc.table_schema = '${tab.schema}';
+        `
+        const res = await query(pkQuery)
+        if (res.success && res.rows && res.rows.length > 0) {
+          onUpdateTab({ pk: res.rows[0].column_name })
+        }
+      }
+      fetchPk()
+    }
+  }, [tab.id, tab.name, tab.schema, tab.pk, query, onUpdateTab])
+
   // Initial fetch
   useEffect(() => {
+    // Only fetch if active and we don't have results, 
+    // or if this is the first time PK is loaded and we need to re-sort
     if (isActive && !tab.results) {
       fetchData(tab.page || 1, tab.pageSize || 100, tab.filters || [])
     }
-  }, [isActive, tab.id, fetchData])
+  }, [isActive, tab.id, fetchData]) // Removed tab.pk to avoid double call if not needed, handled by refresh below
+
+  // Refresh data when PK is discovered to ensure correct sorting
+  useEffect(() => {
+    if (isActive && tab.pk && tab.results) {
+      // If we have data but just found the PK, re-fetch to get correct order
+      fetchData(tab.page || 1, tab.pageSize || 100, tab.filters || [])
+    }
+  }, [isActive, tab.pk]) // Only trigger when PK is set from null/undefined to a value
 
   // Handle refresh and focus shortcuts
   useEffect(() => {

@@ -38,7 +38,11 @@ export const useTableData = (tab: TableTab) => {
         setTotalRows(total)
 
         const offset = (page - 1) * pageSize
-        const q = `SELECT * FROM "${schema}"."${name}"${whereClause} LIMIT ${pageSize} OFFSET ${offset};`
+        let orderByClause = ''
+        if (tab.pk) {
+            orderByClause = ` ORDER BY "${tab.pk}" ASC`
+        }
+        const q = `SELECT * FROM "${schema}"."${name}"${whereClause}${orderByClause} LIMIT ${pageSize} OFFSET ${offset};`
         const res = await query(q)
         
         if (res.success) {
@@ -51,7 +55,7 @@ export const useTableData = (tab: TableTab) => {
     } finally {
         setLoading(false)
     }
-  }, [sessionId, tab.schema, tab.name])
+  }, [sessionId, tab.schema, tab.name, tab.pk])
 
   const deleteRow = async (pkColumn: string, pkValue: any) => {
       const schema = tab.schema!
