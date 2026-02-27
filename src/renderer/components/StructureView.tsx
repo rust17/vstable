@@ -224,6 +224,7 @@ const ColumnMultiSelect: React.FC<{
 }> = ({ allColumns, selectedColumns, onChange }) => {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const [coords, setCoords] = useState<{ top?: number, bottom?: number, left: number, width: number }>({ left: 0, width: 0 })
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -235,10 +236,34 @@ const ColumnMultiSelect: React.FC<{
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  const toggleOpen = () => {
+    if (!isOpen && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        const spaceBelow = window.innerHeight - rect.bottom
+        const spaceAbove = rect.top
+        
+        // If there's less than ~200px below and more space above, open upwards
+        if (spaceBelow < 200 && spaceAbove > spaceBelow) {
+            setCoords({
+                bottom: window.innerHeight - rect.top + 4,
+                left: rect.left,
+                width: rect.width
+            })
+        } else {
+            setCoords({
+                top: rect.bottom + 4,
+                left: rect.left,
+                width: rect.width
+            })
+        }
+    }
+    setIsOpen(!isOpen)
+  }
+
   return (
     <div className="relative" ref={containerRef}>
       <div 
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleOpen}
         className="min-h-[28px] w-full px-2 py-1 bg-gray-100/50 border border-transparent rounded hover:bg-gray-100 cursor-pointer flex flex-wrap gap-1 items-center"
       >
         {selectedColumns.length > 0 ? selectedColumns.map(c => (
@@ -257,7 +282,16 @@ const ColumnMultiSelect: React.FC<{
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 z-[100] mt-1 bg-white border border-gray-200 rounded-lg shadow-xl py-1 max-h-48 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
+        <div 
+            className="fixed z-[100] bg-white border border-gray-200 rounded-lg shadow-xl py-1 max-h-48 overflow-y-auto animate-in fade-in zoom-in-95 duration-100"
+            style={{ 
+                top: coords.top,
+                bottom: coords.bottom,
+                left: coords.left, 
+                width: coords.width,
+                minWidth: '200px'
+            }}
+        >
           {allColumns.map(col => (
             <div 
               key={col}
@@ -664,7 +698,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
   )
 
   return (
-    <div className="flex flex-col h-full bg-gray-50/50 select-text">
+    <div className="flex flex-col h-full bg-white select-text">
       {/* Header */}
       <div className="flex items-center justify-between px-6 h-[94px] bg-white border-b border-gray-200">
         <div className="flex items-center gap-4">
@@ -713,9 +747,9 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto px-6 pt-4 pb-6 space-y-8 elastic-scroll">
+      <div className="flex-1 overflow-auto space-y-8 elastic-scroll">
         {error && (
-            <div className="p-4 bg-red-50 text-red-600 rounded-lg border border-red-100 flex items-start gap-3">
+            <div className="mx-6 mt-4 p-4 bg-red-50 text-red-600 rounded-lg border border-red-100 flex items-start gap-3">
                 <AlertCircle size={18} className="mt-0.5 shrink-0" />
                 <div className="text-sm font-medium whitespace-pre-wrap">{error}</div>
                 <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-700"><X size={14} /></button>
@@ -723,8 +757,8 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
         )}
 
         {/* Columns Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/30 select-text">
+        <div className="border-b border-gray-100">
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-[#f8f9fa] select-text">
             <h3 className="font-semibold text-gray-700 flex items-center gap-2">
                 <div className="w-1 h-4 bg-blue-500 rounded-full"></div>
                 Columns
@@ -736,18 +770,18 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
           
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100 select-text">
+              <thead className="bg-white text-gray-500 font-medium border-b border-gray-100 select-text">
                 <tr>
-                  <th className="px-6 py-3 w-12">#</th>
-                  <th className="px-6 py-3 min-w-[200px]">Name</th>
-                  <th className="px-6 py-3">Type</th>
-                  <th className="px-6 py-3 w-32">Params</th>
-                  <th className="px-6 py-3 w-20 text-center">Auto</th>
-                  <th className="px-6 py-3 w-20 text-center">ID</th>
-                  <th className="px-6 py-3 w-24 text-center">Nullable</th>
-                  <th className="px-6 py-3 w-24 text-center">Primary</th>
-                  <th className="px-6 py-3">Default</th>
-                  <th className="px-6 py-3">Comment</th>
+                  <th className="px-6 py-3 w-12 text-[11px] uppercase tracking-wider">#</th>
+                  <th className="px-6 py-3 min-w-[200px] text-[11px] uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-[11px] uppercase tracking-wider">Type</th>
+                  <th className="px-6 py-3 w-32 text-[11px] uppercase tracking-wider">Params</th>
+                  <th className="px-6 py-3 w-20 text-center text-[11px] uppercase tracking-wider">Auto</th>
+                  <th className="px-6 py-3 w-20 text-center text-[11px] uppercase tracking-wider">ID</th>
+                  <th className="px-6 py-3 w-24 text-center text-[11px] uppercase tracking-wider">Nullable</th>
+                  <th className="px-6 py-3 w-24 text-center text-[11px] uppercase tracking-wider">Primary</th>
+                  <th className="px-6 py-3 text-[11px] uppercase tracking-wider">Default</th>
+                  <th className="px-6 py-3 text-[11px] uppercase tracking-wider">Comment</th>
                   <th className="px-6 py-3 w-16"></th>
                 </tr>
               </thead>
@@ -955,8 +989,8 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
         </div>
 
         {/* Indexes Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/30 select-text">
+        <div className="bg-white border-b border-gray-100">
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-[#f8f9fa] select-text">
             <h3 className="font-semibold text-gray-700 flex items-center gap-2">
                 <div className="w-1 h-4 bg-purple-500 rounded-full"></div>
                 Indexes
@@ -967,12 +1001,12 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-100 select-text">
+              <thead className="bg-white text-gray-500 font-medium border-b border-gray-100 select-text">
                 <tr>
-                  <th className="px-6 py-3 w-12">#</th>
-                  <th className="px-6 py-3">Name</th>
-                  <th className="px-6 py-3">Columns</th>
-                  <th className="px-6 py-3 w-24 text-center">Unique</th>
+                  <th className="px-6 py-3 w-12 text-[11px] uppercase tracking-wider">#</th>
+                  <th className="px-6 py-3 text-[11px] uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-[11px] uppercase tracking-wider">Columns</th>
+                  <th className="px-6 py-3 w-24 text-center text-[11px] uppercase tracking-wider">Unique</th>
                   <th className="px-6 py-3 w-16"></th>
                 </tr>
               </thead>
@@ -1036,6 +1070,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
               </div>
           )}
         </div>
+        <div className="h-20 shrink-0" /> {/* Bottom spacing */}
       </div>
 
       {/* SQL Preview Modal */}

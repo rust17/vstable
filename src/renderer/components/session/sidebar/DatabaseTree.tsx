@@ -285,7 +285,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
                       e.stopPropagation()
                       onDeleteTable(table.table_schema, table.table_name)
                     }}
-                    className={`p-1 hover:text-red-500 hover:bg-red-100 rounded transition-all ${isSelected ? 'text-red-400 opacity-100' : 'text-gray-400 opacity-0 group-hover:opacity-100'}`}
+                    className={`p-1 hover:text-red-500 hover:bg-red-100 rounded transition-all opacity-0 group-hover:opacity-100 ${isSelected ? 'text-red-400' : 'text-gray-400'}`}
                   >
                     <Trash2 size={12} />
                   </button>
