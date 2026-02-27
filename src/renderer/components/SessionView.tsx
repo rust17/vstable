@@ -26,6 +26,11 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
     mruTabIds, showTabSwitcher, setShowTabSwitcher, switcherIndex, setSwitcherIndex
   } = useWorkspace()
   
+  const showTabSwitcherRef = React.useRef(showTabSwitcher)
+  useEffect(() => {
+    showTabSwitcherRef.current = showTabSwitcher
+  }, [showTabSwitcher])
+
   const { 
     databases, schemas, currentSchema, setCurrentSchema, tables, 
     fetchDatabases, fetchTables 
@@ -38,6 +43,17 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
   const [isResizing, setIsResizing] = useState(false)
 
   const activeTab = tabs.find(t => t.id === activeTabId)
+  const tabContainerRef = React.useRef<HTMLDivElement>(null)
+
+  // Scroll active tab into view
+  useEffect(() => {
+    if (activeTabId && tabContainerRef.current) {
+      const activeElement = tabContainerRef.current.querySelector(`[data-active="true"]`)
+      if (activeElement && typeof activeElement.scrollIntoView === 'function') {
+        activeElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+      }
+    }
+  }, [activeTabId])
 
   // Update window title
   useEffect(() => {
@@ -152,8 +168,9 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
     
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === 'Control') {
-         if (showTabSwitcher) {
+         if (showTabSwitcherRef.current) {
            setShowTabSwitcher(false)
+           showTabSwitcherRef.current = false
            const selectedId = mruTabIds[switcherIndex]
            if (selectedId && tabs.some(t => t.id === selectedId)) {
              setActiveTabId(selectedId)
@@ -241,6 +258,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
             }}
          >
             <div 
+                ref={tabContainerRef}
                 className="flex items-end gap-1 overflow-x-auto no-drag scrollbar-hide flex-1 h-full"
                 onDoubleClick={(e) => {
                     if (e.target === e.currentTarget) setIsMaximized(!isMaximized)
@@ -325,6 +343,12 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
         tabs={tabs}
         mruTabIds={mruTabIds}
         selectedIndex={switcherIndex}
+        onSelect={(id) => {
+            setShowTabSwitcher(false)
+            showTabSwitcherRef.current = false
+            setActiveTabId(id)
+            setSwitcherIndex(0)
+        }}
       />
 
       <TableSearchModal 

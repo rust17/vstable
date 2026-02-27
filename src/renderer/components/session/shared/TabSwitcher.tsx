@@ -7,9 +7,21 @@ interface TabSwitcherProps {
   tabs: TableTab[]
   mruTabIds: string[]
   selectedIndex: number
+  onSelect: (id: string) => void
 }
 
-export const TabSwitcher: React.FC<TabSwitcherProps> = ({ isOpen, tabs, mruTabIds, selectedIndex }) => {
+export const TabSwitcher: React.FC<TabSwitcherProps> = ({ isOpen, tabs, mruTabIds, selectedIndex, onSelect }) => {
+  const scrollRef = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    if (isOpen && scrollRef.current) {
+      const activeItem = scrollRef.current.querySelector('[data-active-item="true"]')
+      if (activeItem && typeof activeItem.scrollIntoView === 'function') {
+        activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+      }
+    }
+  }, [selectedIndex, isOpen])
+
   if (!isOpen) return null
 
   return (
@@ -21,7 +33,10 @@ export const TabSwitcher: React.FC<TabSwitcherProps> = ({ isOpen, tabs, mruTabId
           </div>
           <span className="text-[10px] text-gray-400 font-medium">Ctrl + Tab to cycle</span>
         </div>
-        <div className="py-1 max-h-[50vh] overflow-y-auto overscroll-contain bg-white">
+        <div 
+          ref={scrollRef}
+          className="py-1 max-h-[50vh] overflow-y-auto overscroll-contain bg-white"
+        >
           {mruTabIds.map((id, index) => {
             const tab = tabs.find(t => t.id === id)
             if (!tab) return null
@@ -29,9 +44,20 @@ export const TabSwitcher: React.FC<TabSwitcherProps> = ({ isOpen, tabs, mruTabId
             return (
               <div
                 key={id}
+                onMouseDown={(e) => {
+                  e.preventDefault() // prevent focus issues
+                }}
+                onMouseUp={() => {
+                  // Delay slightly to ensure contextmenu event (if any) is fully processed and prevented
+                  setTimeout(() => onSelect(id), 10)
+                }}
+                onContextMenu={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                }}
                 data-testid={`tab-switcher-item-${tab.name}`}
                 data-active-item={isActive}
-                className={`px-4 py-3 flex items-center gap-3 transition-colors select-none ${isActive ? 'bg-blue-600 text-white active-tab-item' : 'hover:bg-gray-50 text-gray-700'}`}
+                className={`px-4 py-3 flex items-center gap-3 transition-colors cursor-pointer select-none ${isActive ? 'bg-blue-600 text-white active-tab-item' : 'hover:bg-gray-50 text-gray-700'}`}
               >
                 <div className={`${isActive ? 'text-white' : 'text-gray-400'}`}>
                   {tab.type === 'table' ? <TableIcon size={16} /> : <Play size={16} />}

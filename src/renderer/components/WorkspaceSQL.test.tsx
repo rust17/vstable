@@ -32,33 +32,30 @@ describe('Workspace & SQL Runner Tests', () => {
   }
 
   describe('Multi-tab Management', () => {
-    it('isolates state between two tabs of the same table', async () => {
+    it('activates existing tab when table is clicked twice', async () => {
       await setupConnected()
 
       // Open "users" table - Tab 1
       const tableItem = await screen.findByTestId('table-item-users')
       fireEvent.click(tableItem)
       
-      // Open "users" table again - Tab 2
-      fireEvent.click(tableItem)
-      
-      const tabs = await screen.findAllByTestId(/tab-table-users/)
-      expect(tabs).toHaveLength(2) 
+      let tabs = await screen.findAllByTestId(/tab-table-users/)
+      expect(tabs).toHaveLength(1) 
 
-      // Set filter in Tab 2
-      fireEvent.click(tabs[1])
-      const tab2Content = screen.getByTestId('active-tab-content')
-      fireEvent.click(within(tab2Content).getByTestId('btn-add-filter'))
+      // Set filter in Tab 1
+      const tab1Content = screen.getByTestId('active-tab-content')
+      fireEvent.click(within(tab1Content).getByTestId('btn-add-filter'))
       
-      const input = within(tab2Content).getByTestId('filter-value-input')
+      const input = within(tab1Content).getByTestId('filter-value-input')
       fireEvent.change(input, { target: { value: 'test-filter' } })
       
-      // Switch back to Tab 1
-      fireEvent.click(tabs[0])
+      // Click "users" table again
+      fireEvent.click(tableItem)
       
-      // Verify Tab 1 content doesn't have the filter
-      const tab1Content = screen.getByTestId('active-tab-content')
-      expect(within(tab1Content).queryByDisplayValue('test-filter')).not.toBeInTheDocument()
+      // Verify still only 1 tab and it still has the filter
+      tabs = await screen.findAllByTestId(/tab-table-users/)
+      expect(tabs).toHaveLength(1)
+      expect(screen.getByDisplayValue('test-filter')).toBeInTheDocument()
     })
 
     it('shows empty state "Select a table..." when all tabs are closed', async () => {
