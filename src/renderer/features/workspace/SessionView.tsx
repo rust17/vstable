@@ -8,9 +8,9 @@ import { ConnectionForm } from '../navigator/ConnectionForm'
 import { TableTabPane } from './TableTabPane'
 import { QueryTabPane } from './QueryTabPane'
 import { StructureView } from '../schema-designer/StructureView'
-import { TabSwitcher } from '../../ui/atoms/TabSwitcher'
-import { TableSearchModal } from '../../ui/overlays/TableSearchModal'
-import { CreateDatabaseModal } from '../../ui/overlays/CreateDatabaseModal'
+import { TabSwitcher } from '../../ui/tab-switcher/TabSwitcher'
+import { TableSearchModal } from '../../ui/modals/TableSearchModal'
+import { CreateDatabaseModal } from '../../ui/modals/CreateDatabaseModal'
 
 interface SessionViewProps {
   id: string
