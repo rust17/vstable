@@ -83,7 +83,7 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
       // Calculate intersecting rows
       const boxTop = Math.min(selectionBox.startY, currentY)
       const boxBottom = Math.max(selectionBox.startY, currentY)
-      
+
       const newSelection = new Set<number>()
       const isMac = window.navigator.platform.toUpperCase().indexOf('MAC') >= 0
       const cmdOrCtrl = e.metaKey || e.ctrlKey // Use basic e here as it's native MouseEvent
@@ -97,7 +97,7 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
           const trElement = tr as HTMLElement
           const rowTop = trElement.offsetTop
           const rowBottom = rowTop + trElement.offsetHeight
-          
+
           if (rowTop < boxBottom && rowBottom > boxTop) {
               newSelection.add(index)
           }
@@ -154,6 +154,7 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
 
   const handleContextMenu = (e: React.MouseEvent, index: number | null) => {
     e.preventDefault()
+    e.stopPropagation()
     let currentSelection = selectedRowIndices
     if (index !== null && !selectedRowIndices.has(index)) {
       currentSelection = new Set([index])
@@ -161,7 +162,7 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
       setLastSelectedIndex(index)
       if (onSelectionChange) onSelectionChange(currentSelection)
     }
-    
+
     const selectedRows = Array.from(currentSelection).map(idx => rows[idx]).filter(Boolean)
     if (onContextMenu) onContextMenu(e, selectedRows)
   }
@@ -170,23 +171,21 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
   if (error) return <div className="p-4 text-red-600 font-mono text-xs whitespace-pre-wrap bg-red-50/30">Error: {error}</div>
 
   return (
-    <div 
+    <div
         ref={containerRef}
-        data-testid="results-scroll" 
+        data-testid="results-scroll"
         className="flex-1 overflow-auto pb-12 elastic-scroll overscroll-y-auto relative select-none"
         onMouseDown={handleMouseDown}
         onContextMenu={(e) => {
-            if (e.target === e.currentTarget) {
-                e.preventDefault()
-                setSelectedRowIndices(new Set())
-                setLastSelectedIndex(null)
-                if (onSelectionChange) onSelectionChange(new Set())
-                if (onContextMenu) onContextMenu(e, [])
-            }
+            e.preventDefault()
+            setSelectedRowIndices(new Set())
+            setLastSelectedIndex(null)
+            if (onSelectionChange) onSelectionChange(new Set())
+            if (onContextMenu) onContextMenu(e, [])
         }}
     >
       {selectionBox && (
-        <div 
+        <div
           className="absolute z-50 border border-blue-500 bg-blue-500/10 pointer-events-none"
           style={{
             left: Math.min(selectionBox.startX, selectionBox.currentX),
