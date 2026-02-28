@@ -26,5 +26,10 @@
 - **数据加载**：`useTableData` 钩子 -> `SessionProvider.query` -> IPC -> `DbManager` -> `Driver.query`。
 - **结构变更**：`SchemaDesigner` 收集状态 -> `core/factory` 获取 `DiffEngine` -> 生成 SQL -> 用户预览并执行。
 
+## 工程质量与验证 (Validation)
+- **Truth Environment (集成测试)**：通过 `docker-compose` 调度真实的 PostgreSQL (5432) 和 MySQL (3306) 实例。
+- **DDL 回环校验**：所有方言引擎的 `generateAlterTableSql` 逻辑必须通过 `.integration.test.ts` 在真实数据库中执行验证，确保生成的 SQL 语法在不同版本数据库中的兼容性。
+- **验证指令**：执行 `npm run docker:up` 后，运行 `npm run test:integration`。
+
 ---
 *遵循原则：逻辑引擎化、驱动抽象化、功能区组织。如无必要，勿增实体。*
