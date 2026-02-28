@@ -100,10 +100,20 @@ export const generateAlterTableSql = (
       const original = col._original
       const isRename = col.name !== original.name
       
+      const originalFormattedType = formatType(original as ColumnDefinition)
+      const originalFormattedDefault = formatDefault(original as ColumnDefinition)
+      
+      const hasMetadataChange = 
+        formattedType !== originalFormattedType ||
+        formattedDefault !== originalFormattedDefault ||
+        col.nullable !== original.nullable ||
+        col.isAutoIncrement !== original.isAutoIncrement ||
+        col.comment !== original.comment
+
       if (isRename) {
         // MySQL 8.0+ supports RENAME COLUMN, but for compatibility CHANGE is often used
         sqls.push(`ALTER TABLE ${safeTable} CHANGE COLUMN \`${original.name}\` ${colDef};`)
-      } else {
+      } else if (hasMetadataChange) {
         // Only metadata or type changed
         sqls.push(`ALTER TABLE ${safeTable} MODIFY COLUMN ${colDef};`)
       }
@@ -132,7 +142,7 @@ export const generateAlterTableSql = (
   })
 
   // 5. PK Changes
-  const pkChanged = columns.some(col => col.isPrimaryKey !== col._original?.isPrimaryKey)
+  const pkChanged = columns.some(col => col._original && col.isPrimaryKey !== col._original.isPrimaryKey)
   if (pkChanged) {
      const hasOldPk = columns.some(col => col._original?.isPrimaryKey)
      if (hasOldPk) {

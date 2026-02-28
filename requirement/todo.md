@@ -299,7 +299,7 @@ add:
 
 add:
     - 开发支持环境 (Developer Experience)
-        - [ ] **容器化集成测试 (Truth Environment)**:
+        - [x] **容器化集成测试 (Truth Environment)**:
             - **思路**：用真实的数据库代替 Mock。
             - **建议**：在项目中引入 `docker-compose`，并在测试阶段启动真实的 MySQL 和 PostgreSQL 实例。
             - **反馈增强**：我可以编写集成测试，直接在真实 DB 上运行 `generateAlterTableSql` 生成的语句。如果数据库报错（如：MySQL 不支持某种索引修改方式），我会直接获得原始错误码，而不是通过代码逻辑去猜。

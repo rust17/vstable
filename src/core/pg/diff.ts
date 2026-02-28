@@ -81,7 +81,7 @@ export const generateAlterTableSql = (
   const fullTableName = `${safeSchema}.${safeTable}`
 
   // 0. Detect PK Changes
-  const pkChanged = columns.some(col => col.isPrimaryKey !== col._original?.isPrimaryKey)
+  const pkChanged = columns.some(col => col._original && col.isPrimaryKey !== col._original.isPrimaryKey)
   if (pkChanged) {
     // Find any existing PK constraint name from original columns
     const oldPkConstraint = columns.find(col => col._original?.isPrimaryKey && col._original.pkConstraintName)?._original?.pkConstraintName
