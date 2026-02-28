@@ -60,5 +60,79 @@ describe('PostgreSQL DDL Integration Tests', () => {
     await pool.query(`INSERT INTO "public"."integration_test_users" ("user_name") VALUES ('testuser2')`)
     const result = await pool.query(`SELECT * FROM "public"."integration_test_users" WHERE "user_name" = 'testuser2'`)
     expect(result.rows[0].status).toBe('active')
+
+    // Make data unique before setting status as Primary Key
+    await pool.query(`UPDATE "public"."integration_test_users" SET "status" = 'inactive' WHERE "user_name" = 'testuser2'`)
+
+    // Prepare for next alteration: set the system-generated PK constraint name
+    alteredColumns[0].pkConstraintName = 'integration_test_users_pkey'
+
+    // 3. Alter Table: Drop Column, Change Nullability/Default, Add Index, Modify PK
+    const finalColumns: ColumnDefinition[] = [
+      // Modify PK: Remove PK from 'id', keep it as column
+      { id: '1', name: 'id', type: 'integer', nullable: false, defaultValue: null, isPrimaryKey: false, isIdentity: true, _original: alteredColumns[0] },
+      // Modify Nullable/Default: 'status' becomes nullable, remove default, and make it the NEW PK
+      { id: '3', name: 'status', type: 'varchar', length: 20, nullable: true, defaultValue: null, isPrimaryKey: true, _original: alteredColumns[2] },
+      // Add a new column to test index
+      { id: '4', name: 'email', type: 'varchar', length: 100, nullable: true, defaultValue: null, isPrimaryKey: false }
+    ]
+
+    const deletedColumns: ColumnDefinition[] = [{ ...alteredColumns[1], _original: alteredColumns[1] }] // Drop 'user_name'
+
+    const indexes = [
+      { id: 'idx_1', name: 'idx_status_email', columns: ['status', 'email'], isUnique: true }
+    ]
+    const deletedIndexes = [] // No index to drop yet
+
+    const finalAlterSqls = generateAlterTableSql(schema, tableName, finalColumns, indexes, deletedColumns, deletedIndexes)
+    for (const sql of finalAlterSqls) {
+      await pool.query(sql)
+    }
+
+    // Verify Drop Column and New Columns/PK
+    await pool.query(`INSERT INTO "public"."integration_test_users" ("status", "email") VALUES ('admin', 'admin@example.com')`)
+    
+    // Verify Unique Index: Inserting duplicate status and email should fail
+    try {
+      await pool.query(`INSERT INTO "public"."integration_test_users" ("status", "email") VALUES ('admin', 'admin@example.com')`)
+      expect.unreachable('Should have thrown unique constraint error')
+    } catch (e: any) {
+      expect(e.code).toBe('23505') // PostgreSQL unique_violation
+    }
+
+    // Verify 'user_name' is dropped
+    try {
+      await pool.query(`SELECT "user_name" FROM "public"."integration_test_users"`)
+      expect.unreachable('Should have thrown column does not exist error')
+    } catch (e: any) {
+      expect(e.code).toBe('42703') // PostgreSQL undefined_column
+    }
+    
+    // 4. Alter Table: Modify Index (Rename, Change Columns, Remove Unique)
+    const finalIndexes = [
+      { id: 'idx_1', name: 'idx_email_only', columns: ['email'], isUnique: false, _original: indexes[0] }
+    ]
+    
+    const step4Columns = finalColumns.map(c => ({ ...c, _original: c }))
+    
+    const indexAlterSqls = generateAlterTableSql(schema, tableName, step4Columns, finalIndexes, [], [])
+    for (const sql of indexAlterSqls) {
+      await pool.query(sql)
+    }
+    
+    // Verify Index Modify (Unique constraint is gone, we can insert same email with different status)
+    await pool.query(`INSERT INTO "public"."integration_test_users" ("status", "email") VALUES ('guest', 'admin@example.com')`)
+
+    // 5. Alter Table: Drop Index
+    const deletedFinalIndexes = [{ ...finalIndexes[0], _original: finalIndexes[0] }]
+    const dropIndexSqls = generateAlterTableSql(schema, tableName, step4Columns, [], [], deletedFinalIndexes)
+    for (const sql of dropIndexSqls) {
+      await pool.query(sql)
+    }
+
+    // Since we don't have an easy way to verify index drop via data insertion, 
+    // we query pg_class to ensure the index 'idx_email_only' is gone.
+    const indexCheck = await pool.query(`SELECT 1 FROM pg_class WHERE relname = 'idx_email_only'`)
+    expect(indexCheck.rowCount).toBe(0)
   })
 })
