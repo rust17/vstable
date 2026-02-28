@@ -303,7 +303,7 @@ add:
             - **思路**：用真实的数据库代替 Mock。
             - **建议**：在项目中引入 `docker-compose`，并在测试阶段启动真实的 MySQL 和 PostgreSQL 实例。
             - **反馈增强**：我可以编写集成测试，直接在真实 DB 上运行 `generateAlterTableSql` 生成的语句。如果数据库报错（如：MySQL 不支持某种索引修改方式），我会直接获得原始错误码，而不是通过代码逻辑去猜。
-        - [ ] **SQL 审计与回显日志 (Traceability)**:
+        - [x] **SQL 审计与回显日志 (Traceability)**:
             - **思路**：建立“黑盒”运行时的透明度。
             - **建议**：在 `Infrastructure` 层增加一个 `DebugLogger`。在开发模式下，将所有 IPC 通信内容、生成的 SQL 语句、执行耗时、受影响行数实时记录到本地文件（如 `.debug.log`）。
             - **反馈增强**：当你说“有 Bug”时，我可以执行 `tail -f .debug.log`。通过观察我生成的 SQL 在真实驱动中是如何流转和报错的，我能瞬间定位是 `core` 逻辑问题还是 `driver` 兼容性问题。

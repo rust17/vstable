@@ -2,6 +2,7 @@ export interface QueryResult {
   success: boolean
   rows?: any[]
   fields?: any[]
+  rowCount?: number
   error?: string
 }
 

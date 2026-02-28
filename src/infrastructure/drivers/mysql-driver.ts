@@ -81,10 +81,15 @@ export class MysqlDriver implements BaseDriver {
   async query(sql: string, params?: any[]): Promise<QueryResult> {
     if (!this.pool) return { success: false, error: 'No MySQL connection' }
     try {
-      const [rows, fields] = await this.pool.query(sql, params)
+      const [result, fields] = await this.pool.query(sql, params)
       // Format fields to match what frontend expects (name property)
       const formattedFields = fields?.map((f: any) => ({ name: f.name }))
-      return { success: true, rows: rows as any[], fields: formattedFields }
+      
+      const isArray = Array.isArray(result)
+      const rows = isArray ? result : []
+      const rowCount = isArray ? result.length : (result as any).affectedRows
+
+      return { success: true, rows, fields: formattedFields, rowCount }
     } catch (error: any) {
       return { success: false, error: error.message }
     }

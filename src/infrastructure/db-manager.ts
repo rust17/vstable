@@ -1,6 +1,7 @@
 import { BaseDriver, QueryResult, Capabilities } from './drivers/base-driver'
 import { PgDriver } from './drivers/pg-driver'
 import { MysqlDriver } from './drivers/mysql-driver'
+import { logger } from './logger'
 
 export class DbManager {
   private drivers: Map<string, BaseDriver> = new Map()
@@ -49,7 +50,18 @@ export class DbManager {
   async query(id: string, sql: string, params?: any[]): Promise<QueryResult> {
     const driver = this.drivers.get(id)
     if (!driver) return { success: false, error: 'No database connection' }
-    return driver.query(sql, params)
+    
+    const startTime = performance.now()
+    try {
+      const result = await driver.query(sql, params)
+      const duration = performance.now() - startTime
+      logger.logQuery(id, sql, params, duration, result.rowCount)
+      return result
+    } catch (error: any) {
+      const duration = performance.now() - startTime
+      logger.logQuery(id, sql, params, duration, undefined)
+      throw error
+    }
   }
 
   async closeAll(): Promise<void> {

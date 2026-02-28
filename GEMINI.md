@@ -29,6 +29,7 @@
 ## 工程质量与验证 (Validation)
 - **Truth Environment (集成测试)**：通过 `docker-compose` 调度真实的 PostgreSQL (5432) 和 MySQL (3306) 实例。
 - **DDL 回环校验**：所有方言引擎的 `generateAlterTableSql` 逻辑必须通过 `.integration.test.ts` 在真实数据库中执行验证，确保生成的 SQL 语法在不同版本数据库中的兼容性。
+- **SQL 审计与回显日志 (Traceability)**：开发模式下所有 IPC 通信和生成的 SQL 语句、执行耗时、受影响行数实时记录至 `.debug.log`，用于快速定位 `core` 逻辑或 `driver` 兼容性问题。
 - **验证指令**：执行 `npm run docker:up` 后，运行 `npm run test:integration`。
 
 ---

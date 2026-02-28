@@ -113,7 +113,7 @@ export class PgDriver implements BaseDriver {
     if (!this.pool) return { success: false, error: 'No PostgreSQL connection' }
     try {
       const result = await this.pool.query(sql, params)
-      return { success: true, rows: result.rows, fields: result.fields }
+      return { success: true, rows: result.rows, fields: result.fields, rowCount: result.rowCount ?? undefined }
     } catch (error: any) {
       return { success: false, error: error.message }
     }
