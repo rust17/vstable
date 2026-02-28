@@ -5,6 +5,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs'
 export interface ConnectionEntry {
   id: string
   name: string
+  dialect: 'postgres' | 'mysql'
   host: string
   port: number
   user: string
@@ -18,7 +19,11 @@ export function getSavedConnections(): ConnectionEntry[] {
   if (!existsSync(STORE_PATH)) return []
   try {
     const content = readFileSync(STORE_PATH, 'utf-8')
-    return JSON.parse(content)
+    const connections = JSON.parse(content)
+    return connections.map((c: any) => ({
+      ...c,
+      dialect: c.dialect || (c.port === 3306 ? 'mysql' : 'postgres')
+    }))
   } catch (e) {
     console.error('Failed to read connections.json', e)
     return []
@@ -37,6 +42,7 @@ export function saveConnection(config: any): void {
   const entry: ConnectionEntry = {
     id: config.id || crypto.randomUUID(),
     name: config.name || config.host,
+    dialect: config.dialect || 'postgres',
     host: config.host,
     port: config.port,
     user: config.user,
