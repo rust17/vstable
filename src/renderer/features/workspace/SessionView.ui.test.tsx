@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { SessionView } from '@renderer/features/workspace/SessionView'
+import { SessionView } from './SessionView'
 import React from 'react'
 
 // Mock context already handled by setup.tsx

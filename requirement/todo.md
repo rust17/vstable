@@ -310,3 +310,11 @@ add:
     - 数据表格标签
         - [ ] 鼠标放在上面应该展示表名
         - [ ] 鼠标右键应该弹出菜单，包括：Close、Close Others、Close All 和 Close Tabs to Right
+
+---
+
+edit:
+    - 代码清理
+        - [x] 移除废弃的 tailwind.config.js，使用 postcss 配置替代
+        - [x] 删除废弃的 data-viewer 目录，合并其内冗余测试文件到 workspace
+        - [x] 将 UI 测试文件归位到相应功能目录，精简 UI 目录
