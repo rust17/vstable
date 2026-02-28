@@ -8,7 +8,7 @@ describe('MySQL DDL Integration Tests', () => {
   beforeAll(async () => {
     connection = await mysql.createConnection({
       host: 'localhost',
-      port: 3306,
+      port: 3307,
       user: 'root',
       password: 'password',
       database: 'quickpg_test'

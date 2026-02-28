@@ -8,7 +8,7 @@ describe('PostgreSQL DDL Integration Tests', () => {
   beforeAll(async () => {
     pool = new Pool({
       host: 'localhost',
-      port: 5432,
+      port: 5433,
       user: 'root',
       password: 'password',
       database: 'quickpg_test'

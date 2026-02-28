@@ -10,7 +10,7 @@
     "postinstall": "electron-builder install-app-deps",
     "package:mac": "npm run build && electron-builder --mac",
     "test": "vitest",
-    "test:integration": "vitest run **/*.integration.test.ts",
+    "test:integration": "vitest run --testNamePattern Integration",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down -v"
   },
