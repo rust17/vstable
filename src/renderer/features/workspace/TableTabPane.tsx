@@ -49,20 +49,17 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
 
   // Initial fetch
   useEffect(() => {
-    // Only fetch if active and we don't have results, 
-    // or if this is the first time PK is loaded and we need to re-sort
     if (isActive && !tab.results) {
-      fetchData(tab.page || 1, tab.pageSize || 100, tab.filters || [])
+      fetchData(tab.page || 1, tab.pageSize || 100, tab.filters || [], tab.sorts || [])
     }
-  }, [isActive, tab.id, fetchData]) // Removed tab.pk to avoid double call if not needed, handled by refresh below
+  }, [isActive, tab.id, fetchData]) 
 
   // Refresh data when PK is discovered to ensure correct sorting
   useEffect(() => {
     if (isActive && tab.pk && tab.results) {
-      // If we have data but just found the PK, re-fetch to get correct order
-      fetchData(tab.page || 1, tab.pageSize || 100, tab.filters || [])
+      fetchData(tab.page || 1, tab.pageSize || 100, tab.filters || [], tab.sorts || [])
     }
-  }, [isActive, tab.pk]) // Only trigger when PK is set from null/undefined to a value
+  }, [isActive, tab.pk]) 
 
   // Handle refresh and focus shortcuts
   useEffect(() => {
@@ -81,16 +78,21 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
 
   const handlePageChange = (newPage: number) => {
     onUpdateTab({ page: newPage })
-    fetchData(newPage, tab.pageSize || 100, tab.filters || [])
+    fetchData(newPage, tab.pageSize || 100, tab.filters || [], tab.sorts || [])
   }
 
   const handlePageSizeChange = (newSize: number) => {
     onUpdateTab({ pageSize: newSize, page: 1 })
-    fetchData(1, newSize, tab.filters || [])
+    fetchData(1, newSize, tab.filters || [], tab.sorts || [])
   }
 
   const handleRefresh = () => {
-    fetchData(tab.page || 1, tab.pageSize || 100, tab.filters || [])
+    fetchData(tab.page || 1, tab.pageSize || 100, tab.filters || [], tab.sorts || [])
+  }
+
+  const handleSortChange = (newSorts: any[]) => {
+    onUpdateTab({ sorts: newSorts })
+    fetchData(tab.page || 1, tab.pageSize || 100, tab.filters || [], newSorts)
   }
 
   // Filter handlers
@@ -115,7 +117,7 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
 
   const handleApplyFilters = () => {
     onUpdateTab({ page: 1 })
-    fetchData(1, tab.pageSize || 100, tab.filters || [])
+    fetchData(1, tab.pageSize || 100, tab.filters || [], tab.sorts || [])
   }
 
   // Row operations
@@ -182,6 +184,8 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
         fields={data?.fields || []}
         structure={tab.structure}
         pk={tab.pk}
+        sorts={tab.sorts || []}
+        onSortChange={handleSortChange}
         loading={loading}
         error={error}
         isAddingRow={tab.isAddingRow}

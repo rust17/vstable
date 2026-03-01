@@ -29,6 +29,11 @@ export interface ConnectionConfig {
   database: string
 }
 
+export interface SortCondition {
+  column: string
+  direction: 'ASC' | 'DESC'
+}
+
 export interface TableTab {
   id: string
   type: 'table' | 'query' | 'structure'
@@ -45,6 +50,7 @@ export interface TableTab {
   structure?: any[]
   query: string
   filters?: FilterCondition[]
+  sorts?: SortCondition[]
   isAddingRow?: boolean
   newRowData?: Record<string, any>
   refreshKey?: number

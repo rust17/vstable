@@ -1,12 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
+import { ArrowUp, ArrowDown } from 'lucide-react'
 import { formatDisplayValue } from '../../../core/pg/format'
-
-interface SelectionBox {
-  startX: number
-  startY: number
-  currentX: number
-  currentY: number
-}
+import { SortCondition } from '../../types/session'
 
 interface ResultGridProps {
   rows: any[]
@@ -17,10 +12,12 @@ interface ResultGridProps {
   error?: string | null
   isAddingRow?: boolean
   newRowData?: Record<string, any>
+  sorts?: SortCondition[]
   onCellDoubleClick?: (row: any, field: string, value: any, type?: string) => void
   onNewRowChange?: (column: string, value: string) => void
   onContextMenu?: (e: React.MouseEvent, selectedRows: any[]) => void
   onSelectionChange?: (indices: Set<number>) => void
+  onSortChange?: (sorts: SortCondition[]) => void
 }
 
 export const ResultGrid: React.FC<ResultGridProps> = ({
@@ -32,34 +29,58 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
   error,
   isAddingRow,
   newRowData,
+  sorts = [],
   onCellDoubleClick,
   onNewRowChange,
   onContextMenu,
-  onSelectionChange
+  onSelectionChange,
+  onSortChange
 }) => {
   const [selectedRowIndices, setSelectedRowIndices] = useState<Set<number>>(new Set())
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null)
-  const [selectionBox, setSelectionBox] = useState<SelectionBox | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const tableRef = useRef<HTMLTableElement>(null)
+
+  const handleHeaderClick = (e: React.MouseEvent, column: string) => {
+    if (!onSortChange) return
+
+    // If the user is selecting text (e.g. three-finger drag on Mac), don't trigger sort
+    const selection = window.getSelection()
+    if (selection && selection.toString().length > 0) {
+        return
+    }
+
+    const isMac = window.navigator.platform.toUpperCase().indexOf('MAC') >= 0
+    const multiSort = isMac ? e.metaKey : e.ctrlKey
+    
+    const existingIndex = sorts.findIndex(s => s.column === column)
+    let newSorts: SortCondition[] = multiSort ? [...sorts] : []
+
+    if (existingIndex > -1) {
+      const current = sorts[existingIndex]
+      if (current.direction === 'ASC') {
+        const next: SortCondition = { column, direction: 'DESC' }
+        if (multiSort) newSorts[existingIndex] = next
+        else newSorts = [next]
+      } else {
+        // DESC -> None
+        if (multiSort) newSorts.splice(existingIndex, 1)
+        else newSorts = []
+      }
+    } else {
+      // None -> ASC
+      const next: SortCondition = { column, direction: 'ASC' }
+      if (multiSort) newSorts.push(next)
+      else newSorts = [next]
+    }
+
+    onSortChange(newSorts)
+  }
 
   const handleMouseDown = (e: React.MouseEvent) => {
     // Only left click on the container or table (not on input/button)
     if (e.button !== 0) return
     if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'BUTTON') return
-
-    const rect = containerRef.current?.getBoundingClientRect()
-    if (!rect) return
-
-    const startX = e.clientX - rect.left + containerRef.current!.scrollLeft
-    const startY = e.clientY - rect.top + containerRef.current!.scrollTop
-
-    setSelectionBox({
-      startX,
-      startY,
-      currentX: startX,
-      currentY: startY
-    })
 
     // If not holding Cmd/Ctrl/Shift, clear selection on start
     const isMac = window.navigator.platform.toUpperCase().indexOf('MAC') >= 0
@@ -69,58 +90,6 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
         if (onSelectionChange) onSelectionChange(new Set())
     }
   }
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!selectionBox || !containerRef.current) return
-
-      const rect = containerRef.current.getBoundingClientRect()
-      const currentX = e.clientX - rect.left + containerRef.current.scrollLeft
-      const currentY = e.clientY - rect.top + containerRef.current.scrollTop
-
-      setSelectionBox(prev => prev ? { ...prev, currentX, currentY } : null)
-
-      // Calculate intersecting rows
-      const boxTop = Math.min(selectionBox.startY, currentY)
-      const boxBottom = Math.max(selectionBox.startY, currentY)
-
-      const newSelection = new Set<number>()
-      const isMac = window.navigator.platform.toUpperCase().indexOf('MAC') >= 0
-      const cmdOrCtrl = e.metaKey || e.ctrlKey // Use basic e here as it's native MouseEvent
-
-      if (cmdOrCtrl) {
-          selectedRowIndices.forEach(idx => newSelection.add(idx))
-      }
-
-      const rowElements = tableRef.current?.querySelectorAll('tbody tr')
-      rowElements?.forEach((tr, index) => {
-          const trElement = tr as HTMLElement
-          const rowTop = trElement.offsetTop
-          const rowBottom = rowTop + trElement.offsetHeight
-
-          if (rowTop < boxBottom && rowBottom > boxTop) {
-              newSelection.add(index)
-          }
-      })
-
-      setSelectedRowIndices(newSelection)
-      if (onSelectionChange) onSelectionChange(newSelection)
-    }
-
-    const handleMouseUp = () => {
-      setSelectionBox(null)
-    }
-
-    if (selectionBox) {
-      window.addEventListener('mousemove', handleMouseMove)
-      window.addEventListener('mouseup', handleMouseUp)
-    }
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [selectionBox, selectedRowIndices, onSelectionChange])
 
   const handleRowClick = (e: React.MouseEvent, index: number) => {
     let newSelection = new Set<number>()
@@ -184,17 +153,6 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
             if (onContextMenu) onContextMenu(e, [])
         }}
     >
-      {selectionBox && (
-        <div
-          className="absolute z-50 border border-blue-500 bg-blue-500/10 pointer-events-none"
-          style={{
-            left: Math.min(selectionBox.startX, selectionBox.currentX),
-            top: Math.min(selectionBox.startY, selectionBox.currentY),
-            width: Math.abs(selectionBox.startX - selectionBox.currentX),
-            height: Math.abs(selectionBox.startY - selectionBox.currentY)
-          }}
-        />
-      )}
       {(!rows || rows.length === 0) && !isAddingRow ? (
         <div className="p-8 text-center text-gray-300 italic text-sm h-full">No data found</div>
       ) : (
@@ -203,10 +161,27 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
           <tr>
             {fields.map((field, i) => {
               const colInfo = structure?.find(c => c.column_name === field.name)
+              const sortIndex = sorts.findIndex(s => s.column === field.name)
+              const sort = sortIndex > -1 ? sorts[sortIndex] : null
+
               return (
-                <th key={i} className="px-4 py-2.5 border-r border-b border-gray-200 whitespace-nowrap bg-gray-50/80">
+                <th 
+                  key={i} 
+                  className="px-4 py-2.5 border-r border-b border-gray-200 whitespace-nowrap bg-gray-50/80 hover:bg-gray-100/80 cursor-pointer group transition-colors"
+                  onClick={(e) => handleHeaderClick(e, field.name)}
+                >
                   <div className="flex flex-col items-start gap-1">
-                    <span className="cursor-text text-gray-700 font-bold">{field.name}</span>
+                    <div className="flex items-center gap-1.5 w-full">
+                      <span className="cursor-text text-gray-700 font-bold group-hover:text-blue-600 transition-colors">{field.name}</span>
+                      <div className="flex items-center">
+                        {sort && (
+                          <div className="flex items-center text-blue-600">
+                            {sort.direction === 'ASC' ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+                            {sorts.length > 1 && <span className="text-[9px] font-bold ml-0.5">{sortIndex + 1}</span>}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                     {colInfo && <span className="text-[10px] font-medium text-gray-500 bg-gray-200/60 rounded px-1.5 py-0.5">{colInfo.data_type.replace(/ without time zone$/, '')}</span>}
                   </div>
                 </th>

@@ -14,7 +14,7 @@ export const useTableData = (tab: TableTab) => {
   // Helper to quote identifiers
   const quote = useCallback((id: string) => `${q}${id}${q}`, [q])
   
-  const fetchData = useCallback(async (page: number, pageSize: number, filters: FilterCondition[]) => {
+  const fetchData = useCallback(async (page: number, pageSize: number, filters: FilterCondition[], sorts: SortCondition[] = []) => {
     setLoading(true)
     setError(null)
     try {
@@ -46,9 +46,14 @@ export const useTableData = (tab: TableTab) => {
 
         const offset = (page - 1) * pageSize
         let orderByClause = ''
-        if (tab.pk) {
+        
+        if (sorts.length > 0) {
+            const orderParts = sorts.map(s => `${quote(s.column)} ${s.direction}`)
+            orderByClause = ` ORDER BY ${orderParts.join(', ')}`
+        } else if (tab.pk) {
             orderByClause = ` ORDER BY ${quote(tab.pk)} ASC`
         }
+
         const sql = `SELECT * FROM ${tableRef}${whereClause}${orderByClause} LIMIT ${pageSize} OFFSET ${offset};`
         const res = await query(sql)
         
