@@ -578,7 +578,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
   }
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
-    if (mode !== 'create') return
+    if (mode !== 'create' && capabilities?.dialect !== 'mysql') return
     setDraggedIdx(index)
     e.dataTransfer.effectAllowed = 'move'
     const target = e.currentTarget as HTMLElement
@@ -593,13 +593,13 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
   }
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
-    if (mode !== 'create') return
+    if (mode !== 'create' && capabilities?.dialect !== 'mysql') return
     e.preventDefault()
     setDragOverIdx(index)
   }
 
   const handleDrop = (e: React.DragEvent, index: number) => {
-    if (mode !== 'create' || draggedIdx === null) return
+    if ((mode !== 'create' && capabilities?.dialect !== 'mysql') || draggedIdx === null) return
     e.preventDefault()
     
     const newCols = [...columns]
@@ -773,10 +773,12 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                   const hasPrecision = typeLower.includes('numeric') || typeLower.includes('decimal') || typeLower.includes('timestamp') || typeLower.includes('time')
                   const canAutoInc = typeLower.includes('int') || typeLower.includes('serial')
 
+                  const isDraggable = mode === 'create' || capabilities?.dialect === 'mysql'
+
                   return (
                     <tr 
                       key={col.id} 
-                      draggable={mode === 'create'}
+                      draggable={isDraggable}
                       onDragStart={(e) => handleDragStart(e, idx)}
                       onDragEnd={handleDragEnd}
                       onDragOver={(e) => handleDragOver(e, idx)}
@@ -788,8 +790,8 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                       }}
                     >
                       <td className="px-6 py-3">
-                        <div className="text-gray-400 text-sm font-mono cursor-move flex items-center gap-2">
-                          {mode === 'create' && <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"><div className="w-3 h-0.5 bg-gray-300"></div><div className="w-3 h-0.5 bg-gray-300"></div><div className="w-3 h-0.5 bg-gray-300"></div></div>}
+                        <div className={`text-gray-400 text-sm font-mono flex items-center gap-2 ${isDraggable ? 'cursor-move' : ''}`}>
+                          {isDraggable && <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"><div className="w-3 h-0.5 bg-gray-300"></div><div className="w-3 h-0.5 bg-gray-300"></div><div className="w-3 h-0.5 bg-gray-300"></div></div>}
                           {idx + 1}
                         </div>
                       </td>

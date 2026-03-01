@@ -128,4 +128,43 @@ describe('MySQL DDL Integration Tests', () => {
     const [indexRows]: any = await connection.query(`SHOW INDEX FROM \`integration_test_users\` WHERE Key_name = 'idx_email_only'`)
     expect(indexRows.length).toBe(0)
   })
+
+  it('should correctly reorder columns using FIRST and AFTER', async () => {
+    const schema = 'quickpg_test'
+    const tableName = 'reorder_test'
+    await connection.query(`DROP TABLE IF EXISTS \`${tableName}\``)
+
+    // 1. Initial State: id, c1, c2, c3
+    const initialCols: ColumnDefinition[] = [
+      { id: '1', name: 'id', type: 'int', nullable: false, defaultValue: null, isPrimaryKey: true },
+      { id: '2', name: 'c1', type: 'int', nullable: true, defaultValue: null, isPrimaryKey: false },
+      { id: '3', name: 'c2', type: 'int', nullable: true, defaultValue: null, isPrimaryKey: false },
+      { id: '4', name: 'c3', type: 'int', nullable: true, defaultValue: null, isPrimaryKey: false }
+    ]
+
+    for (const sql of generateCreateTableSql(schema, tableName, initialCols, [])) {
+      await connection.query(sql)
+    }
+
+    // 2. Reorder: c3 to FIRST, id, c2, c1 (c1 AFTER c2)
+    // New Order: c3, id, c2, c1
+    const reorderedCols: ColumnDefinition[] = [
+      { ...initialCols[3], _original: { ...initialCols[3], originalIndex: 3 } }, // c3 (FIRST)
+      { ...initialCols[0], _original: { ...initialCols[0], originalIndex: 0 } }, // id (AFTER c3)
+      { ...initialCols[2], _original: { ...initialCols[2], originalIndex: 2 } }, // c2 (AFTER id)
+      { ...initialCols[1], _original: { ...initialCols[1], originalIndex: 1 } }  // c1 (AFTER c2)
+    ]
+
+    const alterSqls = generateAlterTableSql(schema, tableName, reorderedCols, [], [], [])
+    
+    for (const sql of alterSqls) {
+      await connection.query(sql)
+    }
+
+    // 3. Verify Order
+    const [rows]: any = await connection.query(`SHOW COLUMNS FROM \`${tableName}\``)
+    const physicalOrder = rows.map((r: any) => r.Field)
+    
+    expect(physicalOrder).toEqual(['c3', 'id', 'c2', 'c1'])
+  })
 })

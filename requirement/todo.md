@@ -325,8 +325,18 @@ fix:
 ---
 
 add:
-    - 数据表格标签
+    - 数据表格
         - [ ] 鼠标放在上面应该展示表名
         - [ ] 鼠标右键应该弹出菜单，包括：Close、Close Others、Close All 和 Close Tabs to Right
     - 数据表格
         - [ ] 通过点击列名快速：倒序、正序、取消排序，支持多个字段一起排序
+
+    ---
+
+    add:
+    - 表结构编辑
+        - [x] MySQL 支持在编辑模式下通过拖拽调整列的物理顺序
+    - 核心引擎
+        - [x] 增强差异比对算法，通过 originalIndex 精确识别列位置变动
+        - [x] 为 MySQL 完善了包含位置信息的 DDL 生成逻辑 (ADD/CHANGE/MODIFY COLUMN)
+

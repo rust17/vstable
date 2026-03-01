@@ -12,6 +12,7 @@ export interface ColumnDefinition {
   isPrimaryKey: boolean
   isAutoIncrement?: boolean
   comment?: string
+  originalIndex?: number
   // Original state for diffing
   _original?: Omit<ColumnDefinition, 'id' | '_original'>
 }
@@ -82,7 +83,7 @@ export const generateAlterTableSql = (
   })
 
   // 3. Handle Column Changes
-  columns.forEach(col => {
+  columns.forEach((col, index) => {
     const formattedType = formatType(col)
     const formattedDefault = formatDefault(col)
     
@@ -92,9 +93,17 @@ export const generateAlterTableSql = (
     if (col.isAutoIncrement) colDef += ` AUTO_INCREMENT`
     if (col.comment) colDef += ` COMMENT '${col.comment.replace(/'/g, "''")}'`
 
+    let positionSql = ''
+    if (index === 0) {
+      positionSql = ' FIRST'
+    } else {
+      const prevCol = columns[index - 1]
+      positionSql = ` AFTER \`${prevCol.name}\``
+    }
+
     if (!col._original) {
       // New Column
-      sqls.push(`ALTER TABLE ${safeTable} ADD COLUMN ${colDef};`)
+      sqls.push(`ALTER TABLE ${safeTable} ADD COLUMN ${colDef}${positionSql};`)
     } else {
       // Modified Column
       const original = col._original
@@ -110,12 +119,23 @@ export const generateAlterTableSql = (
         col.isAutoIncrement !== original.isAutoIncrement ||
         col.comment !== original.comment
 
+      // Detect if position changed
+      const originalOrderedCols = columns
+        .filter(c => c._original)
+        .sort((a, b) => (a._original!.originalIndex || 0) - (b._original!.originalIndex || 0))
+        .map(c => c._original!.name)
+      
+      const originalIdx = originalOrderedCols.indexOf(original.name)
+      const originalPrevColName = originalIdx > 0 ? originalOrderedCols[originalIdx - 1] : null
+      
+      const isFirst = index === 0
+      const prevColName = index > 0 ? columns[index - 1].name : null
+      const positionChanged = isFirst ? (originalIdx !== 0) : (prevColName !== originalPrevColName)
+
       if (isRename) {
-        // MySQL 8.0+ supports RENAME COLUMN, but for compatibility CHANGE is often used
-        sqls.push(`ALTER TABLE ${safeTable} CHANGE COLUMN \`${original.name}\` ${colDef};`)
-      } else if (hasMetadataChange) {
-        // Only metadata or type changed
-        sqls.push(`ALTER TABLE ${safeTable} MODIFY COLUMN ${colDef};`)
+        sqls.push(`ALTER TABLE ${safeTable} CHANGE COLUMN \`${original.name}\` ${colDef}${positionSql};`)
+      } else if (hasMetadataChange || positionChanged) {
+        sqls.push(`ALTER TABLE ${safeTable} MODIFY COLUMN ${colDef}${positionSql};`)
       }
     }
   })

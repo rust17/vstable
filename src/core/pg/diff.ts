@@ -14,6 +14,7 @@ export interface ColumnDefinition {
   isIdentity?: boolean
   comment?: string
   pkConstraintName?: string
+  originalIndex?: number
   // Original state for diffing
   _original?: Omit<ColumnDefinition, 'id' | '_original'>
 }
