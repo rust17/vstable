@@ -1,10 +1,54 @@
-node_modules/
-out/
-dist/
-release/
-*.log
+# --- OS/Editor ---
 .DS_Store
-.env*
-!.env.example
+Thumbs.db
 .vscode/
 .idea/
+*.swp
+*.swo
+
+# --- Logs/Debug ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+backend/log.txt
+
+# --- Environment ---
+.env*
+!.env.example
+
+# --- Frontend (Node.js/Electron) ---
+node_modules/
+frontend/node_modules/
+frontend/out/
+frontend/dist/
+frontend/release/
+frontend/.parcel-cache/
+frontend/.eslintcache
+frontend/.vite/
+frontend/package-lock.json
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/playwright/.cache/
+frontend/*.tsbuildinfo
+
+# --- Backend (Go) ---
+backend/engine
+backend/quickpg-engine
+backend/bin/
+backend/vendor/
+backend/*.exe
+backend/*.test
+backend/__debug_bin
+go.work
+
+# --- Build/Test ---
+coverage/
+.nyc_output/
+.temp/
+.tmp/
+docker-data/
+*.db
+*.sqlite
