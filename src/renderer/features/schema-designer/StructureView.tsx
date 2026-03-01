@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Plus, X, RefreshCw, Save, Database, Trash2, Key, Check, AlertCircle, Search, ChevronDown, Copy, RotateCcw, FileText } from 'lucide-react'
 import { DiffFactory } from '../../../core/factory'
 import { useSession } from '../../providers/SessionProvider'
+import { useDropdownPosition } from '../../hooks/useDropdownPosition'
 import { ColumnDefinition, IndexDefinition, Capabilities } from '../../types/session'
 
 interface StructureViewProps {
-  connectionId: string
+// ... (rest of the interfaces)
+
   schema: string
   tableName: string
   mode?: 'create' | 'edit'
@@ -70,8 +73,8 @@ const EnumManagerModal: React.FC<{
 }> = ({ values: initialValues, onClose, onSave }) => {
     const [values, setValues] = useState<string[]>(initialValues.length > 0 ? initialValues : [''])
 
-    return (
-        <div className="fixed inset-0 z-[600] flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+    return createPortal(
+        <div className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
             <div className="bg-white w-full max-w-md rounded-xl shadow-2xl border border-gray-200 flex flex-col animate-in fade-in zoom-in duration-200">
                 <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
                     <h3 className="font-semibold text-gray-700 flex items-center gap-2">Manage Enum Values</h3>
@@ -119,24 +122,18 @@ const EnumManagerModal: React.FC<{
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     )
 }
 
 const TypeSelector: React.FC<{ value: string; capabilities: Capabilities | null; onChange: (val: string) => void }> = ({ value, capabilities, onChange }) => {
-  const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  const { isOpen, setIsOpen, coords, containerRef, toggleOpen } = useDropdownPosition({ 
+    portalId: 'type-selector-portal',
+    menuHeight: 320,
+    minWidth: 220
+  })
 
   const groups = capabilities?.typeGroups || []
   const filteredGroups = groups.map(group => ({
@@ -147,21 +144,33 @@ const TypeSelector: React.FC<{ value: string; capabilities: Capabilities | null;
   return (
     <div className="relative" ref={containerRef}>
       <button 
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleOpen}
         className="w-full flex items-center justify-between gap-1 px-1 py-0.5 bg-transparent border-b border-transparent hover:border-gray-300 text-blue-600 font-mono text-sm transition-colors"
       >
         <span className="truncate">{value || 'Select Type'}</span>
         <ChevronDown size={14} className={`shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {isOpen && (
-        <div className="fixed z-[300] mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+      {isOpen && createPortal(
+        <div 
+          id="type-selector-portal"
+          className="fixed z-[1000] bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150"
+          style={{
+            top: coords.top,
+            bottom: coords.bottom,
+            left: coords.left,
+            width: coords.width
+          }}
+        >
           <div className="p-2 border-b border-gray-100 flex items-center gap-2 bg-gray-50">
             <Search size={14} className="text-gray-400" />
             <input 
               autoFocus
               value={search}
               onChange={e => setSearch(e.target.value)}
+              onKeyDown={e => {
+                  if (e.key === 'Escape') setIsOpen(false)
+              }}
               placeholder="Search type..."
               className="w-full bg-transparent border-none outline-none text-xs"
             />
@@ -191,7 +200,8 @@ const TypeSelector: React.FC<{ value: string; capabilities: Capabilities | null;
               <div className="p-4 text-center text-gray-400 text-xs italic">No types found</div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
@@ -202,42 +212,10 @@ const ColumnMultiSelect: React.FC<{
   selectedColumns: string[]; 
   onChange: (cols: string[]) => void 
 }> = ({ allColumns, selectedColumns, onChange }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [coords, setCoords] = useState<{ top?: number, bottom?: number, left: number, width: number }>({ left: 0, width: 0 })
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  const toggleOpen = () => {
-    if (!isOpen && containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        const spaceBelow = window.innerHeight - rect.bottom
-        const spaceAbove = rect.top
-        
-        if (spaceBelow < 200 && spaceAbove > spaceBelow) {
-            setCoords({
-                bottom: window.innerHeight - rect.top + 4,
-                left: rect.left,
-                width: rect.width
-            })
-        } else {
-            setCoords({
-                top: rect.bottom + 4,
-                left: rect.left,
-                width: rect.width
-            })
-        }
-    }
-    setIsOpen(!isOpen)
-  }
+  const { isOpen, coords, containerRef, toggleOpen } = useDropdownPosition({ 
+    portalId: 'multi-select-portal',
+    menuHeight: 200
+  })
 
   return (
     <div className="relative" ref={containerRef}>
@@ -260,9 +238,10 @@ const ColumnMultiSelect: React.FC<{
         )) : <span className="text-gray-400 text-xs">Select columns...</span>}
       </div>
 
-      {isOpen && (
+      {isOpen && createPortal(
         <div 
-            className="fixed z-[100] bg-white border border-gray-200 rounded-lg shadow-xl py-1 max-h-48 overflow-y-auto animate-in fade-in zoom-in-95 duration-100"
+            id="multi-select-portal"
+            className="fixed z-[1000] bg-white border border-gray-200 rounded-lg shadow-xl py-1 max-h-48 overflow-y-auto animate-in fade-in zoom-in-95 duration-100"
             style={{ 
                 top: coords.top,
                 bottom: coords.bottom,
@@ -295,7 +274,8 @@ const ColumnMultiSelect: React.FC<{
           {allColumns.length === 0 && (
             <div className="px-3 py-2 text-xs text-gray-400 italic text-center">No columns available</div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
@@ -1055,8 +1035,8 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
         <div className="h-20 shrink-0" />
       </div>
 
-      {sqlPreview && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+      {sqlPreview && createPortal(
+          <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
               <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl border border-gray-200 flex flex-col max-h-[80vh] m-4 animate-in fade-in zoom-in duration-200">
                   <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
                       <h3 className="font-semibold text-gray-700 flex items-center gap-2"><Database size={16} className="text-blue-500" /> Preview SQL</h3>
@@ -1074,7 +1054,8 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                       )}
                   </div>
               </div>
-          </div>
+          </div>,
+          document.body
       )}
 
       {contextMenu && (
