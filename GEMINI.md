@@ -5,7 +5,7 @@
 
 ### 1. 领域引擎层 (Core Engine) - `src/core/`
 - **纯逻辑实现**：不依赖 React/Electron，通过 `DiffFactory` 调度不同数据库的计算逻辑。
-- **方言 Diff 引擎 (`pg/`, `mysql/`)**：实现各方言的 `generateAlterTableSql` 等核心逻辑。
+- **方言 Diff 引擎 (`pg/`, `mysql/`)**：实现各方言 pillars 的 `generateAlterTableSql` 等核心逻辑。
 - **数据格式化 (`pg/format.ts`)**：处理不同方言的类型转换与显示逻辑。
 
 ### 2. 基础设施层 (Infrastructure) - `src/infrastructure/`
@@ -15,6 +15,7 @@
 
 ### 3. 表现层 (Renderer) - `src/renderer/`
 - **元数据驱动 (Metadata-Driven)**：视图层通过 `Capabilities` 接口动态适配方言差异（如 MySQL 无 Schema 概念、引用符差异等）。
+- **动态主题系统 (Dynamic Theming)**：基于 Tailwind v4 的 CSS 变量映射。定义语义化色标 `primary`，通过顶层容器的 `data-theme` 属性动态切换。PostgreSQL 默认映射蓝色，MySQL 映射橙色，确保多会话并存时的视觉隔离。
 - **功能区 (Features)**：
     - `navigator/`: 适配多引擎的数据库/表结构展示。
     - `workspace/`: 多会话 Tab 管理。

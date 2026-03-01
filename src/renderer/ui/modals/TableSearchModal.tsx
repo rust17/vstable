@@ -30,7 +30,7 @@ export const TableSearchModal: React.FC<TableSearchModalProps> = ({ isOpen, onCl
     <div className="fixed inset-0 z-[200] flex items-start justify-center pt-[15vh] bg-black/20 backdrop-blur-[2px]" onClick={onClose}>
       <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl border border-gray-200 overflow-hidden animate-in slide-in-from-top-4 duration-200" onClick={e => e.stopPropagation()}>
         <div className="p-4 border-b border-gray-100">
-          <div className="flex items-center gap-3 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+          <div className="flex items-center gap-3 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200 focus-within:ring-2 focus-within:ring-primary-500/20 focus-within:border-primary-500 transition-all">
             <Database size={18} className="text-gray-400" />
             <input
               autoFocus
@@ -61,13 +61,13 @@ export const TableSearchModal: React.FC<TableSearchModalProps> = ({ isOpen, onCl
           {filtered.length > 0 ? filtered.map((t, i) => (
             <div
               key={`${t.table_schema}.${t.table_name}`}
-              className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors ${i === selectedIndex ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'}`}
+              className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors ${i === selectedIndex ? 'bg-primary-600 text-white' : 'hover:bg-gray-100 text-gray-700'}`}
               onClick={() => onSelect(t.table_schema, t.table_name)}
             >
-              <TableIcon size={16} className={i === selectedIndex ? 'text-blue-200' : 'text-gray-400'} />
+              <TableIcon size={16} className={i === selectedIndex ? 'text-primary-200' : 'text-gray-400'} />
               <div className="flex flex-col">
                 <span className="text-sm font-semibold">{t.table_name}</span>
-                <span className={`text-[10px] ${i === selectedIndex ? 'text-blue-100' : 'text-gray-400'}`}>{t.table_schema}</span>
+                <span className={`text-[10px] ${i === selectedIndex ? 'text-primary-100' : 'text-gray-400'}`}>{t.table_schema}</span>
               </div>
             </div>
           )) : (

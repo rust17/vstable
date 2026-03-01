@@ -57,16 +57,16 @@ export const TabSwitcher: React.FC<TabSwitcherProps> = ({ isOpen, tabs, mruTabId
                 }}
                 data-testid={`tab-switcher-item-${tab.name}`}
                 data-active-item={isActive}
-                className={`px-4 py-3 flex items-center gap-3 transition-colors cursor-pointer select-none ${isActive ? 'bg-blue-600 text-white active-tab-item' : 'hover:bg-gray-50 text-gray-700'}`}
+                className={`px-4 py-3 flex items-center gap-3 transition-colors cursor-pointer select-none ${isActive ? 'bg-primary-600 text-white active-tab-item' : 'hover:bg-gray-50 text-gray-700'}`}
               >
                 <div className={`${isActive ? 'text-white' : 'text-gray-400'}`}>
                   {tab.type === 'table' ? <TableIcon size={16} /> : <Play size={16} />}
                 </div>
                 <div className="flex flex-col flex-1 min-w-0">
                   <span className="text-sm font-semibold truncate">{tab.name}</span>
-                  {tab.type === 'table' && <span className={`text-[10px] ${isActive ? 'text-blue-100' : 'text-gray-400'}`}>{tab.schema}.{tab.name}</span>}
+                  {tab.type === 'table' && <span className={`text-[10px] ${isActive ? 'text-primary-100' : 'text-gray-400'}`}>{tab.schema}.{tab.name}</span>}
                 </div>
-                {index === 0 && <span className={`text-[10px] px-1.5 py-0.5 rounded border ${isActive ? 'bg-blue-500/50 border-blue-400 text-white' : 'bg-gray-100 border-gray-200 text-gray-400'}`}>Active</span>}
+                {index === 0 && <span className={`text-[10px] px-1.5 py-0.5 rounded border ${isActive ? 'bg-primary-500/50 border-primary-400 text-white' : 'bg-gray-100 border-gray-200 text-gray-400'}`}>Active</span>}
               </div>
             )
           })}

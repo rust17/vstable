@@ -48,7 +48,7 @@ export const DataEditModal: React.FC<DataEditModalProps> = ({ isOpen, value, tit
       <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl border border-gray-200 flex flex-col max-h-[80vh] m-4 animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
           <div className="flex flex-col">
-            <h3 className="font-semibold text-gray-700 flex items-center gap-2"><Edit2 size={16} className="text-blue-500" /> {title || 'Edit Data'}</h3>
+            <h3 className="font-semibold text-gray-700 flex items-center gap-2"><Edit2 size={16} className="text-primary-500" /> {title || 'Edit Data'}</h3>
             {dataType && <span className="text-[10px] text-gray-400 font-mono ml-6">{dataType}</span>}
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors"><X size={18} className="text-gray-400" /></button>
@@ -74,7 +74,7 @@ export const DataEditModal: React.FC<DataEditModalProps> = ({ isOpen, value, tit
         </div>
         <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50 rounded-b-xl">
           <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200/50 rounded-lg transition-colors">Cancel</button>
-          <button onClick={handleSave} className="px-6 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm transition-colors">Save Changes</button>
+          <button onClick={handleSave} className="px-6 py-2 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 shadow-sm transition-colors">Save Changes</button>
         </div>
       </div>
     </div>

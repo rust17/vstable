@@ -172,10 +172,10 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
                 >
                   <div className="flex flex-col items-start gap-1">
                     <div className="flex items-center gap-1.5 w-full">
-                      <span className="cursor-text text-gray-700 font-bold group-hover:text-blue-600 transition-colors">{field.name}</span>
+                      <span className="cursor-text text-gray-700 font-bold group-hover:text-primary-600 transition-colors">{field.name}</span>
                       <div className="flex items-center">
                         {sort && (
-                          <div className="flex items-center text-blue-600">
+                          <div className="flex items-center text-primary-600">
                             {sort.direction === 'ASC' ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
                             {sorts.length > 1 && <span className="text-[9px] font-bold ml-0.5">{sortIndex + 1}</span>}
                           </div>
@@ -195,7 +195,7 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
               key={i}
               data-selected={selectedRowIndices.has(i) ? 'true' : 'false'}
               onClick={(e) => handleRowClick(e, i)}
-              className={`${selectedRowIndices.has(i) ? 'bg-blue-100' : 'hover:bg-blue-50/50'} border-b border-gray-100 transition-colors cursor-context-menu`}
+              className={`${selectedRowIndices.has(i) ? 'bg-primary-100' : 'hover:bg-primary-50/50'} border-b border-gray-100 transition-colors cursor-context-menu`}
               onContextMenu={(e) => handleContextMenu(e, i)}
             >
               {fields.map((field, j) => {

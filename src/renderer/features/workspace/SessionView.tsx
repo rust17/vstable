@@ -208,14 +208,18 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
     }
   }, [isActive, activeTabId, closeTab, openQuery, mruTabIds, showTabSwitcher, switcherIndex])
 
-  if (!isConnected) {
-      return <ConnectionForm />
-  }
-
   return (
-    <div data-testid={`session-view-${sessionId}`} className="flex h-full w-full overflow-hidden bg-white text-gray-900" style={{ display: isActive ? 'flex' : 'none' }}>
-      {/* Sidebar */}
-      <div className={`${isMaximized ? 'hidden' : ''} bg-gray-50 border-r border-gray-200 flex flex-col relative`} style={{ width: isMaximized ? 0 : sidebarWidth }}>
+    <div
+      data-theme={config.dialect === 'mysql' ? 'mysql' : 'postgres'}
+      className="h-full w-full"
+      style={{ display: isActive ? 'flex' : 'none' }}
+    >
+      {!isConnected ? (
+        <ConnectionForm />
+      ) : (
+        <div data-testid={`session-view-${sessionId}`} className="flex h-full w-full overflow-hidden bg-white text-gray-900">
+          {/* Sidebar */}
+          <div className={`${isMaximized ? 'hidden' : ''} bg-gray-50 border-r border-gray-200 flex flex-col relative`} style={{ width: isMaximized ? 0 : sidebarWidth }}>
         <div className="flex-1 min-h-0 overflow-hidden">
            <DatabaseTree
              databases={databases}
@@ -281,7 +285,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
         {/* Resize Handle */}
         <div
            onMouseDown={() => setIsResizing(true)}
-           className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-400/50 transition-colors z-50 ${isResizing ? 'bg-blue-500' : ''}`}
+           className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary-400/50 transition-colors z-50 ${isResizing ? 'bg-primary-500' : ''}`}
         />
       </div>
 
@@ -312,9 +316,9 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
                                 e.preventDefault()
                                 setTabContextMenu({ x: e.clientX, y: e.clientY, tabId: tab.id })
                             }}
-                            className={`group flex items-center gap-2 px-4 h-9 text-[11px] font-medium rounded-t-lg cursor-pointer transition-all border-x border-t ${activeTabId === tab.id ? 'bg-white text-blue-600 border-gray-200 -mb-[1px] z-10 shadow-[0_-1px_3px_rgba(0,0,0,0.02)]' : 'bg-transparent text-gray-500 hover:bg-gray-200/50 border-transparent'}`}
+                            className={`group flex items-center gap-2 px-4 h-9 text-[11px] font-medium rounded-t-lg cursor-pointer transition-all border-x border-t ${activeTabId === tab.id ? 'bg-white text-primary-600 border-gray-200 -mb-[1px] z-10 shadow-[0_-1px_3px_rgba(0,0,0,0.02)]' : 'bg-transparent text-gray-500 hover:bg-gray-200/50 border-transparent'}`}
                         >
-                            {tab.type === 'table' ? <TableIcon size={12} className={activeTabId === tab.id ? 'text-blue-500' : 'text-gray-400'} /> : tab.type === 'query' ? <Play size={12} className={activeTabId === tab.id ? 'text-blue-500' : 'text-gray-400'} /> : <Settings size={12} className={activeTabId === tab.id ? 'text-blue-500' : 'text-gray-400'} />}
+                            {tab.type === 'table' ? <TableIcon size={12} className={activeTabId === tab.id ? 'text-primary-500' : 'text-gray-400'} /> : tab.type === 'query' ? <Play size={12} className={activeTabId === tab.id ? 'text-primary-500' : 'text-gray-400'} /> : <Settings size={12} className={activeTabId === tab.id ? 'text-primary-500' : 'text-gray-400'} />}
                             <span className="truncate max-w-[120px]">{tab.name}</span>
                             <button
                                 data-testid={`close-tab-${tab.name}`}
@@ -444,6 +448,8 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
         onClose={() => setShowCreateDb(false)}
         onCreate={handleCreateDatabase}
       />
+    </div>
+    )}
     </div>
   )
 }

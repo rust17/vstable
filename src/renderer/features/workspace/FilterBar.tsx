@@ -32,7 +32,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({ value, options, onChang
               {options.map(opt => (
                 <div 
                   key={opt.value}
-                  className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer ${align === 'center' ? 'text-center' : ''} ${opt.value === value ? 'text-blue-600 bg-blue-50 font-semibold' : 'text-gray-700'}`}
+                  className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer ${align === 'center' ? 'text-center' : ''} ${opt.value === value ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700'}`}
                   onClick={() => {
                     onChange(opt.value)
                     setIsOpen(false)
@@ -96,10 +96,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 type="checkbox"
                 checked={filter.enabled}
                 onChange={e => onUpdateFilter(filter.id, 'enabled', e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer h-4 w-4"
+                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer h-4 w-4"
                 title="Enable/Disable Filter"
               />
-              <div className={`flex flex-1 items-center bg-gray-50 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-white transition-all focus-within:ring-1 focus-within:ring-blue-400/30 focus-within:bg-white focus-within:border-blue-300 overflow-visible h-[34px] ${!filter.enabled ? 'opacity-50' : ''}`}>
+              <div className={`flex flex-1 items-center bg-gray-50 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-white transition-all focus-within:ring-1 focus-within:ring-primary-400/30 focus-within:bg-white focus-within:border-primary-300 overflow-visible h-[34px] ${!filter.enabled ? 'opacity-50' : ''}`}>
                 <CustomDropdown
                   testId={`filter-column-${index}`}
                   className="text-[11px] border-r border-gray-100 min-w-[140px] font-medium text-gray-700 h-full"
@@ -110,7 +110,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 />
                 <CustomDropdown
                   testId={`filter-operator-${index}`}
-                  className="text-[11px] border-r border-gray-100 w-16 font-mono text-blue-600 h-full"
+                  className="text-[11px] border-r border-gray-100 w-16 font-mono text-primary-600 h-full"
                   align="center"
                   value={filter.operator}
                   options={operators}
@@ -144,7 +144,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                   <button
                     data-testid="btn-add-filter"
                     onClick={onAddFilter}
-                    className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-all"
+                    className="p-1.5 text-gray-400 hover:text-primary-500 hover:bg-primary-50 rounded transition-all"
                     title="Add Filter"
                   >
                     <Plus size={16} />
@@ -159,7 +159,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                <button
                 data-testid="btn-add-filter"
                 onClick={onAddFilter}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all border border-gray-200 bg-gray-50 hover:border-blue-300"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all border border-gray-200 bg-gray-50 hover:border-primary-300"
               >
                 <Plus size={14} /> Add Filter
               </button>
@@ -191,14 +191,14 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           <div className="ml-auto flex items-center gap-3">
             {pk && (
               <span className="text-[10px] font-mono text-gray-400 select-none bg-gray-50 px-2 py-1 rounded border border-gray-200">
-                Editable (PK: <span className="text-blue-500 font-bold">{pk}</span>)
+                Editable (PK: <span className="text-primary-500 font-bold">{pk}</span>)
               </span>
             )}
             {onOpenStructure && (
               <button 
                 data-testid="tab-structure" 
                 onClick={onOpenStructure} 
-                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-500 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-all border border-gray-200"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-500 hover:text-primary-600 hover:bg-gray-50 rounded-lg transition-all border border-gray-200"
               >
                 <Settings size={12} />
                 <span>Edit Structure</span>

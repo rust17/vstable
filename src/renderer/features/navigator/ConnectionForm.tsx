@@ -45,7 +45,7 @@ export const ConnectionForm: React.FC = () => {
               className={`group px-3 py-2 rounded-md cursor-pointer transition-all border ${config.id === c.id ? 'bg-white border-gray-200 shadow-sm' : 'hover:bg-gray-200/50 border-transparent'}`}
             >
               <div className="flex items-center justify-between">
-                <span className={`text-xs font-medium truncate ${config.id === c.id ? 'text-blue-600' : 'text-gray-700'}`}>{c.name || c.host}</span>
+                <span className={`text-xs font-medium truncate ${config.id === c.id ? 'text-primary-600' : 'text-gray-700'}`}>{c.name || c.host}</span>
                 <button
                   onClick={(e) => handleDelete(e, c.id)}
                   className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded transition-all"
@@ -66,8 +66,8 @@ export const ConnectionForm: React.FC = () => {
       <div className="flex-1 flex items-center justify-center bg-white p-12 overflow-y-auto">
         <div className="w-full max-w-sm mb-12">
           <div className="flex items-center gap-3 mb-8">
-            <div className="p-2 bg-blue-50 rounded-xl">
-              <Database className="text-blue-600" size={24} />
+            <div className="p-2 bg-primary-50 rounded-xl">
+              <Database className="text-primary-600" size={24} />
             </div>
             <div>
               <h3 className="text-lg font-bold text-gray-900 leading-tight">Connect to {config.dialect === 'mysql' ? 'MySQL' : 'PostgreSQL'}</h3>
@@ -83,14 +83,14 @@ export const ConnectionForm: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setConfig({...config, dialect: 'postgres', port: 5432})}
-                      className={`flex-1 py-1.5 text-xs font-medium rounded-md border transition-all ${config.dialect !== 'mysql' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                      className={`flex-1 py-1.5 text-xs font-medium rounded-md border transition-all ${config.dialect !== 'mysql' ? 'bg-primary-50 border-primary-200 text-primary-600' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'}`}
                     >
                       PostgreSQL
                     </button>
                     <button
                       type="button"
                       onClick={() => setConfig({...config, dialect: 'mysql', port: 3306})}
-                      className={`flex-1 py-1.5 text-xs font-medium rounded-md border transition-all ${config.dialect === 'mysql' ? 'bg-orange-50 border-orange-200 text-orange-600' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                      className={`flex-1 py-1.5 text-xs font-medium rounded-md border transition-all ${config.dialect === 'mysql' ? 'bg-primary-50 border-primary-200 text-primary-600' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'}`}
                     >
                       MySQL
                     </button>
@@ -99,34 +99,34 @@ export const ConnectionForm: React.FC = () => {
 
               <div className="grid grid-cols-4 gap-4 items-baseline">
                   <label className="text-[11px] font-semibold text-gray-400 uppercase text-right">Name</label>
-                  <input className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-gray-300"
+                  <input className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/10 focus:border-primary-500 transition-all placeholder:text-gray-300"
                     placeholder="Local DB"
                     value={config.name || ''} onChange={e => setConfig({...config, name: e.target.value})} />
               </div>
 
               <div className="grid grid-cols-4 gap-4 items-baseline">
                   <label className="text-[11px] font-semibold text-gray-400 uppercase text-right">Host</label>
-                  <input data-testid="input-host" className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                  <input data-testid="input-host" className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/10 focus:border-primary-500 transition-all"
                     value={config.host} onChange={e => setConfig({...config, host: e.target.value})} required />
               </div>
               <div className="grid grid-cols-4 gap-4 items-baseline">
                   <label className="text-[11px] font-semibold text-gray-400 uppercase text-right">Port</label>
-                  <input data-testid="input-port" type="number" className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                  <input data-testid="input-port" type="number" className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/10 focus:border-primary-500 transition-all"
                     value={config.port} onChange={e => setConfig({...config, port: parseInt(e.target.value)})} required />
               </div>
               <div className="grid grid-cols-4 gap-4 items-baseline">
                   <label className="text-[11px] font-semibold text-gray-400 uppercase text-right">User</label>
-                  <input data-testid="input-user" className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                  <input data-testid="input-user" className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/10 focus:border-primary-500 transition-all"
                     value={config.user} onChange={e => setConfig({...config, user: e.target.value})} required />
               </div>
               <div className="grid grid-cols-4 gap-4 items-baseline">
                   <label className="text-[11px] font-semibold text-gray-400 uppercase text-right">Password</label>
-                  <input data-testid="input-password" type="password" className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                  <input data-testid="input-password" type="password" className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/10 focus:border-primary-500 transition-all"
                     value={config.password || ''} onChange={e => setConfig({...config, password: e.target.value})} />
               </div>
               <div className="grid grid-cols-4 gap-4 items-baseline">
                   <label className="text-[11px] font-semibold text-gray-400 uppercase text-right">Database</label>
-                  <input data-testid="input-database" className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                  <input data-testid="input-database" className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/10 focus:border-primary-500 transition-all"
                     value={config.database} onChange={e => setConfig({...config, database: e.target.value})} required />
               </div>
             </div>
@@ -134,7 +134,7 @@ export const ConnectionForm: React.FC = () => {
             {error && <div className="p-3 bg-red-50 text-red-600 text-[11px] rounded border border-red-100">{error}</div>}
 
             <div className="pt-2">
-              <button data-testid="btn-connect" type="submit" disabled={loading} className="w-full px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-all shadow-sm active:scale-[0.98]">
+              <button data-testid="btn-connect" type="submit" disabled={loading} className="w-full px-4 py-2 bg-primary-600 text-white rounded-md text-sm font-semibold hover:bg-primary-700 disabled:opacity-50 transition-all shadow-sm active:scale-[0.98]">
                   {loading ? 'Connecting...' : 'Connect'}
               </button>
             </div>

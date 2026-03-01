@@ -42,21 +42,21 @@ const ColumnContextMenu: React.FC<ColumnContextMenuProps> = ({ x, y, column, onC
       style={{ top: y, left: x }}
       onClick={e => e.stopPropagation()}
     >
-      <button onClick={() => { onDuplicate(); onClose() }} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 flex items-center gap-2">
+      <button onClick={() => { onDuplicate(); onClose() }} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-primary-50 flex items-center gap-2">
         <Copy size={14} className="text-gray-400" /> Duplicate Column
       </button>
-      <button onClick={() => { onInsertBefore(); onClose() }} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 flex items-center gap-2">
+      <button onClick={() => { onInsertBefore(); onClose() }} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-primary-50 flex items-center gap-2">
         <Plus size={14} className="text-gray-400" /> Insert Before
       </button>
-      <button onClick={() => { onInsertAfter(); onClose() }} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 flex items-center gap-2">
+      <button onClick={() => { onInsertAfter(); onClose() }} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-primary-50 flex items-center gap-2">
         <Plus size={14} className="text-gray-400" /> Insert After
       </button>
       {column._original && (
-        <button onClick={() => { onReset(); onClose() }} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 flex items-center gap-2">
+        <button onClick={() => { onReset(); onClose() }} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-primary-50 flex items-center gap-2">
             <RotateCcw size={14} className="text-gray-400" /> Reset Changes
         </button>
       )}
-      <button onClick={() => { onCopySql(); onClose() }} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 flex items-center gap-2 border-b border-gray-100 mb-1 pb-2">
+      <button onClick={() => { onCopySql(); onClose() }} className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-primary-50 flex items-center gap-2 border-b border-gray-100 mb-1 pb-2">
         <FileText size={14} className="text-gray-400" /> Copy SQL Definition
       </button>
       <button onClick={() => { onDelete(); onClose() }} className="w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2">
@@ -95,7 +95,7 @@ const EnumManagerModal: React.FC<{
                                     if (e.key === 'Enter') setValues([...values, ''])
                                 }}
                                 placeholder="Value..."
-                                className="flex-1 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded text-sm outline-none focus:border-blue-500 focus:bg-white transition-all"
+                                className="flex-1 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded text-sm outline-none focus:border-primary-500 focus:bg-white transition-all"
                             />
                             <button 
                                 onClick={() => setValues(values.filter((_, idx) => idx !== i))}
@@ -107,7 +107,7 @@ const EnumManagerModal: React.FC<{
                     ))}
                     <button 
                         onClick={() => setValues([...values, ''])}
-                        className="w-full py-2 border border-dashed border-gray-300 rounded text-xs text-gray-500 hover:border-blue-400 hover:text-blue-500 transition-all flex items-center justify-center gap-1"
+                        className="w-full py-2 border border-dashed border-gray-300 rounded text-xs text-gray-500 hover:border-primary-400 hover:text-primary-500 transition-all flex items-center justify-center gap-1"
                     >
                         <Plus size={14} /> Add Value
                     </button>
@@ -116,7 +116,7 @@ const EnumManagerModal: React.FC<{
                     <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
                     <button 
                         onClick={() => onSave(values.filter(v => v.trim()))} 
-                        className="px-6 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm transition-colors"
+                        className="px-6 py-2 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 shadow-sm transition-colors"
                     >
                         Save Enum
                     </button>
@@ -145,7 +145,7 @@ const TypeSelector: React.FC<{ value: string; capabilities: Capabilities | null;
     <div className="relative" ref={containerRef}>
       <button 
         onClick={toggleOpen}
-        className="w-full flex items-center justify-between gap-1 px-1 py-0.5 bg-transparent border-b border-transparent hover:border-gray-300 text-blue-600 font-mono text-sm transition-colors"
+        className="w-full flex items-center justify-between gap-1 px-1 py-0.5 bg-transparent border-b border-transparent hover:border-gray-300 text-primary-600 font-mono text-sm transition-colors"
       >
         <span className="truncate">{value || 'Select Type'}</span>
         <ChevronDown size={14} className={`shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -188,7 +188,7 @@ const TypeSelector: React.FC<{ value: string; capabilities: Capabilities | null;
                         setIsOpen(false)
                         setSearch('')
                       }}
-                      className={`px-3 py-1.5 text-left text-xs hover:bg-blue-50 transition-colors rounded ${value === type ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600'}`}
+                      className={`px-3 py-1.5 text-left text-xs hover:bg-primary-50 transition-colors rounded ${value === type ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-600'}`}
                     >
                       {type}
                     </button>
@@ -670,7 +670,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                     <select 
                         value={newSchema} 
                         onChange={e => setNewSchema(e.target.value)}
-                        className="text-xs font-normal text-gray-500 bg-gray-100 border-none rounded px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500"
+                        className="text-xs font-normal text-gray-500 bg-gray-100 border-none rounded px-2 py-1 outline-none focus:ring-1 focus:ring-primary-500"
                     >
                         {availableSchemas.length > 0 ? availableSchemas.map(s => (
                             <option key={s} value={s}>{s}</option>
@@ -682,7 +682,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                         placeholder="New Table Name"
                         value={newTableName} 
                         onChange={e => setNewTableName(e.target.value)}
-                        className="text-lg font-bold text-gray-800 border-b border-transparent hover:border-gray-300 focus:border-blue-500 outline-none bg-transparent placeholder:text-gray-300 transition-all"
+                        className="text-lg font-bold text-gray-800 border-b border-transparent hover:border-gray-300 focus:border-primary-500 outline-none bg-transparent placeholder:text-gray-300 transition-all"
                     />
                 </div>
             ) : (
@@ -695,14 +695,14 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
         </div>
         <div className="flex items-center gap-3">
           {mode === 'edit' && (
-             <button onClick={fetchStructure} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Refresh">
+             <button onClick={fetchStructure} className="p-2 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Refresh">
                <RefreshCw size={18} />
              </button>
           )}
           <button onClick={handlePreviewSql} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
             <Database size={16} /> SQL Preview
           </button>
-          <button onClick={handlePreviewSql} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm transition-all">
+          <button onClick={handlePreviewSql} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 shadow-sm transition-all">
             <Save size={16} /> {mode === 'create' ? 'Create Table' : 'Save Changes'}
           </button>
         </div>
@@ -720,10 +720,10 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
         <div className="border-b border-gray-100">
           <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-[#f8f9fa] select-text">
             <h3 className="font-semibold text-gray-700 flex items-center gap-2">
-                <div className="w-1 h-4 bg-blue-500 rounded-full"></div>
+                <div className="w-1 h-4 bg-primary-500 rounded-full"></div>
                 Columns
             </h3>
-            <button onClick={handleAddColumn} className="text-xs flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 font-medium transition-colors">
+            <button onClick={handleAddColumn} className="text-xs flex items-center gap-1 px-3 py-1.5 bg-primary-50 text-primary-600 rounded hover:bg-primary-100 font-medium transition-colors">
                 <Plus size={14} /> Add Column
             </button>
           </div>
@@ -763,7 +763,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                       onDragEnd={handleDragEnd}
                       onDragOver={(e) => handleDragOver(e, idx)}
                       onDrop={(e) => handleDrop(e, idx)}
-                      className={`group hover:bg-blue-50/30 transition-all ${dragOverIdx === idx ? 'border-t-2 border-blue-500' : ''} ${draggedIdx === idx ? 'bg-gray-100' : ''}`}
+                      className={`group hover:bg-primary-50/30 transition-all ${dragOverIdx === idx ? 'border-t-2 border-primary-500' : ''} ${draggedIdx === idx ? 'bg-gray-100' : ''}`}
                       onContextMenu={(e) => {
                         e.preventDefault()
                         setContextMenu({ x: e.clientX, y: e.clientY, colId: col.id })
@@ -780,7 +780,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                             <input 
                                 value={col.name}
                                 onChange={e => handleColumnChange(col.id, 'name', e.target.value)}
-                                className={`w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-1 py-0.5 transition-colors font-medium ${getColumnError(col) ? 'text-red-600' : 'text-gray-700'}`}
+                                className={`w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-primary-500 focus:outline-none px-1 py-0.5 transition-colors font-medium ${getColumnError(col) ? 'text-red-600' : 'text-gray-700'}`}
                             />
                             {getColumnError(col) && (
                                 <div className="absolute left-0 -bottom-4 text-[9px] text-red-500 whitespace-nowrap bg-white px-1 shadow-sm rounded border border-red-100 flex items-center gap-1 z-10 animate-in fade-in slide-in-from-top-1">
@@ -802,7 +802,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                                 {col.type === 'enum' && (
                                     <button 
                                         onClick={() => setEnumEditingColId(col.id)}
-                                        className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+                                        className="p-1 text-gray-400 hover:text-primary-500 transition-colors"
                                         title="Manage Enum Values"
                                     >
                                         <Plus size={12} />
@@ -818,7 +818,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                                       placeholder="Len"
                                       value={col.length || ''}
                                       onChange={e => handleColumnChange(col.id, 'length', e.target.value)}
-                                      className="w-12 bg-gray-100/50 border border-transparent rounded px-1 py-0.5 text-[10px] focus:bg-white focus:border-blue-300 outline-none"
+                                      className="w-12 bg-gray-100/50 border border-transparent rounded px-1 py-0.5 text-[10px] focus:bg-white focus:border-primary-300 outline-none"
                                       title="Length"
                                   />
                               )}
@@ -829,7 +829,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                                           placeholder="Prec"
                                           value={col.precision || ''}
                                           onChange={e => handleColumnChange(col.id, 'precision', e.target.value)}
-                                          className="w-10 bg-gray-100/50 border border-transparent rounded px-1 py-0.5 text-[10px] focus:bg-white focus:border-blue-300 outline-none"
+                                          className="w-10 bg-gray-100/50 border border-transparent rounded px-1 py-0.5 text-[10px] focus:bg-white focus:border-primary-300 outline-none"
                                           title="Precision"
                                       />
                                       {(typeLower.includes('numeric') || typeLower.includes('decimal')) && (
@@ -838,7 +838,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                                               placeholder="Scale"
                                               value={col.scale || ''}
                                               onChange={e => handleColumnChange(col.id, 'scale', e.target.value)}
-                                              className="w-10 bg-gray-100/50 border border-transparent rounded px-1 py-0.5 text-[10px] focus:bg-white focus:border-blue-300 outline-none"
+                                              className="w-10 bg-gray-100/50 border border-transparent rounded px-1 py-0.5 text-[10px] focus:bg-white focus:border-primary-300 outline-none"
                                               title="Scale"
                                           />
                                       )}
@@ -852,7 +852,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                                   type="checkbox"
                                   checked={col.isAutoIncrement}
                                   onChange={e => handleColumnChange(col.id, 'isAutoIncrement', e.target.checked)}
-                                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
                               />
                           )}
                       </td>
@@ -862,7 +862,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                                   type="checkbox"
                                   checked={col.isIdentity}
                                   onChange={e => handleColumnChange(col.id, 'isIdentity', e.target.checked)}
-                                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
                                   title="GENERATED BY DEFAULT AS IDENTITY"
                               />
                           )}
@@ -872,7 +872,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                               type="checkbox"
                               checked={col.nullable}
                               onChange={e => handleColumnChange(col.id, 'nullable', e.target.checked)}
-                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                              className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
                           />
                       </td>
                       <td className="px-6 py-3 text-center">
@@ -886,7 +886,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                     <td className="px-6 py-3">
                         <div className="flex items-center gap-1 group/def">
                             {col.defaultValue !== null ? (
-                                <div className="flex flex-1 items-center bg-gray-100/50 border border-gray-200 rounded px-1 transition-all focus-within:border-blue-300 focus-within:bg-white">
+                                <div className="flex flex-1 items-center bg-gray-100/50 border border-gray-200 rounded px-1 transition-all focus-within:border-primary-300 focus-within:bg-white">
                                     <input 
                                         value={col.defaultValue}
                                         onChange={e => handleColumnChange(col.id, 'defaultValue', e.target.value)}
@@ -912,7 +912,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                             ) : (
                                 <button 
                                     onClick={() => handleColumnChange(col.id, 'defaultValue', '')}
-                                    className="text-[10px] text-gray-400 italic hover:text-blue-500 transition-colors px-2 py-1 border border-dashed border-gray-200 rounded w-full text-left"
+                                    className="text-[10px] text-gray-400 italic hover:text-primary-500 transition-colors px-2 py-1 border border-dashed border-gray-200 rounded w-full text-left"
                                 >
                                     NULL (Click to set)
                                 </button>
@@ -925,7 +925,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                                 value={col.comment || ''}
                                 onChange={e => handleColumnChange(col.id, 'comment', e.target.value)}
                                 placeholder="Comment..."
-                                className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-1 py-0.5 transition-colors text-sm text-gray-500"
+                                className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-primary-500 focus:outline-none px-1 py-0.5 transition-colors text-sm text-gray-500"
                             />
                         </div>
                     </td>
@@ -1039,7 +1039,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
           <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
               <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl border border-gray-200 flex flex-col max-h-[80vh] m-4 animate-in fade-in zoom-in duration-200">
                   <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
-                      <h3 className="font-semibold text-gray-700 flex items-center gap-2"><Database size={16} className="text-blue-500" /> Preview SQL</h3>
+                      <h3 className="font-semibold text-gray-700 flex items-center gap-2"><Database size={16} className="text-primary-500" /> Preview SQL</h3>
                       <button onClick={() => setSqlPreview(null)} className="p-1 hover:bg-gray-100 rounded-full transition-colors"><X size={18} className="text-gray-400" /></button>
                   </div>
                   <div className="p-0 flex-1 overflow-hidden bg-gray-50">
@@ -1048,7 +1048,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                   <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-white rounded-b-xl">
                       <button onClick={() => setSqlPreview(null)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
                       {sqlPreview !== '-- No changes detected --' && (
-                        <button onClick={executeChanges} className="px-6 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm transition-colors flex items-center gap-2">
+                        <button onClick={executeChanges} className="px-6 py-2 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 shadow-sm transition-colors flex items-center gap-2">
                             {executing ? 'Executing...' : 'Execute'}
                         </button>
                       )}

@@ -42,7 +42,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onDelete, onAdd,
       <button 
         disabled={isRowSelected}
         onClick={() => { if (!isRowSelected) { onAdd(); onClose(); } }}
-        className={`w-full text-left px-3 py-2 text-xs flex items-center gap-2 font-medium transition-colors ${!isRowSelected ? 'text-blue-600 hover:bg-blue-50' : 'text-gray-300 cursor-not-allowed'}`}
+        className={`w-full text-left px-3 py-2 text-xs flex items-center gap-2 font-medium transition-colors ${!isRowSelected ? 'text-primary-600 hover:bg-primary-50' : 'text-gray-300 cursor-not-allowed'}`}
       >
         <Plus size={14} /> Add Row
       </button>

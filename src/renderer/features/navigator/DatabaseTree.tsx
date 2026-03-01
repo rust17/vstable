@@ -115,7 +115,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
             className="flex items-center justify-between px-2 h-8 rounded-md cursor-pointer hover:bg-gray-200/50 transition-all group"
           >
             <div className="flex items-center gap-2 overflow-hidden">
-              <Database size={14} className="text-blue-500 shrink-0" />
+              <Database size={14} className="text-primary-500 shrink-0" />
               <span className="text-[13px] font-bold text-gray-700 truncate">{config.database}</span>
             </div>
           </div>
@@ -128,7 +128,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
                   {databases.map(db => (
                     <div 
                       key={db}
-                      className={`px-3 py-2 flex items-center justify-between group/item hover:bg-gray-50 cursor-pointer ${db === config.database ? 'bg-blue-50 text-blue-700' : selectedDbs.has(db) ? 'bg-blue-100' : 'text-gray-700'}`}
+                      className={`px-3 py-2 flex items-center justify-between group/item hover:bg-gray-50 cursor-pointer ${db === config.database ? 'bg-primary-50 text-primary-700' : selectedDbs.has(db) ? 'bg-primary-100' : 'text-gray-700'}`}
                       onClick={(e) => handleDbClick(e, db)}
                     >
                       <span className="text-sm truncate flex-1">{db}</span>
@@ -143,7 +143,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
                           <Trash2 size={12} />
                         </button>
                       )}
-                      {db === config.database && <Check size={12} className="text-blue-600" />}
+                      {db === config.database && <Check size={12} className="text-primary-600" />}
                     </div>
                   ))}
                 </div>
@@ -169,7 +169,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
                       onCreateDatabase()
                       setDbListOpen(false)
                     }}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-primary-600 hover:bg-primary-100 rounded transition-colors"
                   >
                     <Plus size={12} /> Create Database
                   </button>
@@ -187,10 +187,10 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
           <div className="relative">
             <div 
               onClick={() => setSchemaListOpen(!schemaListOpen)}
-              className="flex items-center justify-between px-3 h-[34px] bg-white border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition-all group"
+              className="flex items-center justify-between px-3 h-[34px] bg-white border border-gray-200 rounded-lg hover:border-primary-300 cursor-pointer transition-all group"
             >
               <div className="flex items-center gap-2 overflow-hidden">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-400/60" />
+                <div className="w-1.5 h-1.5 rounded-full bg-primary-400/60" />
                 <span className="text-xs font-semibold text-gray-500 truncate">{currentSchema}</span>
               </div>
             </div>
@@ -202,7 +202,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
                   {schemas.map(s => (
                     <div 
                       key={s}
-                      className={`px-3 py-1.5 text-xs flex items-center justify-between hover:bg-gray-50 cursor-pointer ${s === currentSchema ? 'text-blue-600 bg-blue-50 font-medium' : 'text-gray-600'}`}
+                      className={`px-3 py-1.5 text-xs flex items-center justify-between hover:bg-gray-50 cursor-pointer ${s === currentSchema ? 'text-primary-600 bg-primary-50 font-medium' : 'text-gray-600'}`}
                       onClick={() => {
                         onSelectSchema(s)
                         setSchemaListOpen(false)
@@ -226,7 +226,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
               placeholder="Filter tables..."
               value={tableFilter}
               onChange={(e) => setTableFilter(e.target.value)}
-              className="w-full px-3 h-[34px] text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400/30 bg-white hover:border-gray-300 transition-all"
+              className="w-full px-3 h-[34px] text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-400/30 bg-white hover:border-gray-300 transition-all"
             />
           </div>
         )}
@@ -262,7 +262,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
               )}
               <button 
                 onClick={onCreateTable}
-                className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                className="p-1 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                 title="Create Table"
               >
                 <Plus size={12} />
@@ -281,9 +281,9 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
                   key={i} 
                   data-testid={`table-item-${table.table_name}`}
                   onClick={(e) => handleTableClick(e, table.table_schema, table.table_name)} 
-                  className={`group flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors text-gray-600 cursor-pointer ${isActive ? 'bg-blue-100 text-blue-700' : isSelected ? 'bg-gray-100' : 'hover:bg-blue-50'}`}
+                  className={`group flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors text-gray-600 cursor-pointer ${isActive ? 'bg-primary-100 text-primary-700' : isSelected ? 'bg-gray-100' : 'hover:bg-primary-50'}`}
                 >
-                  <TableIcon size={14} className={`shrink-0 ${isActive ? 'text-blue-500' : isSelected ? 'text-blue-500' : 'group-hover:text-blue-500 text-gray-400'}`} />
+                  <TableIcon size={14} className={`shrink-0 ${isActive ? 'text-primary-500' : isSelected ? 'text-primary-500' : 'group-hover:text-primary-500 text-gray-400'}`} />
                   <span className={`truncate text-[13px] flex-1 ${isActive || isSelected ? 'font-bold' : 'font-medium'}`}>{table.table_name}</span>
                   <button 
                     onClick={(e) => {
@@ -302,7 +302,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
                     <span className="text-xs text-gray-400 italic block mb-2">No tables in schema</span>
                     <button 
                         onClick={onCreateTable}
-                        className="text-xs text-blue-600 hover:underline flex items-center justify-center gap-1 w-full"
+                        className="text-xs text-primary-600 hover:underline flex items-center justify-center gap-1 w-full"
                     >
                         <Plus size={12} /> Create Table
                     </button>
