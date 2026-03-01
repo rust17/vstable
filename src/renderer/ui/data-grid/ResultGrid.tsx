@@ -123,7 +123,6 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
   }, [selectionBox, selectedRowIndices, onSelectionChange])
 
   const handleRowClick = (e: React.MouseEvent, index: number) => {
-    e.stopPropagation() // Prevent container click from clearing
     let newSelection = new Set<number>()
     const isMac = window.navigator.platform.toUpperCase().indexOf('MAC') >= 0
     const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey
@@ -178,6 +177,7 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
         onMouseDown={handleMouseDown}
         onContextMenu={(e) => {
             e.preventDefault()
+            e.stopPropagation()
             setSelectedRowIndices(new Set())
             setLastSelectedIndex(null)
             if (onSelectionChange) onSelectionChange(new Set())

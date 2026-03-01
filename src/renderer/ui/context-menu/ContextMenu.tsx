@@ -13,9 +13,15 @@ interface ContextMenuProps {
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onDelete, onAdd, onClose, isRowSelected, selectedCount = 1 }) => {
   useEffect(() => {
-    const handleClick = () => onClose()
-    window.addEventListener('click', handleClick)
-    return () => window.removeEventListener('click', handleClick)
+    const handleClose = () => onClose()
+    window.addEventListener('click', handleClose)
+    window.addEventListener('contextmenu', handleClose)
+    window.addEventListener('wheel', handleClose)
+    return () => {
+        window.removeEventListener('click', handleClose)
+        window.removeEventListener('contextmenu', handleClose)
+        window.removeEventListener('wheel', handleClose)
+    }
   }, [onClose])
 
   return (
@@ -23,6 +29,8 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onDelete, onAdd,
       className="fixed z-[300] bg-white border border-gray-200 shadow-xl rounded-lg py-1 min-w-[160px] animate-in fade-in zoom-in-95 duration-100"
       style={{ top: y, left: x }}
       onClick={e => e.stopPropagation()}
+      onMouseDown={e => e.stopPropagation()}
+      onContextMenu={e => e.stopPropagation()}
     >
       <button 
         disabled={!isRowSelected}

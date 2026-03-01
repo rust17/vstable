@@ -39,6 +39,7 @@ export const DataEditModal: React.FC<DataEditModalProps> = ({ isOpen, value, tit
     <div 
         className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[2px]" 
         role="dialog"
+        onClick={onClose}
         onKeyDown={e => {
             if (e.key === 'Escape') onClose()
             if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') handleSave()
