@@ -307,9 +307,6 @@ add:
             - **思路**：建立“黑盒”运行时的透明度。
             - **建议**：在 `Infrastructure` 层增加一个 `DebugLogger`。在开发模式下，将所有 IPC 通信内容、生成的 SQL 语句、执行耗时、受影响行数实时记录到本地文件（如 `.debug.log`）。
             - **反馈增强**：当你说“有 Bug”时，我可以执行 `tail -f .debug.log`。通过观察我生成的 SQL 在真实驱动中是如何流转和报错的，我能瞬间定位是 `core` 逻辑问题还是 `driver` 兼容性问题。
-    - 数据表格标签
-        - [ ] 鼠标放在上面应该展示表名
-        - [ ] 鼠标右键应该弹出菜单，包括：Close、Close Others、Close All 和 Close Tabs to Right
 
 ---
 
@@ -318,3 +315,18 @@ edit:
         - [x] 移除废弃的 tailwind.config.js，使用 postcss 配置替代
         - [x] 删除废弃的 data-viewer 目录，合并其内冗余测试文件到 workspace
         - [x] 将 UI 测试文件归位到相应功能目录，精简 UI 目录
+
+---
+
+fix:
+    - 数据表格
+        - [x] 修复 MySQL 环境下数据表格列名下方不显示数据类型的问题（键名大小写标准化）
+
+---
+
+add:
+    - 数据表格标签
+        - [ ] 鼠标放在上面应该展示表名
+        - [ ] 鼠标右键应该弹出菜单，包括：Close、Close Others、Close All 和 Close Tabs to Right
+    - 数据表格
+        - [ ] 通过点击列名快速：倒序、正序、取消排序，支持多个字段一起排序

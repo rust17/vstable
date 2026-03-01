@@ -22,21 +22,21 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
   const { isConnected, config, sessionId, query, buildQuery, connect, disconnect, capabilities } = useSession()
   const q = capabilities?.quoteChar || '"'
   const quote = (id: string) => `${q}${id}${q}`
-  
-  const { 
-    tabs, activeTabId, setActiveTabId, 
+
+  const {
+    tabs, activeTabId, setActiveTabId,
     openTable, openQuery, openStructure, closeTab, updateTab,
     mruTabIds, showTabSwitcher, setShowTabSwitcher, switcherIndex, setSwitcherIndex
   } = useWorkspace()
-  
+
   const showTabSwitcherRef = React.useRef(showTabSwitcher)
   useEffect(() => {
     showTabSwitcherRef.current = showTabSwitcher
   }, [showTabSwitcher])
 
-  const { 
-    databases, schemas, currentSchema, setCurrentSchema, tables, 
-    fetchDatabases, fetchTables 
+  const {
+    databases, schemas, currentSchema, setCurrentSchema, tables,
+    fetchDatabases, fetchTables
   } = useDatabaseMetadata()
 
   const [showTableSearch, setShowTableSearch] = useState(false)
@@ -111,10 +111,10 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
           alert("Cannot delete the currently connected database.")
           return
       }
-      const message = names.length > 1 
-          ? `Are you sure you want to DELETE ${names.length} databases?` 
+      const message = names.length > 1
+          ? `Are you sure you want to DELETE ${names.length} databases?`
           : `Are you sure you want to DELETE database "${names[0]}"?`
-          
+
       if (!confirm(message)) return
 
       for (const n of names) {
@@ -168,7 +168,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
             })
         }
     }
-    
+
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === 'Control') {
          if (showTabSwitcherRef.current) {
@@ -213,12 +213,21 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
                      const colSql = buildQuery('listColumns', { db: config.database, schema, table: name })
                      const res = await query(colSql)
                      if (res.success && res.rows) {
+                         // Normalize keys to lowercase for consistent access across dialects
+                         const normalizedRows = res.rows.map((row: any) => {
+                            const normalized: any = {}
+                            Object.keys(row).forEach(key => {
+                                normalized[key.toLowerCase()] = row[key]
+                            })
+                            return normalized
+                         })
+
                          const pkSql = buildQuery('getPrimaryKey', { db: config.database, schema, table: name })
                          const pkRes = await query(pkSql)
-                         const pk = (pkRes.success && pkRes.rows && pkRes.rows.length > 0) 
-                            ? (pkRes.rows[0].column_name || Object.values(pkRes.rows[0])[0]) 
-                            : null
-                         updateTab(tab.id, { structure: res.rows, pk: pk as string })
+                         const pkRow = pkRes.success && pkRes.rows && pkRes.rows[0]
+                         const pk = pkRow ? (pkRow.column_name || pkRow.COLUMN_NAME || Object.values(pkRow)[0]) : null
+
+                         updateTab(tab.id, { structure: normalizedRows, pk: pk as string })
                      }
                  }
              }}
@@ -228,10 +237,10 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
              onCreateTable={() => openStructure(currentSchema, '', 'create')}
              onDeleteTable={async (schema, name) => {
                  const names = Array.isArray(name) ? name : [name]
-                 const message = names.length > 1 
-                     ? `Delete ${names.length} tables from ${schema}?` 
+                 const message = names.length > 1
+                     ? `Delete ${names.length} tables from ${schema}?`
                      : `Delete table ${schema}.${names[0]}?`
-                     
+
                  if(confirm(message)) {
                      const tableList = names.map(n => {
                          if (capabilities?.supportsSchemas) return `${quote(schema)}.${quote(n)}`
@@ -252,7 +261,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
         </div>
 
         {/* Resize Handle */}
-        <div 
+        <div
            onMouseDown={() => setIsResizing(true)}
            className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-400/50 transition-colors z-50 ${isResizing ? 'bg-blue-500' : ''}`}
         />
@@ -261,13 +270,13 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
          {/* Tab Bar */}
-         <div 
+         <div
             className="border-b border-gray-200 flex items-center px-2 justify-between bg-[#f8f9fa] h-11 gap-2 select-none overflow-hidden"
             onDoubleClick={(e) => {
                 if (e.target === e.currentTarget) setIsMaximized(!isMaximized)
             }}
          >
-            <div 
+            <div
                 ref={tabContainerRef}
                 className="flex items-end gap-1 overflow-x-auto no-drag scrollbar-hide flex-1 h-full"
                 onDoubleClick={(e) => {
@@ -300,25 +309,25 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
          {/* Tab Content */}
          <div className="flex-1 flex flex-col overflow-hidden relative bg-white">
             {tabs.map(tab => (
-                <div 
-                  key={tab.id} 
+                <div
+                  key={tab.id}
                   data-testid={activeTabId === tab.id ? 'active-tab-content' : `inactive-tab-content-${tab.id}`}
-                  className="w-full h-full" 
+                  className="w-full h-full"
                   style={{ display: activeTabId === tab.id ? 'block' : 'none' }}
                 >
                     {tab.type === 'table' ? (
-                        <TableTabPane 
-                            tab={tab} 
-                            isActive={activeTabId === tab.id} 
-                            onUpdateTab={(updates) => updateTab(tab.id, updates)} 
+                        <TableTabPane
+                            tab={tab}
+                            isActive={activeTabId === tab.id}
+                            onUpdateTab={(updates) => updateTab(tab.id, updates)}
                             connectionId={sessionId}
                             onOpenStructure={(schema, name) => openStructure(schema, name, 'edit')}
                         />
                     ) : tab.type === 'query' ? (
-                        <QueryTabPane 
-                            tab={tab} 
-                            isActive={activeTabId === tab.id} 
-                            onUpdateTab={(updates) => updateTab(tab.id, updates)} 
+                        <QueryTabPane
+                            tab={tab}
+                            isActive={activeTabId === tab.id}
+                            onUpdateTab={(updates) => updateTab(tab.id, updates)}
                         />
                     ) : (
                         <StructureView
@@ -328,8 +337,8 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
                             mode={tab.mode || 'edit'}
                             onClose={() => closeTab(tab.id)}
                             onSaveSuccess={(schema, name) => {
-                                updateTab(tab.id, { 
-                                    mode: 'edit', 
+                                updateTab(tab.id, {
+                                    mode: 'edit',
                                     name: `Structure: ${name}`,
                                     initialSchema: schema,
                                     initialTableName: name
@@ -348,7 +357,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
          </div>
       </div>
 
-      <TabSwitcher 
+      <TabSwitcher
         isOpen={showTabSwitcher}
         tabs={tabs}
         mruTabIds={mruTabIds}
@@ -361,7 +370,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
         }}
       />
 
-      <TableSearchModal 
+      <TableSearchModal
         isOpen={showTableSearch}
         onClose={() => setShowTableSearch(false)}
         tables={tables}
@@ -370,7 +379,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
             setShowTableSearch(false)
         }}
       />
-      
+
       <CreateDatabaseModal
         isOpen={showCreateDb}
         onClose={() => setShowCreateDb(false)}
