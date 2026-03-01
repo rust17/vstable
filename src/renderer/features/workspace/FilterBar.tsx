@@ -89,8 +89,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 
   return (
     <div className="bg-white border-b border-gray-200/60 flex flex-col px-4 py-2 gap-2 min-h-[95px] justify-center">
-      {filters.length > 0 && (
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 w-full">
           {filters.map((filter, index) => (
             <div key={filter.id} data-testid={`filter-row-${index}`} className="flex items-center gap-2 w-full">
               <input
@@ -154,29 +153,21 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               </div>
             </div>
           ))}
-        </div>
-      )}
+          
+          {filters.length === 0 && (
+            <div className="flex items-center w-full">
+               <button
+                data-testid="btn-add-filter"
+                onClick={onAddFilter}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all border border-gray-200 bg-gray-50 hover:border-blue-300"
+              >
+                <Plus size={14} /> Add Filter
+              </button>
+            </div>
+          )}
+      </div>
 
       <div className="flex items-center gap-3 h-9">
-        {filters.length === 0 && (
-          <button
-            data-testid="btn-add-filter"
-            onClick={onAddFilter}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all border border-gray-200 bg-gray-50 hover:border-blue-300"
-          >
-            <Plus size={14} /> Add Filter
-          </button>
-        )}
-        
-        {filters.length > 0 && (
-            <button 
-                onClick={onApplyFilters}
-                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg shadow-sm transition-all active:scale-95"
-            >
-                Apply Filters
-            </button>
-        )}
-
         {isAddingRow && (
           <div className="flex items-center gap-2">
             <button

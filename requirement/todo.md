@@ -325,9 +325,11 @@ fix:
 ---
 
 add:
-    - 数据表格
-        - [ ] 鼠标放在上面应该展示表名
-        - [ ] 鼠标右键应该弹出菜单，包括：Close、Close Others、Close All 和 Close Tabs to Right
+    - 数据表格标签
+        - [x] 鼠标放在上面应该展示表名
+        - [x] 鼠标右键应该弹出菜单，包括：Close、Close Others、Close All 和 Close Tabs to Right
+    - 侧边栏与工作区联动
+        - [x] 侧边栏选中状态与当前活跃 Tab 自动同步 (修复图 2 不一致问题)
     - 数据表格
         - [ ] 通过点击列名快速：倒序、正序、取消排序，支持多个字段一起排序
 

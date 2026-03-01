@@ -21,6 +21,7 @@
     - `schema-designer/`: 可视化表设计器，驱动核心 Diff 工厂。
 - **UI 原子库 (UI Kit)**：
     - `data-grid/`: 高性能表格渲染引擎，支持多驱动返回的数据格式。
+    - `tooltip/`: 基于 Portal 实现的轻量气泡，解决原生 title 属性在复杂滚动容器下的延迟与裁剪问题。
 
 ## 关键流程
 - **数据加载**：`useTableData` 钩子 -> `SessionProvider.query` -> IPC -> `DbManager` -> `Driver.query`。

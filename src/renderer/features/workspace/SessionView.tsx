@@ -11,6 +11,7 @@ import { StructureView } from '../schema-designer/StructureView'
 import { TabSwitcher } from '../../ui/tab-switcher/TabSwitcher'
 import { TableSearchModal } from '../../ui/modals/TableSearchModal'
 import { CreateDatabaseModal } from '../../ui/modals/CreateDatabaseModal'
+import { Tooltip } from '../../ui/tooltip/Tooltip'
 
 interface SessionViewProps {
   id: string
@@ -46,7 +47,23 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
   const [isResizing, setIsResizing] = useState(false)
 
   const activeTab = tabs.find(t => t.id === activeTabId)
+  const [tabContextMenu, setTabContextMenu] = useState<{ x: number, y: number, tabId: string } | null>(null)
   const tabContainerRef = React.useRef<HTMLDivElement>(null)
+
+  const handleCloseOthers = (tabId: string) => {
+      tabs.forEach(t => { if (t.id !== tabId) closeTab(t.id) })
+  }
+
+  const handleCloseAll = () => {
+      tabs.forEach(t => closeTab(t.id))
+  }
+
+  const handleCloseToRight = (tabId: string) => {
+      const idx = tabs.findIndex(t => t.id === tabId)
+      if (idx !== -1) {
+          tabs.slice(idx + 1).forEach(t => closeTab(t.id))
+      }
+  }
 
   // Scroll active tab into view
   useEffect(() => {
@@ -205,6 +222,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
              schemas={schemas}
              currentSchema={currentSchema}
              tables={tables}
+             activeTable={activeTab?.type === 'table' ? { schema: activeTab.schema!, name: activeTab.name } : null}
              onSelectSchema={setCurrentSchema}
              onSelectTable={async (schema, name) => {
                  const tab = openTable(schema, name)
@@ -284,24 +302,29 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
                 }}
             >
                 {tabs.map(tab => (
-                    <div
-                        key={tab.id}
-                        data-testid={`tab-table-${tab.name}`}
-                        data-active={activeTabId === tab.id}
-                        onClick={() => setActiveTabId(tab.id)}
-                        onDoubleClick={() => setIsMaximized(!isMaximized)}
-                        className={`group flex items-center gap-2 px-4 h-9 text-[11px] font-medium rounded-t-lg cursor-pointer transition-all border-x border-t ${activeTabId === tab.id ? 'bg-white text-blue-600 border-gray-200 -mb-[1px] z-10 shadow-[0_-1px_3px_rgba(0,0,0,0.02)]' : 'bg-transparent text-gray-500 hover:bg-gray-200/50 border-transparent'}`}
-                    >
-                        {tab.type === 'table' ? <TableIcon size={12} className={activeTabId === tab.id ? 'text-blue-500' : 'text-gray-400'} /> : tab.type === 'query' ? <Play size={12} className={activeTabId === tab.id ? 'text-blue-500' : 'text-gray-400'} /> : <Settings size={12} className={activeTabId === tab.id ? 'text-blue-500' : 'text-gray-400'} />}
-                        <span className="truncate max-w-[120px]">{tab.name}</span>
-                        <button
-                            data-testid={`close-tab-${tab.name}`}
-                            onClick={(e) => { e.stopPropagation(); closeTab(tab.id) }}
-                            className={`p-0.5 rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-700 transition-opacity ${activeTabId === tab.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                    <Tooltip key={tab.id} content={tab.type === 'table' ? `${tab.schema}.${tab.name}` : tab.name}>
+                        <div
+                            data-testid={`tab-table-${tab.name}`}
+                            data-active={activeTabId === tab.id}
+                            onClick={() => setActiveTabId(tab.id)}
+                            onDoubleClick={() => setIsMaximized(!isMaximized)}
+                            onContextMenu={(e) => {
+                                e.preventDefault()
+                                setTabContextMenu({ x: e.clientX, y: e.clientY, tabId: tab.id })
+                            }}
+                            className={`group flex items-center gap-2 px-4 h-9 text-[11px] font-medium rounded-t-lg cursor-pointer transition-all border-x border-t ${activeTabId === tab.id ? 'bg-white text-blue-600 border-gray-200 -mb-[1px] z-10 shadow-[0_-1px_3px_rgba(0,0,0,0.02)]' : 'bg-transparent text-gray-500 hover:bg-gray-200/50 border-transparent'}`}
                         >
-                            <X size={10} />
-                        </button>
-                    </div>
+                            {tab.type === 'table' ? <TableIcon size={12} className={activeTabId === tab.id ? 'text-blue-500' : 'text-gray-400'} /> : tab.type === 'query' ? <Play size={12} className={activeTabId === tab.id ? 'text-blue-500' : 'text-gray-400'} /> : <Settings size={12} className={activeTabId === tab.id ? 'text-blue-500' : 'text-gray-400'} />}
+                            <span className="truncate max-w-[120px]">{tab.name}</span>
+                            <button
+                                data-testid={`close-tab-${tab.name}`}
+                                onClick={(e) => { e.stopPropagation(); closeTab(tab.id) }}
+                                className={`p-0.5 rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-700 transition-opacity ${activeTabId === tab.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+                            >
+                                <X size={10} />
+                            </button>
+                        </div>
+                    </Tooltip>
                 ))}
             </div>
          </div>
@@ -356,6 +379,42 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
             )}
          </div>
       </div>
+
+      {tabContextMenu && (
+        <>
+            <div className="fixed inset-0 z-[100]" onClick={() => setTabContextMenu(null)} />
+            <div 
+                className="fixed z-[101] bg-white border border-gray-200 shadow-xl rounded-lg py-1 min-w-[160px] animate-in fade-in zoom-in-95 duration-100"
+                style={{ top: tabContextMenu.y, left: tabContextMenu.x }}
+            >
+                <button 
+                    onClick={() => { closeTab(tabContextMenu.tabId); setTabContextMenu(null) }}
+                    className="w-full text-left px-3 py-1.5 text-[11px] text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-between"
+                >
+                    Close <span className="text-[9px] text-gray-400">Cmd+W</span>
+                </button>
+                <button 
+                    onClick={() => { handleCloseOthers(tabContextMenu.tabId); setTabContextMenu(null) }}
+                    className="w-full text-left px-3 py-1.5 text-[11px] text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                    Close Others
+                </button>
+                <button 
+                    onClick={() => { handleCloseToRight(tabContextMenu.tabId); setTabContextMenu(null) }}
+                    className="w-full text-left px-3 py-1.5 text-[11px] text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                    Close Tabs to Right
+                </button>
+                <div className="border-t border-gray-100 my-1" />
+                <button 
+                    onClick={() => { handleCloseAll(); setTabContextMenu(null) }}
+                    className="w-full text-left px-3 py-1.5 text-[11px] text-red-600 hover:bg-red-50 transition-colors"
+                >
+                    Close All
+                </button>
+            </div>
+        </>
+      )}
 
       <TabSwitcher
         isOpen={showTabSwitcher}

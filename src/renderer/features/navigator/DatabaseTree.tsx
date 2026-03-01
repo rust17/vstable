@@ -7,6 +7,7 @@ interface DatabaseTreeProps {
   schemas: string[]
   currentSchema: string
   tables: {table_name: string, table_schema: string}[]
+  activeTable?: { schema: string, name: string } | null
   onSelectSchema: (schema: string) => void
   onSelectTable: (schema: string, name: string) => void
   onSwitchDatabase: (db: string) => void
@@ -17,7 +18,7 @@ interface DatabaseTreeProps {
 }
 
 export const DatabaseTree: React.FC<DatabaseTreeProps> = ({ 
-  databases, schemas, currentSchema, tables, 
+  databases, schemas, currentSchema, tables, activeTable,
   onSelectSchema, onSelectTable, onSwitchDatabase, 
   onCreateDatabase, onDeleteDatabase, onCreateTable, onDeleteTable 
 }) => {
@@ -274,21 +275,22 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
             {filteredTables.map((table, i) => {
               const tableKey = `${table.table_schema}.${table.table_name}`
               const isSelected = selectedTables.has(tableKey)
+              const isActive = activeTable && activeTable.schema === table.table_schema && activeTable.name === table.table_name
               return (
                 <div 
                   key={i} 
                   data-testid={`table-item-${table.table_name}`}
                   onClick={(e) => handleTableClick(e, table.table_schema, table.table_name)} 
-                  className={`group flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors text-gray-600 cursor-pointer ${isSelected ? 'bg-blue-100 text-blue-700' : 'hover:bg-blue-50'}`}
+                  className={`group flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors text-gray-600 cursor-pointer ${isActive ? 'bg-blue-100 text-blue-700' : isSelected ? 'bg-gray-100' : 'hover:bg-blue-50'}`}
                 >
-                  <TableIcon size={14} className={`shrink-0 ${isSelected ? 'text-blue-500' : 'group-hover:text-blue-500 text-gray-400'}`} />
-                  <span className={`truncate text-[13px] flex-1 ${isSelected ? 'font-bold' : 'font-medium'}`}>{table.table_name}</span>
+                  <TableIcon size={14} className={`shrink-0 ${isActive ? 'text-blue-500' : isSelected ? 'text-blue-500' : 'group-hover:text-blue-500 text-gray-400'}`} />
+                  <span className={`truncate text-[13px] flex-1 ${isActive || isSelected ? 'font-bold' : 'font-medium'}`}>{table.table_name}</span>
                   <button 
                     onClick={(e) => {
                       e.stopPropagation()
                       onDeleteTable(table.table_schema, table.table_name)
                     }}
-                    className={`p-1 hover:text-red-500 hover:bg-red-100 rounded transition-all opacity-0 group-hover:opacity-100 ${isSelected ? 'text-red-400' : 'text-gray-400'}`}
+                    className={`p-1 hover:text-red-500 hover:bg-red-100 rounded transition-all opacity-0 group-hover:opacity-100 ${isActive || isSelected ? 'text-red-400' : 'text-gray-400'}`}
                   >
                     <Trash2 size={12} />
                   </button>
