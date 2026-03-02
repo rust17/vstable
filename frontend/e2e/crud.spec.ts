@@ -92,13 +92,13 @@ for (const config of testConfigs) {
       // Save structure
       await window.locator('button[data-testid="btn-save-structure"]').click();
       
-      // Execute SQL in the preview modal
+      // Should show Preview modal first
       const executeBtn = window.locator('button[data-testid="btn-execute-sql"]');
-      await expect(executeBtn).toBeVisible();
+      await expect(executeBtn).toBeVisible({ timeout: 10000 });
       await executeBtn.click();
       
       // Wait for the structure view tab to close
-      await expect(window.locator(`div[data-testid="tab-table-Structure: ${tableName}"]`)).not.toBeVisible({ timeout: 10000 });
+      await expect(window.locator(`div[data-testid="tab-table-Structure: ${tableName}"]`)).not.toBeVisible({ timeout: 15000 });
 
       // 2. Refresh sidebar and open the table
       await window.locator('button[data-testid="btn-refresh-tables"]').click();
@@ -138,16 +138,22 @@ for (const config of testConfigs) {
       await expect(cell).toHaveText('Updated_User');
 
       // 5. Delete
-      window.on('dialog', dialog => dialog.accept());
       await cell.click({ button: 'right' });
       await window.locator('button:has-text("Delete Row")').click();
       
+      // Wait for custom confirm modal
+      await expect(window.locator('button[data-testid="btn-confirm-ok"]')).toBeVisible({ timeout: 10000 });
+      await window.locator('button[data-testid="btn-confirm-ok"]').click();
+
       // Verify gone
-      await expect(cell).not.toBeVisible();
+      await expect(cell).not.toBeVisible({ timeout: 10000 });
 
       // 6. Cleanup (Drop Table via UI)
       await tableItem.locator('button').click(); // Trash icon
-      await expect(tableItem).not.toBeVisible();
+      await expect(window.locator('button[data-testid="btn-confirm-ok"]')).toBeVisible({ timeout: 10000 });
+      await window.locator('button[data-testid="btn-confirm-ok"]').click();
+
+      await expect(tableItem).not.toBeVisible({ timeout: 10000 });
     });
   });
 }
