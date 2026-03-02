@@ -40,7 +40,7 @@ QuickPG/
 - **AST 编译器 (`internal/ast/`)**：
     - **逻辑对齐**：通过 `Original` 字段实现新旧状态对比，生成精准的 `ALTER` 语句。
     - **MySQL 特色支持**：实现基于“前驱节点对比”的相对位置位移算法（`FIRST`/`AFTER`），避免冗余更新。
-    - **全面支持**：覆盖了 `Type`、`Length`、`Nullable`、`Default` 以及 `Comment` 的生成与修改逻辑。
+    - **全面支持**：覆盖了 `Type`、`Length`、`Nullable`、`Default`、`Comment` 以及 `Primary Key` 和 `Auto Increment` (MySQL) 的生成与修改逻辑。
 
 ## 关键技术特性
 - **高性能查询**：Go 协程并发处理，查询结果直接以 JSON 返回，主进程不参与大对象序列化，避免 OOM。

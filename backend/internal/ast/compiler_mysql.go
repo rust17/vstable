@@ -40,6 +40,13 @@ func (c *MysqlCompiler) formatDefault(col ColumnDefinition) string {
 	return fmt.Sprintf("DEFAULT '%s'", strings.ReplaceAll(val, "'", "''"))
 }
 
+func (c *MysqlCompiler) formatNullable(col ColumnDefinition) string {
+	if col.Nullable {
+		return "NULL"
+	}
+	return "NOT NULL"
+}
+
 func (c *MysqlCompiler) formatComment(col ColumnDefinition) string {
 	if col.Comment == "" {
 		return ""
@@ -51,15 +58,21 @@ func (c *MysqlCompiler) GenerateAlterTableSql(req DiffRequest) []string {
 	var sqls []string
 	safeTable := fmt.Sprintf("`%s`", req.TableName)
 	
-	oldColMap := make(map[string]ColumnDefinition)
 	oldPredecessor := make(map[string]string)
 	allOldCols := make([]ColumnDefinition, 0)
 	for _, col := range req.Columns {
-		if col.Original != nil { allOldCols = append(allOldCols, *col.Original) }
+		if col.Original != nil {
+			allOldCols = append(allOldCols, *col.Original)
+		}
 	}
 	for _, col := range req.DeletedColumns {
-		if col.Original != nil { allOldCols = append(allOldCols, *col.Original) } else { allOldCols = append(allOldCols, col) }
+		if col.Original != nil {
+			allOldCols = append(allOldCols, *col.Original)
+		} else {
+			allOldCols = append(allOldCols, col)
+		}
 	}
+	// Sort by OriginalIndex
 	for i := 0; i < len(allOldCols); i++ {
 		for j := i + 1; j < len(allOldCols); j++ {
 			if allOldCols[i].OriginalIndex > allOldCols[j].OriginalIndex {
@@ -68,8 +81,11 @@ func (c *MysqlCompiler) GenerateAlterTableSql(req DiffRequest) []string {
 		}
 	}
 	for i, col := range allOldCols {
-		oldColMap[col.Name] = col
-		if i > 0 { oldPredecessor[col.Name] = allOldCols[i-1].Name } else { oldPredecessor[col.Name] = "" }
+		if i > 0 {
+			oldPredecessor[col.Name] = allOldCols[i-1].Name
+		} else {
+			oldPredecessor[col.Name] = ""
+		}
 	}
 
 	if req.OldTableName != "" && req.OldTableName != req.TableName {
@@ -81,7 +97,11 @@ func (c *MysqlCompiler) GenerateAlterTableSql(req DiffRequest) []string {
 
 	for i, col := range req.Columns {
 		position := ""
-		if i == 0 { position = "FIRST" } else { position = fmt.Sprintf("AFTER `%s` Luci", req.Columns[i-1].Name); position = fmt.Sprintf("AFTER `%s` Luci", req.Columns[i-1].Name); position = fmt.Sprintf("AFTER `%s`", req.Columns[i-1].Name) }
+		if i == 0 {
+			position = "FIRST"
+		} else {
+            position = fmt.Sprintf("AFTER `%s`", req.Columns[i-1].Name)
+		}
 
 		colType := c.formatType(col)
 		if col.Original == nil {
@@ -94,7 +114,9 @@ func (c *MysqlCompiler) GenerateAlterTableSql(req DiffRequest) []string {
 						  (col.DefaultValue != nil && *col.DefaultValue != *col.Original.DefaultValue)
 
 			actualPrev := ""
-			if i > 0 { actualPrev = req.Columns[i-1].Name }
+			if i > 0 {
+				actualPrev = req.Columns[i-1].Name
+			}
 			posChanged := actualPrev != oldPredecessor[col.Original.Name]
 			
 			if propChanged || posChanged {
@@ -106,15 +128,21 @@ func (c *MysqlCompiler) GenerateAlterTableSql(req DiffRequest) []string {
 	return sqls
 }
 
-func (c *MysqlCompiler) formatNullable(col ColumnDefinition) string {
-	if col.Nullable { return "NULL" }
-	return "NOT NULL"
-}
-
 func (c *MysqlCompiler) GenerateCreateTableSql(req DiffRequest) []string {
 	var colDefs []string
+	var pkCols []string
 	for _, col := range req.Columns {
-		colDefs = append(colDefs, fmt.Sprintf("`%s` %s %s %s %s", col.Name, c.formatType(col), c.formatNullable(col), c.formatDefault(col), c.formatComment(col)))
+		autoInc := ""
+		if col.IsAutoIncrement {
+			autoInc = "AUTO_INCREMENT"
+		}
+		colDefs = append(colDefs, fmt.Sprintf("`%s` %s %s %s %s %s", col.Name, c.formatType(col), c.formatNullable(col), c.formatDefault(col), autoInc, c.formatComment(col)))
+		if col.IsPrimaryKey {
+			pkCols = append(pkCols, fmt.Sprintf("`%s`", col.Name))
+		}
+	}
+	if len(pkCols) > 0 {
+		colDefs = append(colDefs, fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(pkCols, ", ")))
 	}
 	sql := fmt.Sprintf("CREATE TABLE `%s` (\n  %s\n);", req.TableName, strings.Join(colDefs, ",\n  "))
 	return []string{sql}

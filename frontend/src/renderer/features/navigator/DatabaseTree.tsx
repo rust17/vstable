@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Database, Table as TableIcon, Plus, Trash2, Check } from 'lucide-react'
+import { Database, Table as TableIcon, Plus, Trash2, Check, RefreshCw } from 'lucide-react'
 import { useSession } from '../../providers/SessionProvider'
 
 interface DatabaseTreeProps {
@@ -15,12 +15,14 @@ interface DatabaseTreeProps {
   onDeleteDatabase: (db: string | string[]) => void
   onCreateTable: () => void
   onDeleteTable: (schema: string, name: string | string[]) => void
+  onRefreshTables?: () => void
 }
 
 export const DatabaseTree: React.FC<DatabaseTreeProps> = ({ 
   databases, schemas, currentSchema, tables, activeTable,
   onSelectSchema, onSelectTable, onSwitchDatabase, 
-  onCreateDatabase, onDeleteDatabase, onCreateTable, onDeleteTable 
+  onCreateDatabase, onDeleteDatabase, onCreateTable, onDeleteTable,
+  onRefreshTables
 }) => {
   const { config } = useSession()
   const isMysql = config.dialect === 'mysql'
@@ -240,6 +242,16 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
               {selectedTables.size > 1 ? `${selectedTables.size} Selected` : 'Tables'}
             </h3>
             <div className="flex items-center gap-1">
+              {onRefreshTables && (
+                <button 
+                  data-testid="btn-refresh-tables"
+                  onClick={onRefreshTables}
+                  className="p-1 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                  title="Refresh Tables"
+                >
+                  <RefreshCw size={12} />
+                </button>
+              )}
               {selectedTables.size > 1 && (
                 <button 
                   onClick={() => {
@@ -261,6 +273,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
                 </button>
               )}
               <button 
+                data-testid="btn-create-table"
                 onClick={onCreateTable}
                 className="p-1 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                 title="Create Table"

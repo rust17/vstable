@@ -348,3 +348,14 @@ add:
     - 主题
         - [x] 动态主题适配：PostgreSQL 保持经典蓝色，MySQL 切换为品牌橙色
         - [x] UI 语义化重构：将全局硬编码颜色类（blue-）替换为语义化主色类（primary-）
+
+---
+
+add:
+    - 侧边栏
+        - [x] 添加手动刷新表列表按钮 (btn-refresh-tables)
+    - 核心引擎
+        - [x] 修复 CREATE TABLE 时丢失 PRIMARY KEY 和 AUTO_INCREMENT (MySQL) 的问题
+add test:
+    - 自动化测试
+        - [x] 集成 PostgreSQL 和 MySQL 的全流程 CRUD 参数化测试 (crud.spec.ts)

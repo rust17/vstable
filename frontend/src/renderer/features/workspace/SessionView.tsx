@@ -276,6 +276,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
                      }
                  }
              }}
+             onRefreshTables={fetchTables}
            />
         </div>
         <div className="h-12 px-4 border-t border-gray-200 flex items-center gap-2 shrink-0">

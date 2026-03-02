@@ -717,6 +717,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                     <span className="text-gray-300">/</span>
                     <input 
                         autoFocus
+                        data-testid="input-table-name"
                         placeholder="New Table Name"
                         value={newTableName} 
                         onChange={e => setNewTableName(e.target.value)}
@@ -737,10 +738,10 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                <RefreshCw size={18} />
              </button>
           )}
-          <button onClick={handlePreviewSql} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
+          <button data-testid="btn-preview-sql" onClick={handlePreviewSql} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
             <Database size={16} /> SQL Preview
           </button>
-          <button onClick={handlePreviewSql} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 shadow-sm transition-all">
+          <button data-testid="btn-save-structure" onClick={handlePreviewSql} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 shadow-sm transition-all">
             <Save size={16} /> {mode === 'create' ? 'Create Table' : 'Save Changes'}
           </button>
         </div>
@@ -761,7 +762,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                 <div className="w-1 h-4 bg-primary-500 rounded-full"></div>
                 Columns
             </h3>
-            <button onClick={handleAddColumn} className="text-xs flex items-center gap-1 px-3 py-1.5 bg-primary-50 text-primary-600 rounded hover:bg-primary-100 font-medium transition-colors">
+            <button data-testid="btn-add-column" onClick={handleAddColumn} className="text-xs flex items-center gap-1 px-3 py-1.5 bg-primary-50 text-primary-600 rounded hover:bg-primary-100 font-medium transition-colors">
                 <Plus size={14} /> Add Column
             </button>
           </div>
@@ -817,6 +818,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                           <div className="relative flex items-center">
                             <input 
                                 value={col.name}
+                                data-testid="input-column-name"
                                 onChange={e => handleColumnChange(col.id, 'name', e.target.value)}
                                 className={`w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-primary-500 focus:outline-none px-1 py-0.5 transition-colors font-medium ${getColumnError(col) ? 'text-red-600' : 'text-gray-700'}`}
                             />
@@ -1086,7 +1088,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                   <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-white rounded-b-xl">
                       <button onClick={() => setSqlPreview(null)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
                       {sqlPreview !== '-- No changes detected --' && (
-                        <button onClick={executeChanges} className="px-6 py-2 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 shadow-sm transition-colors flex items-center gap-2">
+                        <button data-testid="btn-execute-sql" onClick={executeChanges} className="px-6 py-2 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 shadow-sm transition-colors flex items-center gap-2">
                             {executing ? 'Executing...' : 'Execute'}
                         </button>
                       )}

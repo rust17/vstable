@@ -106,6 +106,7 @@ func (c *PGCompiler) formatNullable(col ColumnDefinition) string {
 func (c *PGCompiler) GenerateCreateTableSql(req DiffRequest) []string {
 	var colDefs []string
 	var comments []string
+	var pkCols []string
 	safeTable := fmt.Sprintf("\"%s\".\"%s\"", req.Schema, req.TableName)
 	
 	for _, col := range req.Columns {
@@ -113,6 +114,13 @@ func (c *PGCompiler) GenerateCreateTableSql(req DiffRequest) []string {
 		if col.Comment != "" {
 			comments = append(comments, fmt.Sprintf("COMMENT ON COLUMN %s.\"%s\" IS '%s';", safeTable, col.Name, strings.ReplaceAll(col.Comment, "'", "''")))
 		}
+		if col.IsPrimaryKey {
+			pkCols = append(pkCols, fmt.Sprintf("\"%s\"", col.Name))
+		}
+	}
+	
+	if len(pkCols) > 0 {
+		colDefs = append(colDefs, fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(pkCols, ", ")))
 	}
 	
 	sql := fmt.Sprintf("CREATE TABLE %s (\n  %s\n);", safeTable, strings.Join(colDefs, ",\n  "))
