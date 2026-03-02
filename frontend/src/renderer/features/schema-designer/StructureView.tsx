@@ -295,6 +295,8 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
   const [loading, setLoading] = useState(mode === 'edit')
   const [error, setError] = useState<string | null>(null)
   const [sqlPreview, setSqlPreview] = useState<string | null>(null)
+  const [previewTitle, setPreviewTitle] = useState<string>('Preview SQL')
+  const [showExecuteInPreview, setShowExecuteInPreview] = useState<boolean>(true)
   const [executing, setExecuting] = useState(false)
 
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, colId: string } | null>(null)
@@ -599,26 +601,32 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
     setIndexes(indexes.filter(i => i.id !== id))
   }
 
-  const handlePreviewSql = async () => {
+  const handlePreviewSql = async (type: 'diff' | 'create' = 'diff') => {
       if (!capabilities) return
       
       try {
         let sqls: string[] = []
-        if (mode === 'create') {
-            if (!newTableName.trim()) return
+        if (type === 'create' || mode === 'create') {
+            const tableName = mode === 'create' ? newTableName : initialTableName
+            const schema = mode === 'create' ? newSchema : initialSchema
+            if (!tableName.trim()) return
+            setPreviewTitle(mode === 'create' ? 'Preview SQL' : 'Show Create Table Statement')
+            setShowExecuteInPreview(mode === 'create')
             sqls = await (window as any).api.generateCreateSql({
               dialect: capabilities.dialect,
-              schema: newSchema,
-              tableName: newTableName,
+              schema: schema,
+              tableName: tableName,
               columns,
               indexes
             })
         } else {
+            setPreviewTitle('Preview Changes')
+            setShowExecuteInPreview(true)
             sqls = await (window as any).api.generateAlterSql({
               dialect: capabilities.dialect,
               schema: initialSchema,
               tableName: initialTableName,
-              oldTableName: initialTableName, // Currently, renaming tables isn't fully implemented in the UI but this handles the current structure
+              oldTableName: initialTableName,
               columns,
               indexes,
               deletedColumns,
@@ -738,10 +746,17 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
                <RefreshCw size={18} />
              </button>
           )}
-          <button data-testid="btn-preview-sql" onClick={handlePreviewSql} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
-            <Database size={16} /> SQL Preview
-          </button>
-          <button data-testid="btn-save-structure" onClick={handlePreviewSql} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 shadow-sm transition-all">
+          {mode === 'edit' && (
+            <button 
+              data-testid="btn-show-create-sql" 
+              onClick={() => handlePreviewSql('create')} 
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+              title="Show Full CREATE Statement"
+            >
+              <Database size={16} /> Show Create Script
+            </button>
+          )}
+          <button data-testid="btn-save-structure" onClick={() => handlePreviewSql('diff')} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 shadow-sm transition-all">
             <Save size={16} /> {mode === 'create' ? 'Create Table' : 'Save Changes'}
           </button>
         </div>
@@ -1076,18 +1091,24 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
       </div>
 
       {sqlPreview && createPortal(
-          <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
-              <div className="bg-white w-full max-w-2xl rounded-xl shadow-2xl border border-gray-200 flex flex-col max-h-[80vh] m-4 animate-in fade-in zoom-in duration-200">
+          <div 
+            className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
+            onClick={() => setSqlPreview(null)}
+          >
+              <div 
+                className="bg-white w-full max-w-2xl rounded-xl shadow-2xl border border-gray-200 flex flex-col max-h-[80vh] m-4 animate-in fade-in zoom-in duration-200"
+                onClick={(e) => e.stopPropagation()}
+              >
                   <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-xl">
-                      <h3 className="font-semibold text-gray-700 flex items-center gap-2"><Database size={16} className="text-primary-500" /> Preview SQL</h3>
+                      <h3 className="font-semibold text-gray-700 flex items-center gap-2"><Database size={16} className="text-primary-500" /> {previewTitle}</h3>
                       <button onClick={() => setSqlPreview(null)} className="p-1 hover:bg-gray-100 rounded-full transition-colors"><X size={18} className="text-gray-400" /></button>
                   </div>
                   <div className="p-0 flex-1 overflow-hidden bg-gray-50">
-                      <pre className="w-full h-full p-6 font-mono text-xs text-gray-700 overflow-auto whitespace-pre-wrap">{sqlPreview}</pre>
+                      <pre className="w-full h-full p-6 font-mono text-xs text-gray-700 overflow-auto whitespace-pre-wrap select-text cursor-text">{sqlPreview}</pre>
                   </div>
                   <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-white rounded-b-xl">
-                      <button onClick={() => setSqlPreview(null)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
-                      {sqlPreview !== '-- No changes detected --' && (
+                      <button onClick={() => setSqlPreview(null)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Close</button>
+                      {showExecuteInPreview && sqlPreview !== '-- No changes detected --' && (
                         <button data-testid="btn-execute-sql" onClick={executeChanges} className="px-6 py-2 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 shadow-sm transition-colors flex items-center gap-2">
                             {executing ? 'Executing...' : 'Execute'}
                         </button>

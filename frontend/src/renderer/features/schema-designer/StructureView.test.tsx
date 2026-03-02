@@ -144,11 +144,11 @@ describe('StructureView Component', () => {
       expect(screen.getByDisplayValue('age')).toBeInTheDocument()
     })
 
-    // Click Save
+    // Click Save Changes
     fireEvent.click(screen.getByText('Save Changes'))
 
     // Should show SQL Preview Modal
-    await waitFor(() => expect(screen.getByText('Preview SQL')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Preview Changes')).toBeInTheDocument())
     expect(screen.getByText(/ADD COLUMN "age"/)).toBeInTheDocument()
 
     // Click Execute
