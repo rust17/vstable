@@ -8,6 +8,8 @@ import { PaginationControl } from '../../ui/pagination/PaginationControl'
 import { FilterBar } from './FilterBar'
 import { StructureView } from '../schema-designer/StructureView'
 import { DataEditModal } from '../../ui/modals/DataEditModal'
+import { AlertModal } from '../../ui/modals/AlertModal'
+import { ConfirmModal } from '../../ui/modals/ConfirmModal'
 import { ContextMenu } from '../../ui/context-menu/ContextMenu'
 import { formatTimestamp } from '../../utils/format'
 
@@ -25,6 +27,13 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
   
   const [editingCell, setEditingCell] = useState<{ row: any, field: string, value: any, dataType?: string } | null>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number, y: number, selectedRows: any[] } | null>(null)
+  const [alertMessage, setAlertMessage] = useState<string | null>(null)
+  const [confirmConfig, setConfirmConfig] = useState<{ 
+      message: string, 
+      onConfirm: () => void,
+      confirmText?: string,
+      title?: string
+  } | null>(null)
 
   // Fetch PK if not present
   useEffect(() => {
@@ -135,7 +144,7 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
       onUpdateTab({ isAddingRow: false, newRowData: {} })
       handleRefresh()
     } else {
-      alert(res.error || 'Insert failed')
+      setAlertMessage(res.error || 'Insert failed')
     }
   }
 
@@ -146,7 +155,7 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
           handleRefresh()
           setEditingCell(null)
       } else {
-          alert(res.error)
+          setAlertMessage(res.error || 'Update failed')
       }
   }
 
@@ -222,6 +231,21 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
           onSave={handleCellUpdate}
       />
 
+      <AlertModal 
+        isOpen={!!alertMessage} 
+        message={alertMessage || ''} 
+        onClose={() => setAlertMessage(null)} 
+      />
+
+      <ConfirmModal
+        isOpen={!!confirmConfig}
+        title={confirmConfig?.title}
+        message={confirmConfig?.message || ''}
+        confirmText={confirmConfig?.confirmText}
+        onConfirm={() => confirmConfig?.onConfirm()}
+        onClose={() => setConfirmConfig(null)}
+      />
+
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}
@@ -233,14 +257,19 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
                       ? `Are you sure you want to delete these ${contextMenu.selectedRows.length} rows?` 
                       : 'Are you sure you want to delete this row?'
                   
-                  if (window.confirm(message)) {
-                      const pkValues = contextMenu.selectedRows.map(r => r[tab.pk!])
-                      deleteRows(tab.pk, pkValues).then(res => {
-                          if(res.success) handleRefresh()
-                          else alert(res.error)
-                          setContextMenu(null)
-                      })
-                  }
+                  setConfirmConfig({
+                      title: 'Delete Data',
+                      message,
+                      confirmText: 'Delete',
+                      onConfirm: () => {
+                          const pkValues = contextMenu.selectedRows.map(r => r[tab.pk!])
+                          deleteRows(tab.pk, pkValues).then(res => {
+                              if(res.success) handleRefresh()
+                              else setAlertMessage(res.error || 'Delete failed')
+                          })
+                      }
+                  })
+                  setContextMenu(null)
               }
           }}
           onAdd={() => {

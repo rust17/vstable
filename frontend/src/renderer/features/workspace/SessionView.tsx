@@ -11,6 +11,8 @@ import { StructureView } from '../schema-designer/StructureView'
 import { TabSwitcher } from '../../ui/tab-switcher/TabSwitcher'
 import { TableSearchModal } from '../../ui/modals/TableSearchModal'
 import { CreateDatabaseModal } from '../../ui/modals/CreateDatabaseModal'
+import { AlertModal } from '../../ui/modals/AlertModal'
+import { ConfirmModal } from '../../ui/modals/ConfirmModal'
 import { Tooltip } from '../../ui/tooltip/Tooltip'
 
 interface SessionViewProps {
@@ -45,6 +47,13 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
   const [isMaximized, setIsMaximized] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(256)
   const [isResizing, setIsResizing] = useState(false)
+  const [alertMessage, setAlertMessage] = useState<string | null>(null)
+  const [confirmConfig, setConfirmConfig] = useState<{ 
+      message: string, 
+      onConfirm: () => void, 
+      confirmText?: string,
+      title?: string
+  } | null>(null)
 
   const activeTab = tabs.find(t => t.id === activeTabId)
   const [tabContextMenu, setTabContextMenu] = useState<{ x: number, y: number, tabId: string } | null>(null)
@@ -114,34 +123,42 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
     const res = await query(`CREATE DATABASE ${quote(name)};`)
     if (res.success) {
         fetchDatabases()
-        if (confirm(`Database "${name}" created. Switch to it?`)) {
-            handleSwitchDatabase(name)
-        }
+        setConfirmConfig({
+            title: 'Success',
+            message: `Database "${name}" created. Switch to it?`,
+            confirmText: 'Switch',
+            onConfirm: () => handleSwitchDatabase(name)
+        })
     } else {
-        alert('Failed to create database: ' + res.error)
+        setAlertMessage('Failed to create database: ' + res.error)
     }
   }
 
   const handleDeleteDatabase = async (name: string | string[]) => {
       const names = Array.isArray(name) ? name : [name]
       if (names.includes(config.database)) {
-          alert("Cannot delete the currently connected database.")
+          setAlertMessage("Cannot delete the currently connected database.")
           return
       }
       const message = names.length > 1
           ? `Are you sure you want to DELETE ${names.length} databases?`
           : `Are you sure you want to DELETE database "${names[0]}"?`
 
-      if (!confirm(message)) return
-
-      for (const n of names) {
-          const res = await query(`DROP DATABASE ${quote(n)};`)
-          if (!res.success) {
-              alert(`Failed to delete database "${n}": ` + res.error)
-              break
+      setConfirmConfig({
+          title: 'Delete Database',
+          message,
+          confirmText: 'Delete',
+          onConfirm: async () => {
+              for (const n of names) {
+                  const res = await query(`DROP DATABASE ${quote(n)};`)
+                  if (!res.success) {
+                      setAlertMessage(`Failed to delete database "${n}": ` + res.error)
+                      break
+                  }
+              }
+              fetchDatabases()
           }
-      }
-      fetchDatabases()
+      })
   }
 
   // Handle keyboard shortcuts
@@ -263,18 +280,23 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
                      ? `Delete ${names.length} tables from ${schema}?`
                      : `Delete table ${schema}.${names[0]}?`
 
-                 if(confirm(message)) {
-                     const tableList = names.map(n => {
-                         if (capabilities?.supportsSchemas) return `${quote(schema)}.${quote(n)}`
-                         return quote(n)
-                     }).join(', ')
-                     const res = await query(`DROP TABLE ${tableList}`)
-                     if (res.success) {
-                        fetchTables()
-                     } else {
-                        alert('Failed to delete tables: ' + res.error)
+                 setConfirmConfig({
+                     title: 'Delete Table',
+                     message,
+                     confirmText: 'Delete',
+                     onConfirm: async () => {
+                        const tableList = names.map(n => {
+                            if (capabilities?.supportsSchemas) return `${quote(schema)}.${quote(n)}`
+                            return quote(n)
+                        }).join(', ')
+                        const res = await query(`DROP TABLE ${tableList}`)
+                        if (res.success) {
+                            fetchTables()
+                        } else {
+                            setAlertMessage('Failed to delete tables: ' + res.error)
+                        }
                      }
-                 }
+                 })
              }}
              onRefreshTables={fetchTables}
            />
@@ -448,6 +470,21 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
         isOpen={showCreateDb}
         onClose={() => setShowCreateDb(false)}
         onCreate={handleCreateDatabase}
+      />
+
+      <AlertModal 
+        isOpen={!!alertMessage} 
+        message={alertMessage || ''} 
+        onClose={() => setAlertMessage(null)} 
+      />
+
+      <ConfirmModal
+        isOpen={!!confirmConfig}
+        title={confirmConfig?.title}
+        message={confirmConfig?.message || ''}
+        confirmText={confirmConfig?.confirmText}
+        onConfirm={() => confirmConfig?.onConfirm()}
+        onClose={() => setConfirmConfig(null)}
       />
     </div>
     )}
