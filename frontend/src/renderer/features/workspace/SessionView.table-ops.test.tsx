@@ -122,7 +122,9 @@ describe('SessionView Table Operations', () => {
     fireEvent.click(deleteBtn)
 
     // Verify confirmation and DELETE SQL
-    expect(window.confirm).toHaveBeenCalled()
+    const confirmBtn = await screen.findByTestId('btn-confirm-ok')
+    fireEvent.click(confirmBtn)
+
     await waitFor(() => {
         expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining("DELETE FROM \"public\".\"users\" WHERE \"id\" IN ('1')"))
     })

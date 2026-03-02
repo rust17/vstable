@@ -40,6 +40,8 @@ window.api = {
   getSavedConnections: vi.fn().mockResolvedValue([]),
   deleteConnection: vi.fn().mockResolvedValue(true),
   saveConnection: vi.fn().mockResolvedValue(true),
+  generateAlterSql: vi.fn().mockResolvedValue(['ALTER TABLE "users" ADD COLUMN "age" integer;']),
+  generateCreateSql: vi.fn().mockResolvedValue(['CREATE TABLE "users" ("id" serial PRIMARY KEY);']),
 }
 
 // Mock Monaco Editor

@@ -37,7 +37,7 @@ describe('StructureView Component', () => {
           ]
         })
       }
-      if (sql.includes('pg_index ix')) {
+      if (sql.includes('pg_indexes')) {
         return Promise.resolve({
           success: true,
           rows: [
@@ -51,14 +51,23 @@ describe('StructureView Component', () => {
     renderWithProvider(<StructureView {...defaultProps} />)
     await waitFor(() => expect(screen.queryByText(/Loading structure/i)).not.toBeInTheDocument())
 
-    expect(screen.getByDisplayValue('id')).toBeInTheDocument()
+    expect(await screen.findByDisplayValue('id')).toBeInTheDocument()
     expect(screen.getAllByDisplayValue('email').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByDisplayValue('users_email_idx')).toBeInTheDocument()
   })
 
   it('handles index columns returned as Postgres array strings', async () => {
     ;(window as any).api.query.mockImplementation((id, sql) => {
-      if (sql.includes('pg_index ix')) {
+      if (sql.includes('information_schema.columns')) {
+        return Promise.resolve({
+          success: true,
+          rows: [
+            { column_name: 'col1', data_type: 'varchar', is_nullable: 'YES' },
+            { column_name: 'col2', data_type: 'varchar', is_nullable: 'YES' }
+          ]
+        })
+      }
+      if (sql.includes('pg_indexes')) {
         return Promise.resolve({
           success: true,
           rows: [
@@ -72,7 +81,7 @@ describe('StructureView Component', () => {
     renderWithProvider(<StructureView {...defaultProps} />)
     await waitFor(() => expect(screen.queryByText(/Loading structure/i)).not.toBeInTheDocument())
 
-    expect(screen.getByDisplayValue('string_idx')).toBeInTheDocument()
+    expect(await screen.findByDisplayValue('string_idx')).toBeInTheDocument()
     expect(screen.getByText('col1')).toBeInTheDocument()
     expect(screen.getByText('col2')).toBeInTheDocument()
   })
@@ -148,11 +157,11 @@ describe('StructureView Component', () => {
     fireEvent.click(screen.getByText('Save Changes'))
 
     // Should show SQL Preview Modal
-    await waitFor(() => expect(screen.getByText('Preview Changes')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/Preview Changes/i)).toBeInTheDocument())
     expect(screen.getByText(/ADD COLUMN "age"/)).toBeInTheDocument()
 
     // Click Execute
-    fireEvent.click(screen.getByText('Execute'))
+    fireEvent.click(screen.getByText(/Execute/i))
 
     await waitFor(() => {
         expect((window as any).api.query).toHaveBeenCalledWith('test-conn', expect.stringContaining('ADD COLUMN "age"'))
