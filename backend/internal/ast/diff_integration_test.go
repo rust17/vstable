@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"quickpg-engine/internal/db"
+	"vstable-engine/internal/db"
 	"testing"
 	"time"
 )
@@ -24,7 +24,7 @@ func runCommonIntegrationTest(t *testing.T, dialect string, dsn string, compiler
 	tableName := fmt.Sprintf("sync_test_%s", dialect)
 	schema := "public"
 	if dialect == "mysql" {
-		schema = "quickpg_test"
+		schema = "vstable_test"
 	}
 
 	// 1. Cleanup
@@ -84,12 +84,12 @@ func runCommonIntegrationTest(t *testing.T, dialect string, dsn string, compiler
 
 func TestPostgresSyncIntegration(t *testing.T) {
 	dsn := os.Getenv("PG_DSN")
-	if dsn == "" { dsn = "postgres://root:password@localhost:5433/quickpg_test?sslmode=disable" }
+	if dsn == "" { dsn = "postgres://root:password@localhost:5433/vstable_test?sslmode=disable" }
 	runCommonIntegrationTest(t, "pg", dsn, &PGCompiler{})
 }
 
 func TestMysqlSyncIntegration(t *testing.T) {
 	dsn := os.Getenv("MYSQL_DSN")
-	if dsn == "" { dsn = "root:password@tcp(127.0.0.1:3307)/quickpg_test?charset=utf8mb4&parseTime=True&loc=Local" }
+	if dsn == "" { dsn = "root:password@tcp(127.0.0.1:3307)/vstable_test?charset=utf8mb4&parseTime=True&loc=Local" }
 	runCommonIntegrationTest(t, "mysql", dsn, &MysqlCompiler{})
 }

@@ -10,7 +10,7 @@ test.describe('Connection Tests', () => {
 
   test.beforeEach(async () => {
     // Create a temporary user data directory for isolation
-    userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'quickpg-e2e-'));
+    userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vstable-e2e-'));
 
     // Launch Electron application with the isolated user data directory
     electronApp = await electron.launch({ 
@@ -53,7 +53,7 @@ test.describe('Connection Tests', () => {
     await window.locator('input[data-testid="input-port"]').fill('5433');
     await window.locator('input[data-testid="input-user"]').fill('root');
     await window.locator('input[data-testid="input-password"]').fill('password');
-    await window.locator('input[data-testid="input-database"]').fill('quickpg_test');
+    await window.locator('input[data-testid="input-database"]').fill('vstable_test');
     
     await window.locator('button[data-testid="btn-connect"]').click();
     await expect(form).not.toBeVisible({ timeout: 10000 });
@@ -72,7 +72,7 @@ test.describe('Connection Tests', () => {
     await window.locator('input[data-testid="input-port"]').fill('3307');
     await window.locator('input[data-testid="input-user"]').fill('root');
     await window.locator('input[data-testid="input-password"]').fill('password');
-    await window.locator('input[data-testid="input-database"]').fill('quickpg_test');
+    await window.locator('input[data-testid="input-database"]').fill('vstable_test');
     
     await window.locator('button[data-testid="btn-connect"]').click();
     await expect(form).not.toBeVisible({ timeout: 10000 });

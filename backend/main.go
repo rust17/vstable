@@ -7,8 +7,8 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"quickpg-engine/internal/ast"
-	"quickpg-engine/internal/db"
+	"vstable-engine/internal/ast"
+	"vstable-engine/internal/db"
 	"time"
 )
 
@@ -31,7 +31,7 @@ type QueryRequest struct {
 }
 
 func main() {
-	port := os.Getenv("QUICKPG_PORT")
+	port := os.Getenv("VSTABLE_PORT")
 	if port == "" {
 		port = "39082"
 	}

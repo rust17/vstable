@@ -8,7 +8,7 @@ async function globalSetup() {
   console.log('[Global Setup] Building Go Engine...');
   try {
     // appDir is frontend/, so backend is at ../backend
-    execSync('go build -o quickpg-engine main.go', { 
+    execSync('go build -o vstable-engine main.go', { 
       cwd: '../backend',
       stdio: 'inherit' 
     });

@@ -1,8 +1,8 @@
-# QuickPG 架构实现原理
+# vstable 架构实现原理
 
 ## 项目目录结构
 ```text
-QuickPG/
+vstable/
 ├── backend/                # Go 核心引擎
 │   ├── internal/
 │   │   ├── ast/           # SQL 编译器与方言适配逻辑

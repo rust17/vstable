@@ -12,7 +12,7 @@ export class DaemonManager {
     console.log('[Daemon] Starting Go Engine...')
     
     // 开发环境下，直接运行 go run main.go
-    // 生产环境下，运行打包进去的 quickpg-engine 二进制文件
+    // 生产环境下，运行打包进去的 vstable-engine 二进制文件
     const isDev = !app.isPackaged
 
     if (isDev) {
@@ -20,14 +20,14 @@ export class DaemonManager {
       const frontendDir = app.getAppPath()
       const backendDir = join(frontendDir, '../backend')
       
-      const binaryName = os.platform() === 'win32' ? 'quickpg-engine.exe' : 'quickpg-engine'
+      const binaryName = os.platform() === 'win32' ? 'vstable-engine.exe' : 'vstable-engine'
       const binaryPath = join(backendDir, binaryName)
 
       if (existsSync(binaryPath)) {
         console.log(`[Daemon] Spawning pre-built engine at ${binaryPath}`)
         this.engineProcess = spawn(binaryPath, [], {
           cwd: backendDir,
-          env: { ...process.env, QUICKPG_PORT: this.port.toString() }
+          env: { ...process.env, VSTABLE_PORT: this.port.toString() }
         })
       } else {
         // 解决某些环境下 PATH 找不到 go 的问题
@@ -39,7 +39,7 @@ export class DaemonManager {
 
         this.engineProcess = spawn(goBin, ['run', 'main.go'], {
           cwd: backendDir,
-          env: { ...process.env, QUICKPG_PORT: this.port.toString() }
+          env: { ...process.env, VSTABLE_PORT: this.port.toString() }
         })
       }
 
@@ -50,10 +50,10 @@ export class DaemonManager {
     } else {
       // 假设二进制文件位于 app.getAppPath()/resources/engine/ 或类似路径
       // 注意: 这里暂留二进制执行的骨架，当前主要演示 dev 模式
-      const binaryName = os.platform() === 'win32' ? 'quickpg-engine.exe' : 'quickpg-engine'
+      const binaryName = os.platform() === 'win32' ? 'vstable-engine.exe' : 'vstable-engine'
       const binaryPath = join(process.resourcesPath, 'engine', binaryName)
       this.engineProcess = spawn(binaryPath, [], {
-        env: { ...process.env, QUICKPG_PORT: this.port.toString() }
+        env: { ...process.env, VSTABLE_PORT: this.port.toString() }
       })
     }
 

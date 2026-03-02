@@ -1,5 +1,5 @@
 {
-  "name": "quickpg",
+  "name": "vstable",
   "version": "1.0.0",
   "description": "",
   "main": "./out/main/index.js",
@@ -10,14 +10,13 @@
     "postinstall": "electron-builder install-app-deps",
     "package:mac": "npm run build && electron-builder --mac",
     "test": "vitest",
-    "test:integration": "vitest run --testNamePattern Integration",
     "test:e2e": "npm run build && playwright test",
     "docker:up": "docker compose -f ../docker-compose.yml up -d",
     "docker:down": "docker compose -f ../docker-compose.yml down -v"
   },
   "build": {
-    "appId": "com.quickpg.app",
-    "productName": "QuickPG",
+    "appId": "com.vstable.app",
+    "productName": "vstable",
     "directories": {
       "output": "dist"
     },

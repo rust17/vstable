@@ -36,7 +36,7 @@ frontend/*.tsbuildinfo
 
 # --- Backend (Go) ---
 backend/engine
-backend/quickpg-engine
+backend/vstable-engine
 backend/bin/
 backend/vendor/
 backend/*.exe

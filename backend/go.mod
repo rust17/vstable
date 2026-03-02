@@ -1,4 +1,4 @@
-module quickpg-engine
+module vstable-engine
 
 go 1.24.0
 

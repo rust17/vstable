@@ -50,7 +50,7 @@ for (const config of testConfigs) {
     let userDataDir: string;
 
     test.beforeEach(async () => {
-      userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), `quickpg-e2e-complex-${config.dialect.toLowerCase()}-`));
+      userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), `vstable-e2e-complex-${config.dialect.toLowerCase()}-`));
       electronApp = await electron.launch({
         args: ['.', `--user-data-dir=${userDataDir}`]
       });
@@ -70,7 +70,7 @@ for (const config of testConfigs) {
       await window.locator('input[data-testid="input-port"]').fill(config.port);
       await window.locator('input[data-testid="input-user"]').fill('root');
       await window.locator('input[data-testid="input-password"]').fill('password');
-      await window.locator('input[data-testid="input-database"]').fill('quickpg_test');
+      await window.locator('input[data-testid="input-database"]').fill('vstable_test');
       await window.locator('button[data-testid="btn-connect"]').click();
       await expect(form).not.toBeVisible({ timeout: 10000 });
     });

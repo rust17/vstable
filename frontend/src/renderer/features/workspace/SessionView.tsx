@@ -87,7 +87,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
   // Update window title
   useEffect(() => {
     if (isActive && config.database) {
-      document.title = `${config.database} - QuickPG`
+      document.title = `${config.database} - vstable`
     }
   }, [isActive, config.database])
 
