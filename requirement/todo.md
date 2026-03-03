@@ -359,3 +359,14 @@ add:
 add test:
     - 自动化测试
         - [x] 集成 PostgreSQL 和 MySQL 的全流程 CRUD 参数化测试 (crud.spec.ts)
+
+---
+
+fix:
+    - [ ] 建表语句太长时没有滚动条，看不到下方的信息
+    - [ ] 建表弹窗 ctrl+a 会选择页面的数据(应该选中建表语句)
+    - [ ] ctrl+p 打开的表，点 filter 栏下拉框没有数据
+    - [ ] query 页面添加下拉滚动，防止看不到最底下的数据
+    - [ ] query 页面数据要可复制（鼠标左键拖动选中，ctrl+v 复制）
+    - [ ] 左侧导航栏表名按照字母排序
+    - [ ] 添加 lint 补充到 AGENTS.md 的 commands 里
