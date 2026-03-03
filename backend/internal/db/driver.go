@@ -131,6 +131,10 @@ func (d *PgDriver) Query(ctx context.Context, query string, params []interface{}
 		resultRows = append(resultRows, row)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return &QueryResult{Rows: resultRows, Fields: fields}, nil
 }
 
@@ -193,6 +197,10 @@ func (d *MysqlDriver) Query(ctx context.Context, query string, params []interfac
 			}
 		}
 		resultRows = append(resultRows, m)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return &QueryResult{Rows: resultRows, Fields: fields}, nil
