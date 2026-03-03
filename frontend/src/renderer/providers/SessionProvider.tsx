@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react'
+import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react'
 import { ConnectionConfig, QueryResult, Capabilities } from '../types/session'
 
 interface SessionContextType {
@@ -92,11 +92,11 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ id, onUpdateTi
     return sql
   }, [capabilities])
 
-  const connect = async (newConfig: ConnectionConfig) => {
+  const connect = useCallback(async (newConfig: ConnectionConfig) => {
     setLoading(true)
     setError(null)
     try {
-      const result = await (window as any).api.connect(id, newConfig)
+      const result = await window.api.connect(id, newConfig)
       if (result.success) {
         setIsConnected(true)
         setConfig(newConfig)
@@ -105,59 +105,58 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({ id, onUpdateTi
         } else {
            setCapabilities(getInitialCapabilities(newConfig.dialect || 'postgres'))
         }
-        await (window as any).api.saveConnection(newConfig)
+        await window.api.saveConnection(newConfig)
         if (onUpdateTitle) {
           onUpdateTitle(newConfig.database || newConfig.host)
         }
       } else {
         setError(result.error || 'Connection failed')
       }
-      return result
+      return result as QueryResult
     } catch (err: any) {
       setError(err.message)
-      return { success: false, error: err.message }
+      return { success: false, error: err.message } as QueryResult
     } finally {
       setLoading(false)
     }
-  }
+  }, [id, onUpdateTitle])
 
-  const disconnect = async () => {
+  const disconnect = useCallback(async () => {
     try {
-        await (window as any).api.disconnect(id)
+        await window.api.disconnect(id)
         setIsConnected(false)
         setCapabilities(getInitialCapabilities(config.dialect || 'postgres'))
     } catch (e) {
         console.error("Disconnect failed", e)
     }
-  }
+  }, [id, config.dialect])
 
-  const query = async (sql: string, params?: any[]) => {
+  const query = useCallback(async (sql: string, params?: any[]) => {
     try {
-      const result = params
-        ? await (window as any).api.query(id, sql, params)
-        : await (window as any).api.query(id, sql)
-      return result
+      return await window.api.query(id, sql, params)
     } catch (err: any) {
       return { success: false, error: err.message }
     }
-  }
+  }, [id])
+
+  const contextValue = useMemo(() => ({
+    sessionId: id,
+    isConnected,
+    config,
+    capabilities,
+    loading,
+    error,
+    connect,
+    disconnect,
+    query,
+    buildQuery,
+    updateTitle: onUpdateTitle,
+    setError,
+    setConfig
+  }), [id, isConnected, config, capabilities, loading, error, connect, disconnect, query, buildQuery, onUpdateTitle])
 
   return (
-    <SessionContext.Provider value={{
-      sessionId: id,
-      isConnected,
-      config,
-      capabilities,
-      loading,
-      error,
-      connect,
-      disconnect,
-      query,
-      buildQuery,
-      updateTitle: onUpdateTitle,
-      setError,
-      setConfig
-    }}>
+    <SessionContext.Provider value={contextValue}>
       {children}
     </SessionContext.Provider>
   )

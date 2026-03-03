@@ -57,7 +57,7 @@ func (c *MysqlCompiler) formatComment(col ColumnDefinition) string {
 func (c *MysqlCompiler) GenerateAlterTableSql(req DiffRequest) []string {
 	var sqls []string
 	safeTable := fmt.Sprintf("`%s`", req.TableName)
-	
+
 	oldPredecessor := make(map[string]string)
 	allOldCols := make([]ColumnDefinition, 0)
 	for _, col := range req.Columns {
@@ -100,27 +100,27 @@ func (c *MysqlCompiler) GenerateAlterTableSql(req DiffRequest) []string {
 		if i == 0 {
 			position = "FIRST"
 		} else {
-            position = fmt.Sprintf("AFTER `%s`", req.Columns[i-1].Name)
+			position = fmt.Sprintf("AFTER `%s`", req.Columns[i-1].Name)
 		}
 
 		colType := c.formatType(col)
 		if col.Original == nil {
-			sqls = append(sqls, fmt.Sprintf("ALTER TABLE %s ADD COLUMN `%s` %s %s %s %s %s;", 
+			sqls = append(sqls, fmt.Sprintf("ALTER TABLE %s ADD COLUMN `%s` %s %s %s %s %s;",
 				safeTable, col.Name, colType, c.formatNullable(col), c.formatDefault(col), c.formatComment(col), position))
 		} else {
 			origType := c.formatType(*col.Original)
-			propChanged := col.Name != col.Original.Name || colType != origType || col.Nullable != col.Original.Nullable || 
-						  col.Comment != col.Original.Comment || (col.DefaultValue == nil) != (col.Original.DefaultValue == nil) || 
-						  (col.DefaultValue != nil && *col.DefaultValue != *col.Original.DefaultValue)
+			propChanged := col.Name != col.Original.Name || colType != origType || col.Nullable != col.Original.Nullable ||
+				col.Comment != col.Original.Comment || (col.DefaultValue == nil) != (col.Original.DefaultValue == nil) ||
+				(col.DefaultValue != nil && *col.DefaultValue != *col.Original.DefaultValue)
 
 			actualPrev := ""
 			if i > 0 {
 				actualPrev = req.Columns[i-1].Name
 			}
 			posChanged := actualPrev != oldPredecessor[col.Original.Name]
-			
+
 			if propChanged || posChanged {
-				sqls = append(sqls, fmt.Sprintf("ALTER TABLE %s CHANGE `%s` `%s` %s %s %s %s %s;", 
+				sqls = append(sqls, fmt.Sprintf("ALTER TABLE %s CHANGE `%s` `%s` %s %s %s %s %s;",
 					safeTable, col.Original.Name, col.Name, colType, c.formatNullable(col), c.formatDefault(col), c.formatComment(col), position))
 			}
 		}

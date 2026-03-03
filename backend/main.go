@@ -7,9 +7,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 	"vstable-engine/internal/ast"
 	"vstable-engine/internal/db"
-	"time"
 )
 
 type Response struct {
@@ -41,6 +41,7 @@ func main() {
 
 	// 健康检查
 	mux.HandleFunc("/api/ping", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 	})
 
@@ -48,7 +49,7 @@ func main() {
 	mux.HandleFunc("/api/connect", func(w http.ResponseWriter, r *http.Request) {
 		var req ConnectRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			sendError(w, err)
+			sendError(w, http.StatusBadRequest, err)
 			return
 		}
 
@@ -56,23 +57,23 @@ func main() {
 		defer cancel()
 
 		if err := dbManager.Connect(ctx, req.ID, req.Dialect, req.DSN); err != nil {
-			sendError(w, err)
+			sendError(w, http.StatusInternalServerError, err)
 			return
 		}
-		sendJSON(w, Response{Success: true})
+		sendJSON(w, http.StatusOK, Response{Success: true})
 	})
 
 	// 执行查询
 	mux.HandleFunc("/api/query", func(w http.ResponseWriter, r *http.Request) {
 		var req QueryRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			sendError(w, err)
+			sendError(w, http.StatusBadRequest, err)
 			return
 		}
 
 		driver, err := dbManager.Get(req.ID)
 		if err != nil {
-			sendError(w, err)
+			sendError(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -81,12 +82,13 @@ func main() {
 
 		result, err := driver.Query(ctx, req.SQL, req.Params)
 		if err != nil {
-			sendError(w, err)
+			sendError(w, http.StatusInternalServerError, err)
 			return
 		}
 
 		// 适配前端预期的格式
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"success": true,
 			"rows":    result.Rows,
@@ -99,58 +101,59 @@ func main() {
 	mux.HandleFunc("/api/disconnect", func(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
 		if err := dbManager.Disconnect(id); err != nil {
-			sendError(w, err)
+			sendError(w, http.StatusInternalServerError, err)
 			return
 		}
-		sendJSON(w, Response{Success: true})
+		sendJSON(w, http.StatusOK, Response{Success: true})
 	})
 
 	// SQL 生成：生成 ALTER TABLE SQL
 	mux.HandleFunc("/api/diff", func(w http.ResponseWriter, r *http.Request) {
 		var req ast.DiffRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			sendError(w, err)
+			sendError(w, http.StatusBadRequest, err)
 			return
 		}
 
 		compiler, err := ast.GetCompiler(req.Dialect)
 		if err != nil {
-			sendError(w, err)
+			sendError(w, http.StatusBadRequest, err)
 			return
 		}
 
 		sqls := compiler.GenerateAlterTableSql(req)
-		sendJSON(w, Response{Success: true, Data: sqls})
+		sendJSON(w, http.StatusOK, Response{Success: true, Data: sqls})
 	})
 
 	// SQL 生成：生成 CREATE TABLE SQL
 	mux.HandleFunc("/api/create-table", func(w http.ResponseWriter, r *http.Request) {
 		var req ast.DiffRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			sendError(w, err)
+			sendError(w, http.StatusBadRequest, err)
 			return
 		}
 
 		compiler, err := ast.GetCompiler(req.Dialect)
 		if err != nil {
-			sendError(w, err)
+			sendError(w, http.StatusBadRequest, err)
 			return
 		}
 
 		sqls := compiler.GenerateCreateTableSql(req)
-		sendJSON(w, Response{Success: true, Data: sqls})
+		sendJSON(w, http.StatusOK, Response{Success: true, Data: sqls})
 	})
 
-	addr := ":39082"
+	addr := ":" + port
 	fmt.Printf("Engine listening on %s...\n", addr)
 	log.Fatal(http.ListenAndServe(addr, mux))
 }
 
-func sendJSON(w http.ResponseWriter, resp interface{}) {
+func sendJSON(w http.ResponseWriter, status int, resp interface{}) {
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(resp)
 }
 
-func sendError(w http.ResponseWriter, err error) {
-	sendJSON(w, Response{Success: false, Error: err.Error()})
+func sendError(w http.ResponseWriter, status int, err error) {
+	sendJSON(w, status, Response{Success: false, Error: err.Error()})
 }

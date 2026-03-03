@@ -70,12 +70,18 @@ async function engineFetch(path: string, method: string, body?: any) {
 
 // 数据库 IPC 处理 (代理到 Go)
 handleIPC('db:connect', async (_, id, config) => {
+  // 处理保存的加密密码
+  let password = config.password || ''
+  if (!password && config.encryptedPassword) {
+    password = store.decryptPassword(config.encryptedPassword)
+  }
+
   // 将前端配置转为 Go 引擎需要的 DSN
   let dsn = ''
   if (config.dialect === 'pg' || config.dialect === 'postgres' || config.dialect === 'postgresql') {
-    dsn = `postgres://${config.user}:${config.password}@${config.host}:${config.port}/${config.database}?sslmode=disable`
+    dsn = `postgres://${config.user}:${password}@${config.host}:${config.port}/${config.database}?sslmode=disable`
   } else {
-    dsn = `${config.user}:${config.password}@tcp(${config.host}:${config.port})/${config.database}`
+    dsn = `${config.user}:${password}@tcp(${config.host}:${config.port})/${config.database}`
   }
 
   return await engineFetch('/api/connect', 'POST', {

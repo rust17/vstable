@@ -118,7 +118,7 @@ describe('SessionView UI Tasks - Maximize & Rubber Band', () => {
         fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' })
         
         await waitFor(() => {
-            expect(mockApi.query).toHaveBeenCalledWith(expect.any(String), expect.stringContaining("WHERE \"status\" = 'completed'"))
+            expect(mockApi.query).toHaveBeenCalledWith(expect.any(String), expect.stringContaining("WHERE \"status\" = 'completed'"), undefined)
         })
     })
 

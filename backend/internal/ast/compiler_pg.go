@@ -10,7 +10,7 @@ type PGCompiler struct{}
 
 func (c *PGCompiler) formatType(col ColumnDefinition) string {
 	baseType := strings.ToLower(col.Type)
-	
+
 	if col.Length != nil {
 		if l, ok := col.Length.(float64); ok && l > 0 {
 			return fmt.Sprintf("%s(%d)", baseType, int(l))
@@ -42,14 +42,20 @@ func (c *PGCompiler) formatDefault(col ColumnDefinition) string {
 	return fmt.Sprintf("DEFAULT '%s'", strings.ReplaceAll(val, "'", "''"))
 }
 
+func (c *PGCompiler) formatTableName(schema, table string) string {
+	if schema != "" {
+		return fmt.Sprintf("\"%s\".\"%s\"", schema, table)
+	}
+	return fmt.Sprintf("\"%s\"", table)
+}
+
 func (c *PGCompiler) GenerateAlterTableSql(req DiffRequest) []string {
 	var sqls []string
-	safeSchema := fmt.Sprintf("\"%s\"", req.Schema)
-	safeTable := fmt.Sprintf("\"%s\"", req.TableName)
-	fullTableName := fmt.Sprintf("%s.%s", safeSchema, safeTable)
+	fullTableName := c.formatTableName(req.Schema, req.TableName)
 
 	if req.OldTableName != "" && req.OldTableName != req.TableName {
-		sqls = append(sqls, fmt.Sprintf("ALTER TABLE %s.\"%s\" RENAME TO \"%s\";", safeSchema, req.OldTableName, req.TableName))
+		oldTableName := c.formatTableName(req.Schema, req.OldTableName)
+		sqls = append(sqls, fmt.Sprintf("ALTER TABLE %s RENAME TO \"%s\";", oldTableName, req.TableName))
 	}
 
 	for _, col := range req.DeletedColumns {
@@ -60,14 +66,14 @@ func (c *PGCompiler) GenerateAlterTableSql(req DiffRequest) []string {
 		colType := c.formatType(col)
 		if col.Original == nil {
 			// New column
-			sqls = append(sqls, fmt.Sprintf("ALTER TABLE %s ADD COLUMN \"%s\" %s %s %s;", 
+			sqls = append(sqls, fmt.Sprintf("ALTER TABLE %s ADD COLUMN \"%s\" %s %s %s;",
 				fullTableName, col.Name, colType, c.formatNullable(col), c.formatDefault(col)))
 			if col.Comment != "" {
 				sqls = append(sqls, fmt.Sprintf("COMMENT ON COLUMN %s.\"%s\" IS '%s';", fullTableName, col.Name, strings.ReplaceAll(col.Comment, "'", "''")))
 			}
 		} else {
 			if col.Name != col.Original.Name {
-				sqls = append(sqls, fmt.Sprintf("ALTER TABLE %s RENAME COLUMN \"%s\" TO \"%s\";", 
+				sqls = append(sqls, fmt.Sprintf("ALTER TABLE %s RENAME COLUMN \"%s\" TO \"%s\";",
 					fullTableName, col.Original.Name, col.Name))
 			}
 			if colType != c.formatType(*col.Original) {
@@ -99,7 +105,9 @@ func (c *PGCompiler) GenerateAlterTableSql(req DiffRequest) []string {
 }
 
 func (c *PGCompiler) formatNullable(col ColumnDefinition) string {
-	if col.Nullable { return "NULL" }
+	if col.Nullable {
+		return "NULL"
+	}
 	return "NOT NULL"
 }
 
@@ -107,23 +115,23 @@ func (c *PGCompiler) GenerateCreateTableSql(req DiffRequest) []string {
 	var colDefs []string
 	var comments []string
 	var pkCols []string
-	safeTable := fmt.Sprintf("\"%s\".\"%s\"", req.Schema, req.TableName)
-	
+	fullTableName := c.formatTableName(req.Schema, req.TableName)
+
 	for _, col := range req.Columns {
-		colDefs = append(colDefs, fmt.Sprintf("\"%s\" %s %s %s", col.Name, c.formatType(col), c.formatNullable(col), c.formatDefault(col)))
+		colDefs = append(colDefs, strings.TrimSpace(fmt.Sprintf("\"%s\" %s %s %s", col.Name, c.formatType(col), c.formatNullable(col), c.formatDefault(col))))
 		if col.Comment != "" {
-			comments = append(comments, fmt.Sprintf("COMMENT ON COLUMN %s.\"%s\" IS '%s';", safeTable, col.Name, strings.ReplaceAll(col.Comment, "'", "''")))
+			comments = append(comments, fmt.Sprintf("COMMENT ON COLUMN %s.\"%s\" IS '%s';", fullTableName, col.Name, strings.ReplaceAll(col.Comment, "'", "''")))
 		}
 		if col.IsPrimaryKey {
 			pkCols = append(pkCols, fmt.Sprintf("\"%s\"", col.Name))
 		}
 	}
-	
+
 	if len(pkCols) > 0 {
 		colDefs = append(colDefs, fmt.Sprintf("PRIMARY KEY (%s)", strings.Join(pkCols, ", ")))
 	}
-	
-	sql := fmt.Sprintf("CREATE TABLE %s (\n  %s\n);", safeTable, strings.Join(colDefs, ",\n  "))
+
+	sql := fmt.Sprintf("CREATE TABLE %s (\n  %s\n);", fullTableName, strings.Join(colDefs, ",\n  "))
 	res := []string{sql}
 	res = append(res, comments...)
 	return res

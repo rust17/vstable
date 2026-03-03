@@ -82,7 +82,7 @@ describe('SessionView Table Operations', () => {
 
     // Verify INSERT SQL
     await waitFor(() => {
-        expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining("INSERT INTO \"public\".\"users\" (\"name\") VALUES ('Bob')"))
+        expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining("INSERT INTO \"public\".\"users\" (\"name\") VALUES ('Bob')"), undefined)
     })
   })
 
@@ -100,7 +100,7 @@ describe('SessionView Table Operations', () => {
 
     // Verify DEFAULT VALUES INSERT
     await waitFor(() => {
-        expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining('INSERT INTO "public"."users" DEFAULT VALUES;'))
+        expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining('INSERT INTO "public"."users" DEFAULT VALUES'), undefined)
     })
   })
 
@@ -126,7 +126,7 @@ describe('SessionView Table Operations', () => {
     fireEvent.click(confirmBtn)
 
     await waitFor(() => {
-        expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining("DELETE FROM \"public\".\"users\" WHERE \"id\" IN ('1')"))
+        expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining("DELETE FROM \"public\".\"users\" WHERE \"id\" IN ('1')"), undefined)
     })
   })
 
@@ -145,7 +145,7 @@ describe('SessionView Table Operations', () => {
     fireEvent.click(saveBtn)
 
     await waitFor(() => {
-        expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining("UPDATE \"public\".\"users\" SET \"name\" = 'Alice Smith' WHERE \"id\" = '1'"))
+        expect(window.api.query).toHaveBeenCalledWith('test-session', expect.stringContaining("UPDATE \"public\".\"users\" SET \"name\" = 'Alice Smith' WHERE \"id\" = '1'"), undefined)
     })
   })
 

@@ -16,6 +16,14 @@ export interface Capabilities {
   quoteChar: string
   supportsSchemas: boolean
   typeGroups: TypeGroup[]
+  queryTemplates: {
+    listDatabases: string
+    listSchemas?: string
+    listTables: string
+    listColumns: string
+    listIndexes: string
+    getPrimaryKey: string
+  }
 }
 
 export interface ConnectionConfig {

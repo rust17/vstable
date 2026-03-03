@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"vstable-engine/internal/db"
 	"testing"
 	"time"
+	"vstable-engine/internal/db"
 )
 
 func runCommonIntegrationTest(t *testing.T, dialect string, dsn string, compiler Compiler) {
@@ -84,12 +84,16 @@ func runCommonIntegrationTest(t *testing.T, dialect string, dsn string, compiler
 
 func TestPostgresSyncIntegration(t *testing.T) {
 	dsn := os.Getenv("PG_DSN")
-	if dsn == "" { dsn = "postgres://root:password@localhost:5433/vstable_test?sslmode=disable" }
+	if dsn == "" {
+		dsn = "postgres://root:password@localhost:5433/vstable_test?sslmode=disable"
+	}
 	runCommonIntegrationTest(t, "pg", dsn, &PGCompiler{})
 }
 
 func TestMysqlSyncIntegration(t *testing.T) {
 	dsn := os.Getenv("MYSQL_DSN")
-	if dsn == "" { dsn = "root:password@tcp(127.0.0.1:3307)/vstable_test?charset=utf8mb4&parseTime=True&loc=Local" }
+	if dsn == "" {
+		dsn = "root:password@tcp(127.0.0.1:3307)/vstable_test?charset=utf8mb4&parseTime=True&loc=Local"
+	}
 	runCommonIntegrationTest(t, "mysql", dsn, &MysqlCompiler{})
 }
