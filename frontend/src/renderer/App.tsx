@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Plus, X } from 'lucide-react'
-import { SessionView } from './features/workspace/SessionView'
+import { apiClient } from './api/client'
+import { SessionView } from './layouts/MainLayout'
 
 interface Session {
   id: string
@@ -20,7 +21,7 @@ function App() {
   const handleCloseSession = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
     // 关闭连接
-    await window.api.disconnect(id)
+    await apiClient.disconnect(id)
 
     const newSessions = sessions.filter(s => s.id !== id)
     if (newSessions.length === 0) {
@@ -67,7 +68,7 @@ function App() {
          {/* Empty area for double-click to maximize */}
          <div 
            className="flex-1 h-full min-w-[20px]" 
-           onDoubleClick={() => window.api.toggleMaximize()}
+           onDoubleClick={() => apiClient.toggleMaximize()}
          />
 
          <div className="h-full flex items-center">

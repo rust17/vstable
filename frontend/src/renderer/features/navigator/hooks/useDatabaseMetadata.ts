@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useSession } from '../providers/SessionProvider'
+import { useSession } from '../../../stores/useSessionStore'
 
 export const useDatabaseMetadata = () => {
   const { sessionId, isConnected, query, config, capabilities, buildQuery } = useSession()
@@ -26,7 +26,7 @@ export const useDatabaseMetadata = () => {
     const sql = buildQuery('listDatabases', {})
     const result = await query(sql)
     if (result.success && result.rows) {
-      setDatabases(result.rows.map((r: any) => Object.values(r)[0]))
+      setDatabases(result.rows.map((r: any) => Object.values(r)[0] as string))
     }
   }, [query, capabilities, buildQuery])
 
@@ -38,7 +38,7 @@ export const useDatabaseMetadata = () => {
     const sql = buildQuery('listSchemas', {})
     const result = await query(sql)
     if (result.success && result.rows) {
-      const list = result.rows.map((r: any) => Object.values(r)[0])
+      const list = result.rows.map((r: any) => Object.values(r)[0] as string)
       setSchemas(list)
       if (!list.includes(currentSchema)) setCurrentSchema(list[0] || 'public')
     }

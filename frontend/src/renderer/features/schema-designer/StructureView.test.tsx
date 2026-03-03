@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { StructureView } from './StructureView'
 import { vi } from 'vitest'
-import { SessionProvider } from '../../providers/SessionProvider'
+import { SessionProvider } from '../../stores/useSessionStore'
 
 describe('StructureView Component', () => {
   const defaultProps = {

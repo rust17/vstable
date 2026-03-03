@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useSession } from '../providers/SessionProvider'
-import { TableTab, FilterCondition } from '../types/session'
+import { useSession } from '../../../stores/useSessionStore'
+import { TableTab, FilterCondition, SortCondition } from '../../../types/session'
 
 export const useTableData = (tab: TableTab) => {
   const { sessionId, query, config: sessionConfig, capabilities } = useSession()

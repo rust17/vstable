@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react'
 import Editor from '@monaco-editor/react'
 import { Play } from 'lucide-react'
-import { useSession } from '../../providers/SessionProvider'
-import { ResultGrid } from '../../ui/data-grid/ResultGrid'
+import { useSession } from '../../stores/useSessionStore'
+import { ResultGrid } from '../../components/data-grid/ResultGrid'
 import { TableTab } from '../../types/session'
 
 interface QueryTabPaneProps {

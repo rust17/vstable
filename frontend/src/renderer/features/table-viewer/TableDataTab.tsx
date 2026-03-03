@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import { Settings } from 'lucide-react'
 import { TableTab, FilterCondition } from '../../types/session'
-import { useSession } from '../../providers/SessionProvider'
-import { useTableData } from '../../hooks/useTableData'
-import { ResultGrid } from '../../ui/data-grid/ResultGrid'
-import { PaginationControl } from '../../ui/pagination/PaginationControl'
-import { FilterBar } from './FilterBar'
+import { useSession } from '../../stores/useSessionStore'
+import { useTableData } from './hooks/useTableData'
+import { ResultGrid } from '../../components/data-grid/ResultGrid'
+import { PaginationControl } from '../../components/data-grid/PaginationControl'
+import { FilterBar } from './components/FilterBar'
 import { StructureView } from '../schema-designer/StructureView'
-import { DataEditModal } from '../../ui/modals/DataEditModal'
-import { AlertModal } from '../../ui/modals/AlertModal'
-import { ConfirmModal } from '../../ui/modals/ConfirmModal'
-import { ContextMenu } from '../../ui/context-menu/ContextMenu'
+import { DataEditModal } from './components/DataEditModal'
+import { AlertModal } from '../../components/ui/AlertModal'
+import { ConfirmModal } from '../../components/ui/ConfirmModal'
+import { ContextMenu } from '../../components/ui/ContextMenu'
 import { formatTimestamp } from '../../utils/format'
 
 interface TableTabPaneProps {
@@ -263,7 +263,7 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({ tab, isActive, onUpd
                       confirmText: 'Delete',
                       onConfirm: () => {
                           const pkValues = contextMenu.selectedRows.map(r => r[tab.pk!])
-                          deleteRows(tab.pk, pkValues).then(res => {
+                          deleteRows(tab.pk!, pkValues).then(res => {
                               if(res.success) handleRefresh()
                               else setAlertMessage(res.error || 'Delete failed')
                           })

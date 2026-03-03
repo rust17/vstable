@@ -11,7 +11,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, delay = 300
   const [isVisible, setIsVisible] = useState(false)
   const [coords, setCoords] = useState({ x: 0, y: 0 })
   const triggerRef = useRef<HTMLElement | null>(null)
-  const timeoutRef = useRef<NodeJS.Timeout>()
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const showTooltip = () => {
     if (!content) return
@@ -56,13 +56,13 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, delay = 300
     },
     onMouseEnter: (e: React.MouseEvent) => {
       showTooltip()
-      if (child.props.onMouseEnter) child.props.onMouseEnter(e)
+      if ((child.props as any).onMouseEnter) (child.props as any).onMouseEnter(e)
     },
     onMouseLeave: (e: React.MouseEvent) => {
       hideTooltip()
-      if (child.props.onMouseLeave) child.props.onMouseLeave(e)
+      if ((child.props as any).onMouseLeave) (child.props as any).onMouseLeave(e)
     }
-  })
+  } as any)
 
   return (
     <>

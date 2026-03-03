@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Database, History, Trash2 } from 'lucide-react'
-import { useSession } from '../../providers/SessionProvider'
+import { useSession } from '../../stores/useSessionStore'
 
 export const ConnectionForm: React.FC = () => {
   const { config, connect, loading, error, setConfig } = useSession()

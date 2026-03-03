@@ -1,13 +1,39 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Plus, X, RefreshCw, Save, Database, Trash2, Key, Check, AlertCircle, Search, ChevronDown, Copy, RotateCcw, FileText } from 'lucide-react'
-import { useSession } from '../../providers/SessionProvider'
+import { useSession } from '../../stores/useSessionStore'
 import { useDropdownPosition } from '../../hooks/useDropdownPosition'
-import { ColumnDefinition, IndexDefinition, Capabilities } from '../../types/session'
+import { Capabilities } from '../../types/session'
+
+export interface ColumnDefinition {
+  id: string
+  name: string
+  type: string
+  length?: string | number
+  precision?: string | number
+  scale?: string | number
+  nullable: boolean
+  defaultValue: any
+  isPrimaryKey: boolean
+  isAutoIncrement?: boolean
+  isIdentity?: boolean
+  comment?: string
+  pkConstraintName?: string
+  isDefaultExpression?: boolean
+  enumValues?: string[]
+  _original?: any
+}
+
+export interface IndexDefinition {
+  id: string
+  name: string
+  columns: string[]
+  isUnique: boolean
+  _original?: any
+}
 
 interface StructureViewProps {
-// ... (rest of the interfaces)
-
+  connectionId: string
   schema: string
   tableName: string
   mode?: 'create' | 'edit'
@@ -426,7 +452,7 @@ export const StructureView: React.FC<StructureViewProps> = ({ connectionId, sche
             if (Array.isArray(row.column_names)) {
               cols = row.column_names
             } else if (typeof row.column_names === 'string') {
-              cols = row.column_names.replace(/^\{|\}$/g, '').split(',').map(s => s.trim().replace(/^"|"$/g, '')).filter(Boolean)
+              cols = row.column_names.replace(/^\{|\}$/g, '').split(',').map((s: string) => s.trim().replace(/^"|"$/g, '')).filter(Boolean)
             }
 
             return {

@@ -1,6 +1,6 @@
 export interface IElectronAPI {
   // DB Ops
-  connect: (id: string, config: any) => Promise<{ success: boolean; error?: string }>
+  connect: (id: string, config: any) => Promise<{ success: boolean; error?: string; capabilities?: any }>
   query: (id: string, sql: string, params?: any[]) => Promise<{ success: boolean; rows?: any[]; fields?: any[]; error?: string }>
   disconnect: (id: string) => Promise<{ success: boolean }>
   
