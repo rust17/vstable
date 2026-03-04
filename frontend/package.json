@@ -1,7 +1,11 @@
 {
   "name": "vstable",
-  "version": "0.1.0",
-  "description": "",
+  "version": "0.1.1",
+  "description": "A stable and fast database management tool.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rust17/vstable.git"
+  },
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
@@ -23,6 +27,7 @@
     "directories": {
       "output": "dist"
     },
+    "icon": "resources/icons",
     "files": [
       "out/**/*"
     ],
@@ -36,6 +41,7 @@
       }
     ],
     "mac": {
+      "icon": "resources/icons",
       "category": "public.app-category.developer-tools",
       "target": [
         "dmg",
