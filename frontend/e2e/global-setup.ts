@@ -8,9 +8,9 @@ async function globalSetup() {
   console.log('[Global Setup] Building Go Engine...');
   try {
     // appDir is frontend/, so backend is at ../backend
-    execSync('go build -o vstable-engine main.go', { 
+    execSync('go build -o vstable-engine main.go', {
       cwd: '../backend',
-      stdio: 'inherit' 
+      stdio: 'inherit',
     });
     console.log('[Global Setup] Go Engine built.');
   } catch (error) {
@@ -27,8 +27,10 @@ async function globalSetup() {
       ],
       timeout: 60000, // 60 seconds
     });
-    console.log('[Global Setup] Ports are open. Waiting 5 seconds for databases to fully initialize...');
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    console.log(
+      '[Global Setup] Ports are open. Waiting 5 seconds for databases to fully initialize...'
+    );
+    await new Promise((resolve) => setTimeout(resolve, 5000));
     console.log('[Global Setup] Databases are ready.');
   } catch (error) {
     console.error('[Global Setup] Timed out waiting for databases:', error);

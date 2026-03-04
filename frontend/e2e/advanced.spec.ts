@@ -11,7 +11,7 @@ test.describe('Advanced Features Tests', () => {
   test.beforeEach(async () => {
     userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vstable-e2e-advanced-'));
     electronApp = await electron.launch({
-      args: ['.', `--user-data-dir=${userDataDir}`]
+      args: ['.', `--user-data-dir=${userDataDir}`],
     });
     window = await electronApp.firstWindow();
     await window.waitForLoadState('domcontentloaded');
@@ -30,20 +30,24 @@ test.describe('Advanced Features Tests', () => {
     await window.locator('input[data-testid="input-password"]').fill('password');
     await window.locator('input[data-testid="input-database"]').fill('vstable_test');
     await window.locator('button[data-testid="btn-connect"]').click();
-    await expect(window.locator('form[data-testid="connection-form"]')).not.toBeVisible({ timeout: 10000 });
+    await expect(window.locator('form[data-testid="connection-form"]')).not.toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test.afterEach(async () => {
     if (electronApp) await electronApp.close();
     if (userDataDir && fs.existsSync(userDataDir)) {
-      try { fs.rmSync(userDataDir, { recursive: true, force: true }); } catch (e) {}
+      try {
+        fs.rmSync(userDataDir, { recursive: true, force: true });
+      } catch (e) {}
     }
   });
 
   test('A-01: SQL Console Execution', async () => {
     const mod = os.platform() === 'darwin' ? 'Meta' : 'Control';
     await window.keyboard.press(`${mod}+t`);
-    
+
     const activeTab = window.locator('div[data-testid="active-tab-content"]');
     const runQueryBtn = activeTab.locator('button[data-testid="btn-run-query"]');
     await expect(runQueryBtn).toBeVisible({ timeout: 10000 });
@@ -53,7 +57,7 @@ test.describe('Advanced Features Tests', () => {
     await window.keyboard.press(`${mod}+a`);
     await window.keyboard.press('Backspace');
     await window.keyboard.insertText('SELECT 1 as col1, 2 as col2;');
-    
+
     // Ensure text is there
     await expect(activeTab.locator('.view-line').first()).toContainText('SELECT 1');
 
@@ -61,7 +65,7 @@ test.describe('Advanced Features Tests', () => {
 
     // Verify results - wait for loading to finish
     await expect(activeTab.locator('text=Loading data...')).not.toBeVisible({ timeout: 10000 });
-    
+
     // Check if it shows rows count
     await expect(activeTab.locator('text=1 rows')).toBeVisible({ timeout: 10000 });
 
@@ -77,21 +81,21 @@ test.describe('Advanced Features Tests', () => {
     await window.keyboard.press(`${mod}+t`);
     let activeTab = window.locator('div[data-testid="active-tab-content"]');
     const editor = activeTab.locator('.monaco-editor').last();
-    
+
     const statements = [
       `DROP TABLE IF EXISTS ${tableName};`,
       `CREATE TABLE ${tableName} (id serial primary key, price numeric);`,
-      `INSERT INTO ${tableName} (price) SELECT i FROM generate_series(1, 105) s(i);`
+      `INSERT INTO ${tableName} (price) SELECT i FROM generate_series(1, 105) s(i);`,
     ];
 
     for (const sql of statements) {
-        await editor.click();
-        await window.keyboard.press(`${mod}+a`);
-        await window.keyboard.press('Backspace');
-        await window.keyboard.insertText(sql);
-        await activeTab.locator('button[data-testid="btn-run-query"]').click();
-        await expect(activeTab.locator('text=Loading data...')).not.toBeVisible({ timeout: 15000 });
-        await expect(activeTab.locator('div.text-red-600')).not.toBeVisible();
+      await editor.click();
+      await window.keyboard.press(`${mod}+a`);
+      await window.keyboard.press('Backspace');
+      await window.keyboard.insertText(sql);
+      await activeTab.locator('button[data-testid="btn-run-query"]').click();
+      await expect(activeTab.locator('text=Loading data...')).not.toBeVisible({ timeout: 15000 });
+      await expect(activeTab.locator('div.text-red-600')).not.toBeVisible();
     }
 
     // 2. Open Table
@@ -107,7 +111,7 @@ test.describe('Advanced Features Tests', () => {
     const nextBtn = activeTab.locator('button[data-testid="btn-next-page"]');
     await expect(nextBtn).toBeVisible();
     await expect(nextBtn).not.toBeDisabled();
-    
+
     // 4. A-03: Sorting
     const priceHeader = activeTab.locator('th:has-text("price")');
     await priceHeader.click(); // Sort ASC
@@ -117,11 +121,14 @@ test.describe('Advanced Features Tests', () => {
 
     // 5. A-04: Filtering
     await activeTab.locator('button[data-testid="btn-add-filter"]').click();
-    
+
     // Column Dropdown
     const colDropdown = activeTab.locator('div[data-testid="filter-column-0"]');
     await colDropdown.click();
-    await colDropdown.locator('div').filter({ hasText: /^price$/ }).click();
+    await colDropdown
+      .locator('div')
+      .filter({ hasText: /^price$/ })
+      .click();
 
     // Operator Dropdown
     const opDropdown = activeTab.locator('div[data-testid="filter-operator-0"]');

@@ -6,7 +6,7 @@
 - `cd frontend && npm run build` (编译前端与后端二进制)
 - `cd frontend && npm run test` (Vitest 单元测试)
 - `cd frontend && npm run test:e2e` (Playwright 全链路测试，会先 build)
-- `cd frontend && npm run lint` (ESLint 静态检查)
+- `cd frontend && npm run check` (Biome 格式化与静态检查)
 - `cd backend && go test -v ./...` (后端集成测试，需 Docker)
 - `cd frontend && npm run docker:up` (启动测试所需的 PG/MySQL 容器)
 
@@ -67,7 +67,7 @@ vstable 是一款专为开发者设计的现代数据库管理工具，支持可
 ## Conventions and quality
 
 - **代码风格**:
-  - 前端：TypeScript 严格模式，Prettier/ESLint。
+  - 前端：TypeScript 严格模式，Biome。
   - 后端：Go 1.24 标准风格。
 - **测试驱动**:
   - 新功能必须包含单元测试（Vitest）。

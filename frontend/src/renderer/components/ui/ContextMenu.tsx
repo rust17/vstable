@@ -1,51 +1,69 @@
-import React, { useEffect } from 'react'
-import { Trash2, Plus } from 'lucide-react'
+import React, { useEffect } from 'react';
+import { Trash2, Plus } from 'lucide-react';
 
 interface ContextMenuProps {
-  x: number
-  y: number
-  onDelete: () => void
-  onAdd: () => void
-  onClose: () => void
-  isRowSelected: boolean
-  selectedCount?: number
+  x: number;
+  y: number;
+  onDelete: () => void;
+  onAdd: () => void;
+  onClose: () => void;
+  isRowSelected: boolean;
+  selectedCount?: number;
 }
 
-export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onDelete, onAdd, onClose, isRowSelected, selectedCount = 1 }) => {
+export const ContextMenu: React.FC<ContextMenuProps> = ({
+  x,
+  y,
+  onDelete,
+  onAdd,
+  onClose,
+  isRowSelected,
+  selectedCount = 1,
+}) => {
   useEffect(() => {
-    const handleClose = () => onClose()
-    window.addEventListener('click', handleClose)
-    window.addEventListener('contextmenu', handleClose)
-    window.addEventListener('wheel', handleClose)
+    const handleClose = () => onClose();
+    window.addEventListener('click', handleClose);
+    window.addEventListener('contextmenu', handleClose);
+    window.addEventListener('wheel', handleClose);
     return () => {
-        window.removeEventListener('click', handleClose)
-        window.removeEventListener('contextmenu', handleClose)
-        window.removeEventListener('wheel', handleClose)
-    }
-  }, [onClose])
+      window.removeEventListener('click', handleClose);
+      window.removeEventListener('contextmenu', handleClose);
+      window.removeEventListener('wheel', handleClose);
+    };
+  }, [onClose]);
 
   return (
-    <div 
+    <div
       className="fixed z-[300] bg-white border border-gray-200 shadow-xl rounded-lg py-1 min-w-[160px] animate-in fade-in zoom-in-95 duration-100"
       style={{ top: y, left: x }}
-      onClick={e => e.stopPropagation()}
-      onMouseDown={e => e.stopPropagation()}
-      onContextMenu={e => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+      onContextMenu={(e) => e.stopPropagation()}
     >
-      <button 
+      <button
         disabled={!isRowSelected}
-        onClick={() => { if (isRowSelected) { onDelete(); onClose(); } }}
+        onClick={() => {
+          if (isRowSelected) {
+            onDelete();
+            onClose();
+          }
+        }}
         className={`w-full text-left px-3 py-2 text-xs flex items-center gap-2 font-medium transition-colors ${isRowSelected ? 'text-red-600 hover:bg-red-50' : 'text-gray-300 cursor-not-allowed'}`}
       >
         <Trash2 size={14} /> {selectedCount > 1 ? `Delete ${selectedCount} Rows` : 'Delete Row'}
       </button>
-      <button 
+      <button
         disabled={isRowSelected}
-        onClick={() => { if (!isRowSelected) { onAdd(); onClose(); } }}
+        onClick={() => {
+          if (!isRowSelected) {
+            onAdd();
+            onClose();
+          }
+        }}
         className={`w-full text-left px-3 py-2 text-xs flex items-center gap-2 font-medium transition-colors ${!isRowSelected ? 'text-primary-600 hover:bg-primary-50' : 'text-gray-300 cursor-not-allowed'}`}
       >
         <Plus size={14} /> Add Row
       </button>
     </div>
-  )
-}
+  );
+};

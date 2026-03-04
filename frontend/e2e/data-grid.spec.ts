@@ -12,7 +12,7 @@ test.describe('Data Grid Tests', () => {
   test.beforeEach(async () => {
     userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vstable-e2e-datagrid-'));
     electronApp = await electron.launch({
-      args: ['.', `--user-data-dir=${userDataDir}`]
+      args: ['.', `--user-data-dir=${userDataDir}`],
     });
     window = await electronApp.firstWindow();
     await window.waitForLoadState('domcontentloaded');
@@ -31,7 +31,9 @@ test.describe('Data Grid Tests', () => {
     await window.locator('input[data-testid="input-password"]').fill('password');
     await window.locator('input[data-testid="input-database"]').fill('vstable_test');
     await window.locator('button[data-testid="btn-connect"]').click();
-    await expect(window.locator('form[data-testid="connection-form"]')).not.toBeVisible({ timeout: 20000 });
+    await expect(window.locator('form[data-testid="connection-form"]')).not.toBeVisible({
+      timeout: 20000,
+    });
 
     // Setup table
     const mod = os.platform() === 'darwin' ? 'Meta' : 'Control';
@@ -41,17 +43,17 @@ test.describe('Data Grid Tests', () => {
 
     const statements = [
       `DROP TABLE IF EXISTS ${tableName};`,
-      `CREATE TABLE ${tableName} (id int primary key, name varchar(255));`
+      `CREATE TABLE ${tableName} (id int primary key, name varchar(255));`,
     ];
 
     for (const sql of statements) {
-        await editor.click();
-        await window.keyboard.press(`${mod}+a`);
-        await window.keyboard.press('Backspace');
-        await window.keyboard.insertText(sql);
-        await activeTab.locator('button[data-testid="btn-run-query"]').click();
-        await expect(activeTab.locator('text=Loading data...')).not.toBeVisible({ timeout: 10000 });
-        await expect(activeTab.locator('div.text-red-600')).not.toBeVisible();
+      await editor.click();
+      await window.keyboard.press(`${mod}+a`);
+      await window.keyboard.press('Backspace');
+      await window.keyboard.insertText(sql);
+      await activeTab.locator('button[data-testid="btn-run-query"]').click();
+      await expect(activeTab.locator('text=Loading data...')).not.toBeVisible({ timeout: 10000 });
+      await expect(activeTab.locator('div.text-red-600')).not.toBeVisible();
     }
 
     // Open table
@@ -62,7 +64,9 @@ test.describe('Data Grid Tests', () => {
   test.afterEach(async () => {
     if (electronApp) await electronApp.close();
     if (userDataDir && fs.existsSync(userDataDir)) {
-      try { fs.rmSync(userDataDir, { recursive: true, force: true }); } catch (e) {}
+      try {
+        fs.rmSync(userDataDir, { recursive: true, force: true });
+      } catch (e) {}
     }
   });
 
@@ -110,7 +114,9 @@ test.describe('Data Grid Tests', () => {
     await editor.click();
     await window.keyboard.press(`${mod}+a`);
     await window.keyboard.press('Backspace');
-    await window.keyboard.insertText(`INSERT INTO ${tableName} (id, name) VALUES (100, 'external');`);
+    await window.keyboard.insertText(
+      `INSERT INTO ${tableName} (id, name) VALUES (100, 'external');`
+    );
     await activeTab.locator('button[data-testid="btn-run-query"]').click();
     await expect(activeTab.locator('text=Loading data...')).not.toBeVisible({ timeout: 10000 });
 
@@ -118,7 +124,9 @@ test.describe('Data Grid Tests', () => {
     activeTab = window.locator('div[data-testid="active-tab-content"]');
     await expect(activeTab.locator('text=Loading data...')).not.toBeVisible();
     await window.keyboard.press(`${mod}+r`);
-    await expect(activeTab.locator('td[data-testid="cell-id-0"]')).toHaveText('100', { timeout: 15000 });
+    await expect(activeTab.locator('td[data-testid="cell-id-0"]')).toHaveText('100', {
+      timeout: 15000,
+    });
   });
 
   test('R-01: Constraint Violation via Insert Conflict', async () => {

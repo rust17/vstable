@@ -10,8 +10,8 @@ test.describe('Connection Management Tests', () => {
 
   test.beforeEach(async () => {
     userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vstable-e2e-conn-'));
-    electronApp = await electron.launch({ 
-      args: ['.', `--user-data-dir=${userDataDir}`] 
+    electronApp = await electron.launch({
+      args: ['.', `--user-data-dir=${userDataDir}`],
     });
     window = await electronApp.firstWindow();
     await window.waitForLoadState('domcontentloaded');
@@ -25,7 +25,9 @@ test.describe('Connection Management Tests', () => {
   test.afterEach(async () => {
     if (electronApp) await electronApp.close();
     if (userDataDir && fs.existsSync(userDataDir)) {
-      try { fs.rmSync(userDataDir, { recursive: true, force: true }); } catch (e) {}
+      try {
+        fs.rmSync(userDataDir, { recursive: true, force: true });
+      } catch (e) {}
     }
   });
 
@@ -39,7 +41,7 @@ test.describe('Connection Management Tests', () => {
     await window.locator('input[data-testid="input-user"]').fill('root');
     await window.locator('input[data-testid="input-password"]').fill('password');
     await window.locator('input[data-testid="input-database"]').fill('vstable_test');
-    
+
     await window.locator('button[data-testid="btn-connect"]').click();
     await expect(form).not.toBeVisible({ timeout: 10000 });
   });
@@ -52,7 +54,7 @@ test.describe('Connection Management Tests', () => {
     await window.locator('input[data-testid="input-user"]').fill('root');
     await window.locator('input[data-testid="input-password"]').fill('password');
     await window.locator('input[data-testid="input-database"]').fill('vstable_test');
-    
+
     await window.locator('button[data-testid="btn-connect"]').click();
     await expect(form).not.toBeVisible({ timeout: 10000 });
   });
@@ -64,13 +66,13 @@ test.describe('Connection Management Tests', () => {
     await window.locator('input[data-testid="input-user"]').fill('root');
     await window.locator('input[data-testid="input-password"]').fill('wrong_password');
     await window.locator('input[data-testid="input-database"]').fill('vstable_test');
-    
+
     await window.locator('button[data-testid="btn-connect"]').click();
-    
+
     // 验证内联错误消息出现
     const errorMsg = window.locator('div.text-red-600');
     await expect(errorMsg).toBeVisible({ timeout: 10000 });
-    
+
     // 表单依然可见
     await expect(window.locator('form[data-testid="connection-form"]')).toBeVisible();
   });

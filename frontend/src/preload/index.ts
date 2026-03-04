@@ -1,13 +1,14 @@
-import { contextBridge, ipcRenderer } from 'electron'
-import { exposeElectronAPI } from '@electron-toolkit/preload'
+import { contextBridge, ipcRenderer } from 'electron';
+import { exposeElectronAPI } from '@electron-toolkit/preload';
 
 // 暴露出基础的 Electron API
 if (process.contextIsolated) {
   try {
-    exposeElectronAPI()
+    exposeElectronAPI();
     contextBridge.exposeInMainWorld('api', {
       connect: (id: string, config: any) => ipcRenderer.invoke('db:connect', id, config),
-      query: (id: string, sql: string, params?: any[]) => ipcRenderer.invoke('db:query', id, sql, params),
+      query: (id: string, sql: string, params?: any[]) =>
+        ipcRenderer.invoke('db:query', id, sql, params),
       disconnect: (id: string) => ipcRenderer.invoke('db:disconnect', id),
       enginePing: () => ipcRenderer.invoke('engine:ping'),
       generateAlterSql: (req: any) => ipcRenderer.invoke('sql:generate-alter', req),
@@ -16,12 +17,12 @@ if (process.contextIsolated) {
       // Store APIs
       getSavedConnections: () => ipcRenderer.invoke('store:get-all'),
       saveConnection: (config: any) => ipcRenderer.invoke('store:save', config),
-      deleteConnection: (id: string) => ipcRenderer.invoke('store:delete', id)
-    })
+      deleteConnection: (id: string) => ipcRenderer.invoke('store:delete', id),
+    });
   } catch (error) {
-    console.error(error)
+    console.error(error);
   }
 } else {
   // @ts-ignore (define in d.ts)
-  window.electron = electronAPI
+  window.electron = electronAPI;
 }

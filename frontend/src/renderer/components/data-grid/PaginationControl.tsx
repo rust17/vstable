@@ -1,13 +1,13 @@
-import React from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import React from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface PaginationControlProps {
-  page: number
-  pageSize: number
-  totalRows: number
-  loading: boolean
-  onPageChange: (newPage: number) => void
-  onPageSizeChange: (newSize: number) => void
+  page: number;
+  pageSize: number;
+  totalRows: number;
+  loading: boolean;
+  onPageChange: (newPage: number) => void;
+  onPageSizeChange: (newSize: number) => void;
 }
 
 export const PaginationControl: React.FC<PaginationControlProps> = ({
@@ -16,10 +16,10 @@ export const PaginationControl: React.FC<PaginationControlProps> = ({
   totalRows,
   loading,
   onPageChange,
-  onPageSizeChange
+  onPageSizeChange,
 }) => {
-  const totalPages = Math.ceil(totalRows / pageSize) || 1
-  
+  const totalPages = Math.ceil(totalRows / pageSize) || 1;
+
   return (
     <div className="flex items-center gap-3 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg px-3 py-1.5 shadow-lg z-20">
       <div className="flex items-center gap-1 border-r border-gray-100 pr-2 mr-1">
@@ -38,8 +38,8 @@ export const PaginationControl: React.FC<PaginationControlProps> = ({
           onChange={(e) => onPageChange(parseInt(e.target.value) || 1)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
-              const p = Math.max(1, Math.min(page, totalPages))
-              onPageChange(p)
+              const p = Math.max(1, Math.min(page, totalPages));
+              onPageChange(p);
             }
           }}
           className="text-center text-xs font-medium focus:outline-none bg-transparent mx-1 no-arrows [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -71,5 +71,5 @@ export const PaginationControl: React.FC<PaginationControlProps> = ({
         Total: {totalRows}
       </span>
     </div>
-  )
-}
+  );
+};
