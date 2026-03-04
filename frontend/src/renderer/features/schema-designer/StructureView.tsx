@@ -1,24 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import {
-  Plus,
-  X,
-  RefreshCw,
-  Save,
-  Database,
-  Trash2,
-  Key,
-  Check,
   AlertCircle,
-  Search,
   ChevronDown,
   Copy,
-  RotateCcw,
+  Database,
   FileText,
+  Key,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  Save,
+  Search,
+  Trash2,
+  X,
 } from 'lucide-react';
-import { useSession } from '../../stores/useSessionStore';
+import type React from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useDropdownPosition } from '../../hooks/useDropdownPosition';
-import { Capabilities } from '../../types/session';
+import { useSession } from '../../stores/useSessionStore';
+import type { Capabilities } from '../../types/session';
 
 export interface ColumnDefinition {
   id: string;
@@ -178,7 +178,6 @@ const EnumManagerModal: React.FC<{
           {values.map((v, i) => (
             <div key={i} className="flex items-center gap-2">
               <input
-                autoFocus={i === values.length - 1}
                 value={v}
                 onChange={(e) => {
                   const newVals = [...values];
@@ -274,7 +273,6 @@ const TypeSelector: React.FC<{
             <div className="p-2 border-b border-gray-100 flex items-center gap-2 bg-gray-50">
               <Search size={14} className="text-gray-400" />
               <input
-                autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => {
@@ -438,7 +436,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
-  const fetchStructure = async () => {
+  const fetchStructure = useCallback(async () => {
     if (!capabilities) return;
 
     if (mode === 'create') {
@@ -625,11 +623,19 @@ export const StructureView: React.FC<StructureViewProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [
+    capabilities,
+    mode,
+    connectionId,
+    config.database,
+    initialSchema,
+    initialTableName,
+    buildQuery,
+  ]);
 
   useEffect(() => {
     fetchStructure();
-  }, [connectionId, initialSchema, initialTableName, mode, capabilities]);
+  }, []); // Run only once on mount to prevent infinite render loops from stable references changing
 
   const handleAddColumn = () => {
     const newCol: ColumnDefinition = {
@@ -835,7 +841,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
         setSqlPreview(sqls.join('\n'));
       }
     } catch (err: any) {
-      setError('Failed to generate SQL: ' + err.message);
+      setError(`Failed to generate SQL: ${err.message}`);
     }
   };
 
@@ -928,7 +934,6 @@ export const StructureView: React.FC<StructureViewProps> = ({
                 </select>
                 <span className="text-gray-300">/</span>
                 <input
-                  autoFocus
                   data-testid="input-table-name"
                   placeholder="New Table Name"
                   value={newTableName}
@@ -1389,7 +1394,6 @@ export const StructureView: React.FC<StructureViewProps> = ({
                   readOnly
                   className="w-full h-full p-6 font-mono text-xs text-gray-700 bg-transparent outline-none resize-none overflow-auto whitespace-pre select-text cursor-text leading-relaxed"
                   value={sqlPreview}
-                  autoFocus
                   onFocus={(e) => e.target.select()}
                   onKeyDown={(e) => {
                     if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
