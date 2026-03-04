@@ -92,13 +92,12 @@ export const QueryTabPane: React.FC<QueryTabPaneProps> = ({ tab, isActive, onUpd
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Results</span>
               {tab.results?.rows && <span className="text-[10px] text-gray-400">{tab.results.rows.length} rows</span>}
           </div>
-          <div className="flex-1 overflow-hidden relative">
+          <div className="flex-1 overflow-auto relative bg-white">
             <ResultGrid 
                 rows={tab.results?.rows || []}
                 fields={tab.results?.fields || []}
                 loading={executing}
                 error={error}
-                // Query results are generally read-only for now unless we implement row identification logic
             />
           </div>
       </div>

@@ -56,7 +56,7 @@ export const useDatabaseMetadata = () => {
           table_name: r.table_name || vals[0], 
           table_schema: r.table_schema || currentSchema || config.database 
         }
-      }))
+      }).sort((a, b) => a.table_name.localeCompare(b.table_name)))
     }
   }, [query, currentSchema, capabilities, buildQuery, config.database])
 

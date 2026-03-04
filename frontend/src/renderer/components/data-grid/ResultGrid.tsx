@@ -142,7 +142,7 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
     <div
         ref={containerRef}
         data-testid="results-scroll"
-        className="flex-1 overflow-auto pb-12 elastic-scroll overscroll-y-auto relative select-none"
+        className="flex-1 overflow-auto pb-12 elastic-scroll overscroll-y-auto relative"
         onMouseDown={handleMouseDown}
         onContextMenu={(e) => {
             e.preventDefault()
@@ -156,7 +156,7 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
       {(!rows || rows.length === 0) && !isAddingRow ? (
         <div className="p-8 text-center text-gray-300 italic text-sm h-full">No data found</div>
       ) : (
-      <table ref={tableRef} className="w-full border-collapse text-left text-xs font-mono relative">
+      <table ref={tableRef} className="w-full border-collapse text-left text-xs font-mono relative select-text">
         <thead className="bg-gray-100 sticky top-0 z-10 select-text">
           <tr>
             {fields.map((field, i) => {
@@ -183,7 +183,7 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
                       </div>
                     </div>
                     {colInfo?.data_type && (
-                      <span className="text-[10px] font-medium text-gray-500 bg-gray-200/60 rounded px-1.5 py-0.5">
+                      <span className="text-[10px] font-medium text-gray-500 bg-gray-200/60 rounded px-1.5 py-0.5 select-none">
                         {colInfo.data_type.replace(/ without time zone$/, '')}
                       </span>
                     )}
@@ -198,7 +198,12 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
             <tr
               key={i}
               data-selected={selectedRowIndices.has(i) ? 'true' : 'false'}
-              onClick={(e) => handleRowClick(e, i)}
+              onClick={(e) => {
+                  // If user is selecting text, don't trigger row selection
+                  const selection = window.getSelection();
+                  if (selection && selection.toString().length > 0) return;
+                  handleRowClick(e, i)
+              }}
               className={`${selectedRowIndices.has(i) ? 'bg-primary-100' : 'hover:bg-primary-50/50'} border-b border-gray-100 transition-colors cursor-context-menu`}
               onContextMenu={(e) => handleContextMenu(e, i)}
             >
@@ -208,7 +213,7 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
                   <td
                     key={j}
                     data-testid={`cell-${field.name}-${i}`}
-                    className="border-r border-gray-100 text-gray-600 whitespace-nowrap max-w-xs truncate p-0"
+                    className="border-r border-gray-100 text-gray-600 whitespace-nowrap max-w-xs truncate p-0 select-text"
                     onDoubleClick={() => {
                         const newSelection = new Set([i])
                         setSelectedRowIndices(newSelection)
@@ -219,9 +224,9 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
                         }
                     }}
                   >
-                    <div className="w-full h-full px-4 py-2.5 cursor-pointer">
-                        <div className="max-h-20 overflow-hidden text-ellipsis whitespace-nowrap">
-                            {formatDisplayValue(row[field.name], colInfo?.data_type) || <span className="text-gray-300 italic">null</span>}
+                    <div className="w-full h-full px-4 py-2.5 cursor-text">
+                        <div className="max-h-20 overflow-hidden text-ellipsis whitespace-nowrap select-text">
+                            {formatDisplayValue(row[field.name], colInfo?.data_type) || <span className="text-gray-300 italic select-none">null</span>}
                         </div>
                     </div>
                   </td>

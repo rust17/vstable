@@ -132,6 +132,32 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
       })
   }
 
+  const handleSelectTable = async (schema: string, name: string) => {
+    const tab = openTable(schema, name)
+    // Ensure structure is loaded
+    if (!tab.structure || tab.structure.length === 0) {
+        const colSql = buildQuery('listColumns', { db: config.database, schema, table: name })
+        const res = await query(colSql)
+        if (res.success && res.rows) {
+            // Normalize keys to lowercase for consistent access across dialects
+            const normalizedRows = res.rows.map((row: any) => {
+                const normalized: any = {}
+                Object.keys(row).forEach(key => {
+                    normalized[key.toLowerCase()] = row[key]
+                })
+                return normalized
+            })
+
+            const pkSql = buildQuery('getPrimaryKey', { db: config.database, schema, table: name })
+            const pkRes = await query(pkSql)
+            const pkRow = pkRes.success && pkRes.rows && pkRes.rows[0]
+            const pk = pkRow ? (pkRow.column_name || pkRow.COLUMN_NAME || Object.values(pkRow)[0]) : null
+
+            updateTab(tab.id, { structure: normalizedRows, pk: pk as string })
+        }
+    }
+  }
+
   return (
     <div
       data-theme={config.dialect === 'mysql' ? 'mysql' : 'postgres'}
@@ -152,33 +178,8 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
              tables={tables}
              activeTable={activeTab?.type === 'table' ? { schema: activeTab.schema!, name: activeTab.name } : null}
              onSelectSchema={setCurrentSchema}
-             onSelectTable={async (schema, name) => {
-                 const tab = openTable(schema, name)
-                 // Ensure structure is loaded
-                 if (!tab.structure || tab.structure.length === 0) {
-                     const colSql = buildQuery('listColumns', { db: config.database, schema, table: name })
-                     const res = await query(colSql)
-                     if (res.success && res.rows) {
-                         // Normalize keys to lowercase for consistent access across dialects
-                         const normalizedRows = res.rows.map((row: any) => {
-                            const normalized: any = {}
-                            Object.keys(row).forEach(key => {
-                                normalized[key.toLowerCase()] = row[key]
-                            })
-                            return normalized
-                         })
-
-                         const pkSql = buildQuery('getPrimaryKey', { db: config.database, schema, table: name })
-                         const pkRes = await query(pkSql)
-                         const pkRow = pkRes.success && pkRes.rows && pkRes.rows[0]
-                         const pk = pkRow ? (pkRow.column_name || pkRow.COLUMN_NAME || Object.values(pkRow)[0]) : null
-
-                         updateTab(tab.id, { structure: normalizedRows, pk: pk as string })
-                     }
-                 }
-             }}
-             onSwitchDatabase={handleSwitchDatabase}
-             onCreateDatabase={() => setShowCreateDb(true)}
+             onSelectTable={handleSelectTable}
+             onSwitchDatabase={handleSwitchDatabase}             onCreateDatabase={() => setShowCreateDb(true)}
              onDeleteDatabase={handleDeleteDatabase}
              onCreateTable={() => openStructure(currentSchema, '', 'create')}
              onDeleteTable={async (schema, name) => {
@@ -289,7 +290,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
         onClose={() => setShowTableSearch(false)}
         tables={tables}
         onSelect={(schema, name) => {
-            openTable(schema, name)
+            handleSelectTable(schema, name)
             setShowTableSearch(false)
         }}
       />

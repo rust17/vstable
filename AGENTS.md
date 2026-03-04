@@ -6,6 +6,7 @@
 - `cd frontend && npm run build` (编译前端与后端二进制)
 - `cd frontend && npm run test` (Vitest 单元测试)
 - `cd frontend && npm run test:e2e` (Playwright 全链路测试，会先 build)
+- `cd frontend && npm run lint` (ESLint 静态检查)
 - `cd backend && go test -v ./...` (后端集成测试，需 Docker)
 - `cd frontend && npm run docker:up` (启动测试所需的 PG/MySQL 容器)
 

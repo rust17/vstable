@@ -42,7 +42,7 @@ export const createWorkspaceStore = () => {
     }),
 
     setShowTabSwitcher: (show) => set({ showTabSwitcher: show }),
-    
+
     setSwitcherIndex: (index) => set((state) => ({
       switcherIndex: typeof index === 'function' ? index(state.switcherIndex) : index
     })),
@@ -83,7 +83,7 @@ export const createWorkspaceStore = () => {
         type: 'query',
         name: 'New Query',
         results: null,
-        query: '-- Write your SQL here\nSELECT * FROM '
+        query: 'SELECT * FROM '
       }
       set(state => ({ tabs: [...state.tabs, newTab] }))
       get().setActiveTabId(tabId)
@@ -120,12 +120,12 @@ export const createWorkspaceStore = () => {
       set(state => {
         const newTabs = state.tabs.filter(t => t.id !== tabId)
         let nextActiveId = state.activeTabId
-        
+
         if (state.activeTabId === tabId) {
           const nextMruId = state.mruTabIds.find(id => id !== tabId && newTabs.some(t => t.id === id))
           nextActiveId = nextMruId || (newTabs.length > 0 ? newTabs[newTabs.length - 1].id : null)
         }
-        
+
         const newMru = state.mruTabIds.filter(id => id !== tabId && newTabs.some(t => t.id === id))
         return { tabs: newTabs, activeTabId: nextActiveId, mruTabIds: newMru }
       })
@@ -140,8 +140,8 @@ export const createWorkspaceStore = () => {
     closeOthers: (tabId) => {
       set(state => {
         const remaining = state.tabs.filter(t => t.id === tabId)
-        return { 
-          tabs: remaining, 
+        return {
+          tabs: remaining,
           activeTabId: tabId,
           mruTabIds: state.mruTabIds.filter(id => id === tabId)
         }
