@@ -370,3 +370,9 @@ fix:
     - [x] query 页面数据表格里的数据要可复制（鼠标左键拖动选中，ctrl+v 复制）
     - [x] 左侧导航栏表名按照字母排序
     - [x] 添加 lint 补充到 AGENTS.md 的 commands 里
+
+
+---
+
+fix:
+    - [ ] filter 下拉框添加搜索
