@@ -26,6 +26,15 @@
     "files": [
       "out/**/*"
     ],
+    "extraResources": [
+      {
+        "from": "engine",
+        "to": "engine",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
     "mac": {
       "category": "public.app-category.developer-tools",
       "target": [

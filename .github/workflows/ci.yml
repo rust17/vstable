@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: frontend/package.json
+      - name: Install dependencies
+        run: cd frontend && npm install
+      - name: Lint & Format Check
+        run: cd frontend && npm run check
+
+  backend-tests:
+    name: Backend Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: backend/go.sum
+      - name: Start Docker Databases
+        run: docker compose up -d
+      - name: Run Backend Tests
+        run: cd backend && go test -v ./...
+
+  frontend-unit-tests:
+    name: Frontend Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: frontend/package.json
+      - name: Install dependencies
+        run: cd frontend && npm install
+      - name: Run Vitest
+        run: cd frontend && npm run test
+
+  e2e-tests:
+    name: Playwright E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: frontend/package.json
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - name: Install dependencies
+        run: cd frontend && npm install
+      - name: Install Playwright Browsers
+        run: cd frontend && npx playwright install --with-deps
+      - name: Start Docker Databases
+        run: docker compose up -d
+      - name: Run E2E Tests
+        run: cd frontend && xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" npm run test:e2e
