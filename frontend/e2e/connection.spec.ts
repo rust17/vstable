@@ -11,7 +11,7 @@ test.describe('Connection Management Tests', () => {
   test.beforeEach(async () => {
     userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vstable-e2e-conn-'));
     electronApp = await electron.launch({
-      args: ['.', `--user-data-dir=${userDataDir}`],
+      args: ['.', '--no-sandbox', '--disable-gpu', `--user-data-dir=${userDataDir}`],
     });
     window = await electronApp.firstWindow();
     await window.waitForLoadState('domcontentloaded');
