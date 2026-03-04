@@ -15,8 +15,8 @@
     "package:mac": "npm run build && electron-builder --mac",
     "test": "vitest",
     "test:e2e": "npm run build && playwright test",
-    "docker:up": "docker compose -f ../docker-compose.yml up -d",
-    "docker:down": "docker compose -f ../docker-compose.yml down -v",
+    "docker:up": "docker compose -f docker-compose.yml up -d",
+    "docker:down": "docker compose -f docker-compose.yml down -v",
     "lint": "biome lint .",
     "format": "biome format --write .",
     "check": "biome check --write ."
