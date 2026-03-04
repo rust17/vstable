@@ -1,5 +1,5 @@
-import React from 'react';
-import { TriangleAlert, HelpCircle } from 'lucide-react';
+import { HelpCircle, TriangleAlert } from 'lucide-react';
+import type React from 'react';
 
 interface ConfirmModalProps {
   isOpen: boolean;

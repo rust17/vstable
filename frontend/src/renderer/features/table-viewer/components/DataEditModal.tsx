@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
 import { Edit2, X } from 'lucide-react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 
 interface DataEditModalProps {
   isOpen: boolean;
@@ -33,7 +34,7 @@ export const DataEditModal: React.FC<DataEditModalProps> = ({
       try {
         if (val.trim()) JSON.parse(val);
       } catch (e: any) {
-        setError('Invalid JSON: ' + e.message);
+        setError(`Invalid JSON: ${e.message}`);
         return;
       }
     }

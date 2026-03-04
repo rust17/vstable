@@ -7,7 +7,7 @@ export const logger = {
     let displayData = '';
     try {
       displayData = JSON.stringify(data);
-      if (displayData.length > 200) displayData = displayData.substring(0, 200) + '...';
+      if (displayData.length > 200) displayData = `${displayData.substring(0, 200)}...`;
     } catch (e) {
       displayData = '[Circular or Non-serializable]';
     }

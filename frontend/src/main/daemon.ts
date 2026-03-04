@@ -1,8 +1,8 @@
-import { spawn, ChildProcess } from 'child_process';
-import { join } from 'path';
+import { type ChildProcess, spawn } from 'child_process';
 import { app } from 'electron';
-import * as os from 'os';
 import { existsSync } from 'fs';
+import * as os from 'os';
+import { join } from 'path';
 
 export class DaemonManager {
   private engineProcess: ChildProcess | null = null;

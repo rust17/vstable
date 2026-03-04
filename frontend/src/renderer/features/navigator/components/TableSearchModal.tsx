@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
 import { Database, Table as TableIcon } from 'lucide-react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 
 interface TableSearchModalProps {
   isOpen: boolean;

@@ -1,6 +1,6 @@
-import { createStore, useStore } from 'zustand';
 import { createContext, useContext } from 'react';
-import { TableTab } from '../types/session';
+import { createStore, useStore } from 'zustand';
+import type { TableTab } from '../types/session';
 
 interface WorkspaceState {
   tabs: TableTab[];

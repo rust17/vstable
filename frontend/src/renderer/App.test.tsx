@@ -1,6 +1,5 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import App from './App';
-import { vi } from 'vitest';
 
 describe('App Component', () => {
   it('renders with a default session', () => {

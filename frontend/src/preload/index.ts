@@ -1,5 +1,5 @@
-import { contextBridge, ipcRenderer } from 'electron';
 import { exposeElectronAPI } from '@electron-toolkit/preload';
+import { contextBridge, ipcRenderer } from 'electron';
 
 // 暴露出基础的 Electron API
 if (process.contextIsolated) {
@@ -23,6 +23,6 @@ if (process.contextIsolated) {
     console.error(error);
   }
 } else {
-  // @ts-ignore (define in d.ts)
+  // @ts-expect-error (define in d.ts)
   window.electron = electronAPI;
 }

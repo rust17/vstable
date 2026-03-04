@@ -1,4 +1,4 @@
-import { ConnectionConfig, QueryResult } from '../types/session';
+import type { ConnectionConfig, QueryResult } from '../types/session';
 
 /**
  * API Client Layer

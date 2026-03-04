@@ -1,6 +1,6 @@
-import React from 'react';
 import { Play, Table as TableIcon } from 'lucide-react';
-import { TableTab } from '../../types/session';
+import React from 'react';
+import type { TableTab } from '../../types/session';
 
 interface TabSwitcherProps {
   isOpen: boolean;

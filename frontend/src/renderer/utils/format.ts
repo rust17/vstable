@@ -1,9 +1,7 @@
-import React from 'react';
-
 export const formatTimestamp = (value: any) => {
   if (value === null || value === undefined || value === '') return '';
   const date = new Date(value);
-  if (isNaN(date.getTime())) return String(value);
+  if (Number.isNaN(date.getTime())) return String(value);
 
   const pad = (n: number) => n.toString().padStart(2, '0');
   const y = date.getFullYear();

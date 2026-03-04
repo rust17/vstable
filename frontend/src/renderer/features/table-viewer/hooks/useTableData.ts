@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useSession } from '../../../stores/useSessionStore';
-import { TableTab, FilterCondition, SortCondition } from '../../../types/session';
+import type { FilterCondition, SortCondition, TableTab } from '../../../types/session';
 
 export const useTableData = (tab: TableTab) => {
   const { sessionId, query, config: sessionConfig, capabilities } = useSession();
@@ -47,7 +47,7 @@ export const useTableData = (tab: TableTab) => {
         let total = 0;
         if (countRes.success && countRes.rows) {
           const row = countRes.rows[0];
-          total = parseInt(row.count || row['COUNT(*)'] || Object.values(row)[0] || '0');
+          total = parseInt(row.count || row['COUNT(*)'] || Object.values(row)[0] || '0', 10);
         }
         setTotalRows(total);
 

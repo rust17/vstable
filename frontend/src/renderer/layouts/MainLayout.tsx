@@ -1,22 +1,23 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { SessionProvider, useSession } from '../stores/useSessionStore';
-import {
-  useWorkspaceStore,
-  createWorkspaceStore,
-  WorkspaceContext,
-} from '../stores/useWorkspaceStore';
-import { useShortcutStore } from '../stores/useShortcutStore';
-import { useDatabaseMetadata } from '../features/navigator/hooks/useDatabaseMetadata';
-import { DatabaseTree } from '../features/navigator/DatabaseTree';
-import { ConnectionForm } from '../features/connection/ConnectionForm';
-import { TableTabPane } from '../features/table-viewer/TableDataTab';
-import { QueryTabPane } from '../features/query-editor/QueryEditorTab';
-import { StructureView } from '../features/schema-designer/StructureView';
-import { TabSwitcher } from '../components/ui/TabSwitcher';
-import { TableSearchModal } from '../features/navigator/components/TableSearchModal';
-import { CreateDatabaseModal } from '../features/navigator/components/CreateDatabaseModal';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { AlertModal } from '../components/ui/AlertModal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { TabSwitcher } from '../components/ui/TabSwitcher';
+import { ConnectionForm } from '../features/connection/ConnectionForm';
+import { CreateDatabaseModal } from '../features/navigator/components/CreateDatabaseModal';
+import { TableSearchModal } from '../features/navigator/components/TableSearchModal';
+import { DatabaseTree } from '../features/navigator/DatabaseTree';
+import { useDatabaseMetadata } from '../features/navigator/hooks/useDatabaseMetadata';
+import { QueryTabPane } from '../features/query-editor/QueryEditorTab';
+import { StructureView } from '../features/schema-designer/StructureView';
+import { TableTabPane } from '../features/table-viewer/TableDataTab';
+import { SessionProvider, useSession } from '../stores/useSessionStore';
+import { useShortcutStore } from '../stores/useShortcutStore';
+import {
+  createWorkspaceStore,
+  useWorkspaceStore,
+  WorkspaceContext,
+} from '../stores/useWorkspaceStore';
 import { TabWorkspace } from './TabWorkspace';
 
 interface SessionViewProps {
@@ -120,7 +121,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
         onConfirm: () => handleSwitchDatabase(name),
       });
     } else {
-      setAlertMessage('Failed to create database: ' + res.error);
+      setAlertMessage(`Failed to create database: ${res.error}`);
     }
   };
 
@@ -143,7 +144,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
         for (const n of names) {
           const res = await query(`DROP DATABASE ${quote(n)};`);
           if (!res.success) {
-            setAlertMessage(`Failed to delete database "${n}": ` + res.error);
+            setAlertMessage(`Failed to delete database "${n}": ${res.error}`);
             break;
           }
         }
@@ -235,7 +236,7 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
                       if (res.success) {
                         fetchTables();
                       } else {
-                        setAlertMessage('Failed to delete tables: ' + res.error);
+                        setAlertMessage(`Failed to delete tables: ${res.error}`);
                       }
                     },
                   });

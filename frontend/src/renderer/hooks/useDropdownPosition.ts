@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface DropdownCoords {
   top?: number;
@@ -46,14 +46,14 @@ export function useDropdownPosition(options: UseDropdownPositionOptions) {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         const portal = document.getElementById(options.portalId);
-        if (portal && portal.contains(event.target as Node)) return;
+        if (portal?.contains(event.target as Node)) return;
         setIsOpen(false);
       }
     };
 
     const handleScroll = (event: Event) => {
       const portal = document.getElementById(options.portalId);
-      if (portal && portal.contains(event.target as Node)) return;
+      if (portal?.contains(event.target as Node)) return;
       setIsOpen(false);
     };
 

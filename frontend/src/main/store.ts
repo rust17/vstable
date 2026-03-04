@@ -1,6 +1,6 @@
 import { app, safeStorage } from 'electron';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
 
 export interface ConnectionEntry {
   id: string;

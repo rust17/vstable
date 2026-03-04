@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Plus, Settings, Play, Table as TableIcon, X } from 'lucide-react';
-import { useWorkspaceStore } from '../stores/useWorkspaceStore';
+import { Play, Settings, Table as TableIcon, X } from 'lucide-react';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Tooltip } from '../components/ui/Tooltip';
-import { TableTab } from '../types/session';
+import { useWorkspaceStore } from '../stores/useWorkspaceStore';
+import type { TableTab } from '../types/session';
 
 interface TabWorkspaceProps {
   isMaximized: boolean;

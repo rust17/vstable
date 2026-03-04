@@ -1,7 +1,8 @@
-import React, { createContext, useContext, ReactNode, useRef } from 'react';
+import type React from 'react';
+import { createContext, type ReactNode, useContext, useRef } from 'react';
 import { createStore, useStore } from 'zustand';
 import { apiClient } from '../api/client';
-import { ConnectionConfig, QueryResult, Capabilities } from '../types/session';
+import type { Capabilities, ConnectionConfig, QueryResult } from '../types/session';
 
 const getInitialCapabilities = (dialect: string): Capabilities => {
   if (dialect === 'mysql') {

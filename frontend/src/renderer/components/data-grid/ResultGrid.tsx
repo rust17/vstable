@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowDown, ArrowUp } from 'lucide-react';
+import type React from 'react';
+import { useRef, useState } from 'react';
+import type { SortCondition } from '../../types/session';
 import { formatDisplayValue } from '../../utils/format';
-import { SortCondition } from '../../types/session';
 
 interface ResultGridProps {
   rows: any[];
@@ -278,9 +279,7 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
                         className={`w-full h-full px-4 py-2.5 text-xs bg-transparent focus:outline-none focus:bg-white placeholder:text-green-300/50 font-mono ${isAuto ? 'bg-gray-50/50 text-gray-400 cursor-not-allowed italic' : 'text-gray-700'}`}
                         placeholder={isAuto ? '(auto)' : field.name}
                         value={newRowData?.[field.name] || ''}
-                        onChange={(e) =>
-                          onNewRowChange && onNewRowChange(field.name, e.target.value)
-                        }
+                        onChange={(e) => onNewRowChange?.(field.name, e.target.value)}
                       />
                     </td>
                   );

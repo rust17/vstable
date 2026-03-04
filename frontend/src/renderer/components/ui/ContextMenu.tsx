@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
-import { Trash2, Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
+import type React from 'react';
+import { useEffect } from 'react';
 
 interface ContextMenuProps {
   x: number;

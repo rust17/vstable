@@ -1,5 +1,5 @@
-import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import type React from 'react';
 
 interface PaginationControlProps {
   page: number;
@@ -35,7 +35,7 @@ export const PaginationControl: React.FC<PaginationControlProps> = ({
           data-testid="input-page-number"
           type="number"
           value={page}
-          onChange={(e) => onPageChange(parseInt(e.target.value) || 1)}
+          onChange={(e) => onPageChange(parseInt(e.target.value, 10) || 1)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               const p = Math.max(1, Math.min(page, totalPages));
@@ -59,7 +59,7 @@ export const PaginationControl: React.FC<PaginationControlProps> = ({
       <select
         data-testid="select-page-size"
         value={pageSize}
-        onChange={(e) => onPageSizeChange(parseInt(e.target.value))}
+        onChange={(e) => onPageSizeChange(parseInt(e.target.value, 10))}
         className="text-[10px] font-medium text-gray-600 focus:outline-none bg-transparent cursor-pointer"
       >
         <option value="50">50 / page</option>

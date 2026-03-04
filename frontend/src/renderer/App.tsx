@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
 import { Plus, X } from 'lucide-react';
+import type React from 'react';
+import { useState } from 'react';
 import { apiClient } from './api/client';
 import { SessionView } from './layouts/MainLayout';
 

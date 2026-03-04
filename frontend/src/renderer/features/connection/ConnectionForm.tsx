@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
 import { Database, History, Trash2 } from 'lucide-react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { useSession } from '../../stores/useSessionStore';
 
 export const ConnectionForm: React.FC = () => {
@@ -142,7 +143,7 @@ export const ConnectionForm: React.FC = () => {
                   type="number"
                   className="col-span-3 px-3 py-2 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/10 focus:border-primary-500 transition-all"
                   value={config.port}
-                  onChange={(e) => setConfig({ ...config, port: parseInt(e.target.value) })}
+                  onChange={(e) => setConfig({ ...config, port: parseInt(e.target.value, 10) })}
                   required
                 />
               </div>

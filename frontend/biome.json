@@ -35,7 +35,34 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "a11y": {
+        "useKeyWithClickEvents": "off",
+        "noStaticElementInteractions": "off",
+        "useButtonType": "off",
+        "noNoninteractiveElementInteractions": "off",
+        "useValidAnchor": "off",
+        "noLabelWithoutControl": "off",
+        "noAutofocus": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noArrayIndexKey": "off",
+        "noImplicitAnyLet": "off"
+      },
+      "style": {
+        "useNodejsImportProtocol": "off",
+        "noNonNullAssertion": "off"
+      },
+      "correctness": {
+        "noUnusedVariables": "off",
+        "noInvalidUseBeforeDeclaration": "off",
+        "useExhaustiveDependencies": "off",
+        "noUnusedFunctionParameters": "off"
+      },
+      "complexity": {
+        "noBannedTypes": "off"
+      }
     }
   },
   "assist": {

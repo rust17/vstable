@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { PaginationControl } from '../../components/data-grid/PaginationControl';
 import { ResultGrid } from '../../components/data-grid/ResultGrid';
 import { AlertModal } from '../../components/ui/AlertModal';

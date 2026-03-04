@@ -1,9 +1,10 @@
-import React, { useState, useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import { Play } from 'lucide-react';
-import { useSession } from '../../stores/useSessionStore';
+import type React from 'react';
+import { useRef, useState } from 'react';
 import { ResultGrid } from '../../components/data-grid/ResultGrid';
-import { TableTab } from '../../types/session';
+import { useSession } from '../../stores/useSessionStore';
+import type { TableTab } from '../../types/session';
 
 interface QueryTabPaneProps {
   tab: TableTab;
