@@ -1,17 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { Settings } from 'lucide-react';
-import { TableTab, FilterCondition } from '../../types/session';
-import { useSession } from '../../stores/useSessionStore';
-import { useTableData } from './hooks/useTableData';
-import { ResultGrid } from '../../components/data-grid/ResultGrid';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { PaginationControl } from '../../components/data-grid/PaginationControl';
-import { FilterBar } from './components/FilterBar';
-import { StructureView } from '../schema-designer/StructureView';
-import { DataEditModal } from './components/DataEditModal';
+import { ResultGrid } from '../../components/data-grid/ResultGrid';
 import { AlertModal } from '../../components/ui/AlertModal';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { ContextMenu } from '../../components/ui/ContextMenu';
+import { useSession } from '../../stores/useSessionStore';
+import type { FilterCondition, TableTab } from '../../types/session';
 import { formatTimestamp } from '../../utils/format';
+import { DataEditModal } from './components/DataEditModal';
+import { FilterBar } from './components/FilterBar';
+import { useTableData } from './hooks/useTableData';
 
 interface TableTabPaneProps {
   tab: TableTab;
@@ -79,68 +78,34 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({
       };
       fetchPk();
     }
-  }, [
-    tab.id,
-    tab.name,
-    tab.schema,
-    tab.pk,
-    query,
-    onUpdateTab,
-    capabilities,
-    buildQuery,
-    config.database,
-  ]);
+  }, [tab.name, tab.schema, tab.pk, query, onUpdateTab, capabilities, buildQuery, config.database]);
 
   // Initial fetch
   useEffect(() => {
     if (isActive && !tab.results) {
       fetchData(tab.page || 1, tab.pageSize || 100, tab.filters || [], tab.sorts || []);
     }
-  }, [isActive, tab.id, fetchData]);
+  }, [isActive, fetchData, tab.filters, tab.page, tab.pageSize, tab.results, tab.sorts]);
 
   // Refresh data when PK is discovered to ensure correct sorting
   useEffect(() => {
     if (isActive && tab.pk && tab.results) {
       fetchData(tab.page || 1, tab.pageSize || 100, tab.filters || [], tab.sorts || []);
     }
-  }, [isActive, tab.pk]);
+  }, [isActive, tab.pk, fetchData, tab.filters, tab.page, tab.pageSize, tab.results, tab.sorts]);
+
+  const handleRefresh = useCallback(() => {
+    fetchData(tab.page || 1, tab.pageSize || 100, tab.filters || [], tab.sorts || []);
+  }, [fetchData, tab.page, tab.pageSize, tab.filters, tab.sorts]);
 
   // Handle refresh and focus shortcuts
   useEffect(() => {
     if (isActive && tab.refreshKey) {
       handleRefresh();
     }
-  }, [tab.refreshKey]);
+  }, [tab.refreshKey, handleRefresh, isActive]);
 
-  useEffect(() => {
-    if (isActive && tab.focusKey) {
-      if (!tab.filters || tab.filters.length === 0) {
-        handleAddFilter();
-      }
-    }
-  }, [tab.focusKey]);
-
-  const handlePageChange = (newPage: number) => {
-    onUpdateTab({ page: newPage });
-    fetchData(newPage, tab.pageSize || 100, tab.filters || [], tab.sorts || []);
-  };
-
-  const handlePageSizeChange = (newSize: number) => {
-    onUpdateTab({ pageSize: newSize, page: 1 });
-    fetchData(1, newSize, tab.filters || [], tab.sorts || []);
-  };
-
-  const handleRefresh = () => {
-    fetchData(tab.page || 1, tab.pageSize || 100, tab.filters || [], tab.sorts || []);
-  };
-
-  const handleSortChange = (newSorts: any[]) => {
-    onUpdateTab({ sorts: newSorts });
-    fetchData(tab.page || 1, tab.pageSize || 100, tab.filters || [], newSorts);
-  };
-
-  // Filter handlers
-  const handleAddFilter = () => {
+  const handleAddFilter = useCallback(() => {
     const newFilter: FilterCondition = {
       id: crypto.randomUUID(),
       column: '',
@@ -153,6 +118,29 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({
     }
     const currentFilters = tab.filters || [];
     onUpdateTab({ filters: [...currentFilters, newFilter] });
+  }, [tab.structure, tab.filters, onUpdateTab]);
+
+  useEffect(() => {
+    if (isActive && tab.focusKey) {
+      if (!tab.filters || tab.filters.length === 0) {
+        handleAddFilter();
+      }
+    }
+  }, [tab.focusKey, handleAddFilter, isActive, tab.filters]);
+
+  const handlePageChange = (newPage: number) => {
+    onUpdateTab({ page: newPage });
+    fetchData(newPage, tab.pageSize || 100, tab.filters || [], tab.sorts || []);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    onUpdateTab({ pageSize: newSize, page: 1 });
+    fetchData(1, newSize, tab.filters || [], tab.sorts || []);
+  };
+
+  const handleSortChange = (newSorts: any[]) => {
+    onUpdateTab({ sorts: newSorts });
+    fetchData(tab.page || 1, tab.pageSize || 100, tab.filters || [], newSorts);
   };
 
   const handleRemoveFilter = (id: string) => {
