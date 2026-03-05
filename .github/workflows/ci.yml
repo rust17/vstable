@@ -31,7 +31,7 @@ jobs:
           go-version: '1.24'
           cache-dependency-path: backend/go.sum
       - name: Start Docker Databases
-        run: docker compose up -d
+        run: cd frontend && docker compose up -d --wait
       - name: Run Backend Tests
         run: cd backend && go test -v ./...
 
@@ -69,6 +69,6 @@ jobs:
       - name: Install Playwright Browsers
         run: cd frontend && npx playwright install --with-deps
       - name: Start Docker Databases
-        run: docker compose up -d
+        run: cd frontend && docker compose up -d --wait
       - name: Run E2E Tests
         run: cd frontend && xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" npm run test:e2e
