@@ -28,6 +28,57 @@ type IndexDefinition struct {
 	Original *IndexDefinition `json:"_original"`
 }
 
+type ForeignKeyDefinition struct {
+	ID                string                `json:"id"`
+	Name              string                `json:"name"`
+	Columns           []string              `json:"columns"`
+	ReferencedTable   string                `json:"referencedTable"`
+	ReferencedColumns []string              `json:"referencedColumns"`
+	OnDelete          string                `json:"onDelete"`
+	OnUpdate          string                `json:"onUpdate"`
+	Original          *ForeignKeyDefinition `json:"_original"`
+}
+
+type CheckConstraintDefinition struct {
+	ID         string                     `json:"id"`
+	Name       string                     `json:"name"`
+	Expression string                     `json:"expression"`
+	Original   *CheckConstraintDefinition `json:"_original"`
+}
+
+type ViewDefinition struct {
+	ID         string          `json:"id"`
+	Name       string          `json:"name"`
+	Definition string          `json:"definition"`
+	Original   *ViewDefinition `json:"_original"`
+}
+
+type TriggerDefinition struct {
+	ID         string             `json:"id"`
+	Name       string             `json:"name"`
+	Timing     string             `json:"timing"`
+	Event      string             `json:"event"`
+	TableName  string             `json:"tableName"`
+	Definition string             `json:"definition"`
+	Enabled    bool               `json:"enabled"`
+	Original   *TriggerDefinition `json:"_original"`
+}
+
+type RoutineDefinition struct {
+	ID         string             `json:"id"`
+	Name       string             `json:"name"`
+	Type       string             `json:"type"` // PROCEDURE or FUNCTION
+	Definition string             `json:"definition"`
+	Original   *RoutineDefinition `json:"_original"`
+}
+
+type DatabaseConfig struct {
+	Charset             string `json:"charset"`
+	Collation           string `json:"collation"`
+	Engine              string `json:"engine"`
+	AutoIncrementOffset int    `json:"autoIncrementOffset"`
+}
+
 type DiffRequest struct {
 	Dialect        string             `json:"dialect"`
 	Schema         string             `json:"schema"`
@@ -37,6 +88,22 @@ type DiffRequest struct {
 	Indexes        []IndexDefinition  `json:"indexes"`
 	DeletedColumns []ColumnDefinition `json:"deletedColumns"`
 	DeletedIndexes []IndexDefinition  `json:"deletedIndexes"`
+
+	ForeignKeys        []ForeignKeyDefinition      `json:"foreignKeys"`
+	DeletedForeignKeys []ForeignKeyDefinition      `json:"deletedForeignKeys"`
+	CheckConstraints   []CheckConstraintDefinition `json:"checkConstraints"`
+	DeletedChecks      []CheckConstraintDefinition `json:"deletedChecks"`
+
+	Views        []ViewDefinition `json:"views"`
+	DeletedViews []ViewDefinition `json:"deletedViews"`
+
+	Triggers        []TriggerDefinition `json:"triggers"`
+	DeletedTriggers []TriggerDefinition `json:"deletedTriggers"`
+
+	Routines        []RoutineDefinition `json:"routines"`
+	DeletedRoutines []RoutineDefinition `json:"deletedRoutines"`
+
+	Config *DatabaseConfig `json:"config"`
 }
 
 type DiffResponse struct {
