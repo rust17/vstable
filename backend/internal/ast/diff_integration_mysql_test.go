@@ -12,7 +12,7 @@ import (
 func TestMysqlSyncIntegration(t *testing.T) {
 	dsn := os.Getenv("MYSQL_DSN")
 	if dsn == "" {
-		dsn = "root:password@tcp(127.0.0.1:3307)/vstable_test?charset=utf8mb4&parseTime=True&loc=Local"
+		dsn = "root:password@tcp(localhost:3307)/vstable_test?charset=utf8mb4&parseTime=True&loc=Local"
 	}
 
 	dialect := "mysql"
