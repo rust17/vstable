@@ -146,6 +146,23 @@ handleIPC('store:delete', (_, id) => {
   store.deleteConnection(id);
 });
 
+handleIPC('store:get-workspace', () => {
+  const workspace = store.getWorkspace();
+  // decrypt passwords just like we do for get-all
+  if (workspace?.sessions) {
+    workspace.sessions.forEach((s: any) => {
+      if (s.config?.encryptedPassword) {
+        s.config.password = store.decryptPassword(s.config.encryptedPassword);
+      }
+    });
+  }
+  return workspace;
+});
+
+handleIPC('store:save-workspace', (_, data) => {
+  store.saveWorkspace(data);
+});
+
 handleIPC('window:toggle-maximize', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (win) {

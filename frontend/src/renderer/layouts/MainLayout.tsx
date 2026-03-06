@@ -24,9 +24,16 @@ interface SessionViewProps {
   id: string;
   isActive: boolean;
   onUpdateTitle: (title: string) => void;
+  initialConfig?: any;
+  initialWorkspace?: any;
+  onStateChange?: (id: string, state: any) => void;
 }
 
-const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
+const SessionContent: React.FC<{
+  isActive: boolean;
+  initialConfig?: any;
+  onStateChange?: (id: string, state: any) => void;
+}> = ({ isActive, initialConfig, onStateChange }) => {
   const { isConnected, config, sessionId, query, buildQuery, connect, disconnect, capabilities } =
     useSession();
   const q = capabilities?.quoteChar || '"';
@@ -69,6 +76,42 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
     confirmText?: string;
     title?: string;
   } | null>(null);
+
+  // Auto connect if initialConfig is provided
+  useEffect(() => {
+    if (initialConfig && !isConnected) {
+      connect(initialConfig);
+    }
+  }, [initialConfig, isConnected, connect]);
+
+  // Report state changes
+  useEffect(() => {
+    if (onStateChange && isConnected) {
+      // Create lightweight tabs state
+      const persistedTabs = tabs.map((t) => ({
+        id: t.id,
+        type: t.type,
+        name: t.name,
+        schema: t.schema,
+        query: t.query,
+        pk: t.pk,
+        structure: t.structure,
+        page: t.page,
+        pageSize: t.pageSize,
+        filters: t.filters,
+        sorts: t.sorts,
+        mode: t.mode,
+        initialSchema: t.initialSchema,
+        initialTableName: t.initialTableName,
+      }));
+      onStateChange(sessionId, {
+        config,
+        tabs: persistedTabs,
+        activeTabId,
+        mruTabIds,
+      });
+    }
+  }, [isConnected, config, tabs, activeTabId, mruTabIds, sessionId, onStateChange]);
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
 
@@ -361,17 +404,38 @@ const SessionContent: React.FC<{ isActive: boolean }> = ({ isActive }) => {
 export const SessionView: React.FC<SessionViewProps> = (props) => {
   return (
     <SessionProvider id={props.id} onUpdateTitle={props.onUpdateTitle}>
-      <WorkspaceStoreWrapper isActive={props.isActive} />
+      <WorkspaceStoreWrapper
+        isActive={props.isActive}
+        initialConfig={props.initialConfig}
+        initialWorkspace={props.initialWorkspace}
+        onStateChange={props.onStateChange}
+      />
     </SessionProvider>
   );
 };
 
-const WorkspaceStoreWrapper: React.FC<{ isActive: boolean }> = ({ isActive }) => {
-  const [store] = useState(() => createWorkspaceStore());
+interface WorkspaceStoreWrapperProps {
+  isActive: boolean;
+  initialConfig?: any;
+  initialWorkspace?: any;
+  onStateChange?: (id: string, state: any) => void;
+}
+
+const WorkspaceStoreWrapper: React.FC<WorkspaceStoreWrapperProps> = ({
+  isActive,
+  initialConfig,
+  initialWorkspace,
+  onStateChange,
+}) => {
+  const [store] = useState(() => createWorkspaceStore(initialWorkspace));
 
   return (
     <WorkspaceContext.Provider value={store}>
-      <SessionContent isActive={isActive} />
+      <SessionContent
+        isActive={isActive}
+        initialConfig={initialConfig}
+        onStateChange={onStateChange}
+      />
     </WorkspaceContext.Provider>
   );
 };

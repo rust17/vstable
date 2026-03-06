@@ -15,16 +15,26 @@ export const formatTimestamp = (value: any) => {
 };
 
 export const formatDisplayValue = (value: any, dataType?: string) => {
-  if (value === null) return null; // handle JSX in component
-  let display = String(value);
-  if (dataType?.includes('json') && typeof value === 'object') {
-    display = JSON.stringify(value, null, 2);
-  } else if (
-    dataType?.includes('timestamp') ||
-    dataType?.includes('date') ||
-    dataType?.includes('time')
-  ) {
-    display = formatTimestamp(value);
+  if (value === null || value === undefined) return null;
+
+  const type = dataType?.toLowerCase() || '';
+
+  // If it's a JSON type, handle potential string-encoded JSON or direct objects
+  if (type.includes('json')) {
+    try {
+      // If it's a string that looks like JSON, try to parse it first to avoid extra escaping
+      const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+      return JSON.stringify(parsed, null, 2);
+    } catch (e) {
+      // If parsing fails (e.g. it's just a regular string in a json column), return as-is
+      return String(value);
+    }
   }
-  return display;
+
+  // If it's a date/time, use our custom formatter to avoid local timezone strings
+  if (type.includes('timestamp') || type.includes('date') || type.includes('time') || value instanceof Date) {
+    return formatTimestamp(value);
+  }
+
+  return String(value);
 };

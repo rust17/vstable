@@ -80,6 +80,29 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({
     }
   }, [tab.name, tab.schema, tab.pk, query, onUpdateTab, capabilities, buildQuery, config.database]);
 
+  // Fetch structure if missing
+  useEffect(() => {
+    if ((!tab.structure || tab.structure.length === 0) && tab.name && (tab.schema || !capabilities?.supportsSchemas)) {
+      const fetchStructure = async () => {
+        const schema = tab.schema || config.database;
+        const colSql = buildQuery('listColumns', { db: config.database, schema, table: tab.name });
+        const res = await query(colSql);
+        if (res.success && res.rows) {
+          // Normalize keys to lowercase for consistent access across dialects
+          const normalizedRows = res.rows.map((row: any) => {
+            const normalized: any = {};
+            Object.keys(row).forEach((key) => {
+              normalized[key.toLowerCase()] = row[key];
+            });
+            return normalized;
+          });
+          onUpdateTab({ structure: normalizedRows });
+        }
+      };
+      fetchStructure();
+    }
+  }, [tab.name, tab.schema, tab.structure, query, onUpdateTab, capabilities, buildQuery, config.database]);
+
   // Initial fetch
   useEffect(() => {
     if (isActive && !tab.results) {

@@ -25,11 +25,11 @@ interface WorkspaceState {
 
 type WorkspaceStore = ReturnType<typeof createWorkspaceStore>;
 
-export const createWorkspaceStore = () => {
+export const createWorkspaceStore = (initialState?: Partial<WorkspaceState>) => {
   return createStore<WorkspaceState>((set, get) => ({
-    tabs: [],
-    activeTabId: null,
-    mruTabIds: [],
+    tabs: initialState?.tabs || [],
+    activeTabId: initialState?.activeTabId || null,
+    mruTabIds: initialState?.mruTabIds || [],
     showTabSwitcher: false,
     switcherIndex: 0,
 
