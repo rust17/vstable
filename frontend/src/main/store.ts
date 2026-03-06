@@ -11,6 +11,7 @@ export interface ConnectionEntry {
   user: string;
   database: string;
   encryptedPassword?: string;
+  password?: string;
 }
 
 const STORE_PATH = join(app.getPath('userData'), 'connections.json');
@@ -49,6 +50,7 @@ export function saveConnection(config: any): void {
     user: config.user,
     database: config.database,
     encryptedPassword: encryptedPassword || undefined,
+    password: !safeStorage.isEncryptionAvailable() && config.password ? config.password : undefined,
   };
 
   const index = connections.findIndex((c) => c.id === entry.id);
@@ -106,8 +108,9 @@ export function saveWorkspace(data: any): void {
             session.config.encryptedPassword = safeStorage
               .encryptString(session.config.password)
               .toString('base64');
+            delete session.config.password;
           }
-          delete session.config.password;
+          // If encryption is not available, we KEEP session.config.password as plain text!
         }
       }
     }

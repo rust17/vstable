@@ -32,7 +32,12 @@ export const formatDisplayValue = (value: any, dataType?: string) => {
   }
 
   // If it's a date/time, use our custom formatter to avoid local timezone strings
-  if (type.includes('timestamp') || type.includes('date') || type.includes('time') || value instanceof Date) {
+  if (
+    type.includes('timestamp') ||
+    type.includes('date') ||
+    type.includes('time') ||
+    value instanceof Date
+  ) {
     return formatTimestamp(value);
   }
 

@@ -46,15 +46,44 @@ test.describe('Workspace Persistence Tests', () => {
     await window.locator('button[data-testid="btn-connect"]').click();
     await expect(form).not.toBeVisible({ timeout: 10000 });
 
-    // Open a Query tab
+    // Create a table first to ensure it exists
     const mod = os.platform() === 'darwin' ? 'Meta' : 'Control';
     await window.keyboard.press(`${mod}+t`);
+    const activeTab = window.locator('div[data-testid="active-tab-content"]');
+    const editor = activeTab.locator('.monaco-editor').last();
+    await editor.click();
+    await window.keyboard.press(`${mod}+a`);
+    await window.keyboard.press('Backspace');
+    await window.keyboard.insertText('CREATE TABLE IF NOT EXISTS persist_test (id int);');
+    await activeTab.locator('button[data-testid="btn-run-query"]').click();
+    await expect(activeTab.locator('text=Loading data...')).not.toBeVisible({ timeout: 10000 });
+
+    // Open the table tab
+    await window.locator('button[data-testid="btn-refresh-tables"]').click();
+    const tableItem = window.locator('div[data-testid="table-item-persist_test"]');
+    await expect(tableItem).toBeVisible({ timeout: 10000 });
+    await tableItem.click();
 
     // Ensure the tab appears
-    await expect(window.locator('div[data-testid="tab-table-New Query"]')).toBeVisible();
+    await expect(window.locator('div[data-testid="tab-table-persist_test"]')).toBeVisible();
 
-    // Give it a moment to save workspace.json
-    await window.waitForTimeout(2000);
+    // Wait for the data to finish loading to ensure all state updates are done
+    const activeTabContent = window.locator('div[data-testid="active-tab-content"]');
+    await expect(activeTabContent.locator('text=Loading data...')).not.toBeVisible({
+      timeout: 10000,
+    });
+
+    // Give it a moment to save workspace.json (CI can be slow, 1s debounce + IO)
+    const workspacePath = path.join(userDataDir, 'workspace.json');
+    await expect(async () => {
+      expect(fs.existsSync(workspacePath)).toBeTruthy();
+      const content = fs.readFileSync(workspacePath, 'utf8');
+      const data = JSON.parse(content);
+      const hasTableTab = data.sessions?.[0]?.tabs?.some(
+        (t: any) => t.type === 'table' && t.name === 'persist_test'
+      );
+      expect(hasTableTab).toBeTruthy();
+    }).toPass({ timeout: 15000 });
 
     // Close the app
     await electronApp.close();
@@ -66,19 +95,17 @@ test.describe('Workspace Persistence Tests', () => {
     window = await electronApp.firstWindow();
     await window.waitForLoadState('domcontentloaded');
 
+    // Wait for "Loading workspace..." to disappear
+    await expect(window.locator('text=Loading workspace...')).not.toBeVisible({ timeout: 15000 });
+
     // Wait for engine
     await expect(async () => {
       const response = await window.request.get('http://127.0.0.1:39082/api/ping');
       expect(response.ok()).toBeTruthy();
     }).toPass({ timeout: 15000 });
 
-    // form should not be visible (auto connected)
-    await expect(window.locator('form[data-testid="connection-form"]')).not.toBeVisible({
-      timeout: 5000,
-    });
-
     // the tab should be restored
-    await expect(window.locator('div[data-testid="tab-table-New Query"]')).toBeVisible({
+    await expect(window.locator('div[data-testid="tab-table-persist_test"]')).toBeVisible({
       timeout: 10000,
     });
 

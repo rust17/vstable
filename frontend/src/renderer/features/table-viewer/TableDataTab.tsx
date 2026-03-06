@@ -82,7 +82,11 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({
 
   // Fetch structure if missing
   useEffect(() => {
-    if ((!tab.structure || tab.structure.length === 0) && tab.name && (tab.schema || !capabilities?.supportsSchemas)) {
+    if (
+      (!tab.structure || tab.structure.length === 0) &&
+      tab.name &&
+      (tab.schema || !capabilities?.supportsSchemas)
+    ) {
       const fetchStructure = async () => {
         const schema = tab.schema || config.database;
         const colSql = buildQuery('listColumns', { db: config.database, schema, table: tab.name });
@@ -101,7 +105,16 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({
       };
       fetchStructure();
     }
-  }, [tab.name, tab.schema, tab.structure, query, onUpdateTab, capabilities, buildQuery, config.database]);
+  }, [
+    tab.name,
+    tab.schema,
+    tab.structure,
+    query,
+    onUpdateTab,
+    capabilities,
+    buildQuery,
+    config.database,
+  ]);
 
   // Initial fetch
   useEffect(() => {

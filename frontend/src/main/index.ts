@@ -134,7 +134,7 @@ handleIPC('store:get-all', () => {
   // 返回时解密密码，方便前端填充（仅在 IPC 通道传输）
   return connections.map((c) => ({
     ...c,
-    password: c.encryptedPassword ? store.decryptPassword(c.encryptedPassword) : '',
+    password: c.encryptedPassword ? store.decryptPassword(c.encryptedPassword) : c.password || '',
   }));
 });
 
@@ -154,6 +154,8 @@ handleIPC('store:get-workspace', () => {
       if (s.config?.encryptedPassword) {
         s.config.password = store.decryptPassword(s.config.encryptedPassword);
       }
+      // If encryptedPassword is not present, it means password was saved as plain text or is empty.
+      // It is already in s.config.password from JSON if plain text, so no action needed.
     });
   }
   return workspace;
