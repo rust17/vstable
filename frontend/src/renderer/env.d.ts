@@ -23,6 +23,8 @@ export interface IElectronAPI {
   getSavedConnections: () => Promise<any[]>;
   saveConnection: (config: any) => Promise<void>;
   deleteConnection: (id: string) => Promise<void>;
+  getWorkspace: () => Promise<any>;
+  saveWorkspace: (data: any) => Promise<void>;
 }
 
 declare global {

@@ -1,19 +1,114 @@
 import { Plus, X } from 'lucide-react';
 import type React from 'react';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiClient } from './api/client';
 import { SessionView } from './layouts/MainLayout';
+import type { PersistedSession, PersistedWorkspace } from './types/session';
 
 interface Session {
   id: string;
   title: string;
+  initialConfig?: any;
+  initialWorkspace?: any;
 }
 
 function App() {
-  const [sessions, setSessions] = useState<Session[]>([
-    { id: crypto.randomUUID(), title: 'New Connection' },
-  ]);
-  const [activeSessionId, setActiveSessionId] = useState<string>(sessions[0].id);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  // Store the latest state of each session reported by SessionView
+  const sessionStatesRef = useRef<Record<string, any>>({});
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Load workspace on mount
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const workspace: PersistedWorkspace = await apiClient.getWorkspace();
+        if (workspace?.sessions && workspace.sessions.length > 0) {
+          const loadedSessions: Session[] = workspace.sessions.map((s: PersistedSession) => {
+            // Restore session state
+            sessionStatesRef.current[s.id] = {
+              config: s.config,
+              tabs: s.tabs,
+              activeTabId: s.activeTabId,
+              mruTabIds: s.mruTabIds,
+            };
+
+            return {
+              id: s.id,
+              title: s.title,
+              initialConfig: s.config,
+              initialWorkspace: {
+                tabs: s.tabs,
+                activeTabId: s.activeTabId,
+                mruTabIds: s.mruTabIds,
+              },
+            };
+          });
+          setSessions(loadedSessions);
+          setActiveSessionId(workspace.activeSessionId || loadedSessions[0].id);
+        } else {
+          // Default empty state
+          const newSessionId = crypto.randomUUID();
+          setSessions([{ id: newSessionId, title: 'New Connection' }]);
+          setActiveSessionId(newSessionId);
+        }
+      } catch (err) {
+        console.error('Failed to load workspace:', err);
+        const newSessionId = crypto.randomUUID();
+        setSessions([{ id: newSessionId, title: 'New Connection' }]);
+        setActiveSessionId(newSessionId);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+    init();
+  }, []);
+
+  const saveWorkspace = useCallback(() => {
+    if (isInitializing || !activeSessionId) return;
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      // Build workspace payload
+      const payload: PersistedWorkspace = {
+        activeSessionId,
+        sessions: sessions.map((s) => {
+          const state = sessionStatesRef.current[s.id] || {};
+          return {
+            id: s.id,
+            title: s.title,
+            config: state.config,
+            tabs: state.tabs || [],
+            activeTabId: state.activeTabId || null,
+            mruTabIds: state.mruTabIds || [],
+          };
+        }),
+      };
+
+      apiClient.saveWorkspace(payload).catch((err) => {
+        console.error('Failed to save workspace:', err);
+      });
+    }, 1000); // 1s debounce
+  }, [sessions, activeSessionId, isInitializing]);
+
+  // Save workspace when active session changes
+  useEffect(() => {
+    saveWorkspace();
+  }, [activeSessionId, saveWorkspace]);
+
+  const handleStateChange = useCallback(
+    (id: string, state: any) => {
+      sessionStatesRef.current[id] = state;
+      saveWorkspace();
+    },
+    [saveWorkspace]
+  );
 
   const handleAddSession = () => {
     const newSession = { id: crypto.randomUUID(), title: 'New Connection' };
@@ -23,29 +118,37 @@ function App() {
 
   const handleCloseSession = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    // 关闭连接
     await apiClient.disconnect(id);
+
+    // Remove from tracked state
+    delete sessionStatesRef.current[id];
 
     const newSessions = sessions.filter((s) => s.id !== id);
     if (newSessions.length === 0) {
-      // 如果关掉最后一个，创建一个新的
       const newSession = { id: crypto.randomUUID(), title: 'New Connection' };
       setSessions([newSession]);
       setActiveSessionId(newSession.id);
     } else {
       setSessions(newSessions);
       if (activeSessionId === id) {
-        // 如果关闭的是当前激活的，切换到最后一个
         setActiveSessionId(newSessions[newSessions.length - 1].id);
       }
     }
+    saveWorkspace();
   };
+
+  if (isInitializing) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-white text-gray-500">
+        Loading workspace...
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen bg-white overflow-hidden">
       {/* Titlebar / Tab Bar */}
       <div className="titlebar h-11 flex items-end bg-[#f3f3f3] border-b border-gray-200 pl-20 pr-4 select-none draggable-region">
-        {/* Traffic lights area is padded by pl-20 via CSS or Tailwind if configured, keeping it here for safety */}
         <div className="flex items-end gap-1 overflow-x-auto scrollbar-hide h-full">
           {sessions.map((session) => (
             <div
@@ -90,8 +193,12 @@ function App() {
             key={session.id}
             id={session.id}
             isActive={activeSessionId === session.id}
+            initialConfig={session.initialConfig}
+            initialWorkspace={session.initialWorkspace}
+            onStateChange={handleStateChange}
             onUpdateTitle={(title) => {
               setSessions((prev) => prev.map((s) => (s.id === session.id ? { ...s, title } : s)));
+              saveWorkspace();
             }}
           />
         ))}

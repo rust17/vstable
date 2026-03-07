@@ -18,6 +18,8 @@ if (process.contextIsolated) {
       getSavedConnections: () => ipcRenderer.invoke('store:get-all'),
       saveConnection: (config: any) => ipcRenderer.invoke('store:save', config),
       deleteConnection: (id: string) => ipcRenderer.invoke('store:delete', id),
+      getWorkspace: () => ipcRenderer.invoke('store:get-workspace'),
+      saveWorkspace: (data: any) => ipcRenderer.invoke('store:save-workspace', data),
     });
   } catch (error) {
     console.error(error);

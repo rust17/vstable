@@ -11,9 +11,11 @@ export interface ConnectionEntry {
   user: string;
   database: string;
   encryptedPassword?: string;
+  password?: string;
 }
 
 const STORE_PATH = join(app.getPath('userData'), 'connections.json');
+const WORKSPACE_PATH = join(app.getPath('userData'), 'workspace.json');
 
 export function getSavedConnections(): ConnectionEntry[] {
   if (!existsSync(STORE_PATH)) return [];
@@ -48,6 +50,7 @@ export function saveConnection(config: any): void {
     user: config.user,
     database: config.database,
     encryptedPassword: encryptedPassword || undefined,
+    password: !safeStorage.isEncryptionAvailable() && config.password ? config.password : undefined,
   };
 
   const index = connections.findIndex((c) => c.id === entry.id);
@@ -73,5 +76,46 @@ export function decryptPassword(encryptedBase64: string): string {
   } catch (e) {
     console.error('Failed to decrypt password', e);
     return '';
+  }
+}
+
+export function getWorkspace(): any {
+  if (!existsSync(WORKSPACE_PATH)) return null;
+  try {
+    const content = readFileSync(WORKSPACE_PATH, 'utf-8');
+    return JSON.parse(content);
+  } catch (e) {
+    console.error('Failed to read workspace.json', e);
+    return null;
+  }
+}
+
+export function saveWorkspace(data: any): void {
+  try {
+    // Before saving, we must ensure passwords in configs are encrypted, or simply stripped,
+    // since connection config is already saved in connections.json.
+    // It's safer to not persist passwords in workspace.json.
+    // However, since it's just restoring connection context, removing password is fine
+    // as connect IPC logic will look it up if we have connection id, or we just rely on the user to re-enter it,
+    // wait, actually we can just encrypt passwords if they are present.
+    // Given the architecture, the user might just be connecting via an ad-hoc connection,
+    // we'll strip raw passwords to be safe and let them use encrypted ones if any.
+    const safeData = JSON.parse(JSON.stringify(data));
+    for (const session of safeData.sessions || []) {
+      if (session.config) {
+        if (session.config.password) {
+          if (safeStorage.isEncryptionAvailable()) {
+            session.config.encryptedPassword = safeStorage
+              .encryptString(session.config.password)
+              .toString('base64');
+            delete session.config.password;
+          }
+          // If encryption is not available, we KEEP session.config.password as plain text!
+        }
+      }
+    }
+    writeFileSync(WORKSPACE_PATH, JSON.stringify(safeData, null, 2));
+  } catch (e) {
+    console.error('Failed to save workspace.json', e);
   }
 }

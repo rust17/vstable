@@ -44,3 +44,6 @@
 **Resilience and Errors**
 - R-01 Constraint Violation: 尝试插入重复主键或非法格式（如 UUID 列填入普通字符串），验证 AlertModal 报错。
 - R-02 Connection Failure: 输入错误的凭据，验证 UI 显示明确的错误提示。
+
+**Workspace Persistence**
+- P-01 Restore Session: 连接数据库并打开页签，执行创建表格 SQL，打开表格后重启应用，验证自动连接并恢复之前的页签状态。

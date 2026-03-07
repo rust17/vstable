@@ -22,6 +22,14 @@ export const apiClient = {
     return window.api.saveConnection(config);
   },
 
+  getWorkspace: async (): Promise<any> => {
+    return window.api.getWorkspace();
+  },
+
+  saveWorkspace: async (data: any): Promise<void> => {
+    return window.api.saveWorkspace(data);
+  },
+
   toggleMaximize: (): void => {
     window.api.toggleMaximize();
   },
