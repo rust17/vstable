@@ -1,4 +1,4 @@
-import type { ConnectionConfig, QueryResult } from '../types/session';
+import type { ConnectionConfig, PersistedWorkspace, QueryResult } from '../types/session';
 
 /**
  * API Client Layer
@@ -22,11 +22,11 @@ export const apiClient = {
     return window.api.saveConnection(config);
   },
 
-  getWorkspace: async (): Promise<any> => {
+  getWorkspace: async (): Promise<PersistedWorkspace | null> => {
     return window.api.getWorkspace();
   },
 
-  saveWorkspace: async (data: any): Promise<void> => {
+  saveWorkspace: async (data: PersistedWorkspace): Promise<void> => {
     return window.api.saveWorkspace(data);
   },
 

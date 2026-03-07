@@ -1,5 +1,6 @@
 import { exposeElectronAPI } from '@electron-toolkit/preload';
 import { contextBridge, ipcRenderer } from 'electron';
+import type { ConnectionConfig, PersistedWorkspace } from '../renderer/types/session';
 
 // 暴露出基础的 Electron API
 if (process.contextIsolated) {
@@ -16,10 +17,10 @@ if (process.contextIsolated) {
       toggleMaximize: () => ipcRenderer.invoke('window:toggle-maximize'),
       // Store APIs
       getSavedConnections: () => ipcRenderer.invoke('store:get-all'),
-      saveConnection: (config: any) => ipcRenderer.invoke('store:save', config),
+      saveConnection: (config: ConnectionConfig) => ipcRenderer.invoke('store:save', config),
       deleteConnection: (id: string) => ipcRenderer.invoke('store:delete', id),
       getWorkspace: () => ipcRenderer.invoke('store:get-workspace'),
-      saveWorkspace: (data: any) => ipcRenderer.invoke('store:save-workspace', data),
+      saveWorkspace: (data: PersistedWorkspace) => ipcRenderer.invoke('store:save-workspace', data),
     });
   } catch (error) {
     console.error(error);

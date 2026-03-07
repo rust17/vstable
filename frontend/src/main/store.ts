@@ -1,6 +1,7 @@
 import { app, safeStorage } from 'electron';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import type { ConnectionConfig, PersistedWorkspace } from '../renderer/types/session';
 
 export interface ConnectionEntry {
   id: string;
@@ -32,7 +33,7 @@ export function getSavedConnections(): ConnectionEntry[] {
   }
 }
 
-export function saveConnection(config: any): void {
+export function saveConnection(config: ConnectionConfig): void {
   const connections = getSavedConnections();
 
   // 处理加密
@@ -79,7 +80,7 @@ export function decryptPassword(encryptedBase64: string): string {
   }
 }
 
-export function getWorkspace(): any {
+export function getWorkspace(): PersistedWorkspace | null {
   if (!existsSync(WORKSPACE_PATH)) return null;
   try {
     const content = readFileSync(WORKSPACE_PATH, 'utf-8');
@@ -90,7 +91,7 @@ export function getWorkspace(): any {
   }
 }
 
-export function saveWorkspace(data: any): void {
+export function saveWorkspace(data: PersistedWorkspace): void {
   try {
     // Before saving, we must ensure passwords in configs are encrypted, or simply stripped,
     // since connection config is already saved in connections.json.
