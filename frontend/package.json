@@ -1,6 +1,6 @@
 {
   "name": "vstable",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "A stable and fast database management tool.",
   "repository": {
     "type": "git",
