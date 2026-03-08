@@ -34,6 +34,7 @@ export interface ConnectionConfig {
   port: number;
   user: string;
   password?: string;
+  encryptedPassword?: string;
   database: string;
 }
 
@@ -71,4 +72,35 @@ export interface FilterCondition {
   operator: string;
   value: string;
   enabled: boolean;
+}
+
+export interface PersistedTab {
+  id: string;
+  type: 'table' | 'query' | 'structure';
+  name: string;
+  schema?: string;
+  query?: string;
+  pk?: string | null;
+  structure?: any[];
+  page?: number;
+  pageSize?: number;
+  filters?: FilterCondition[];
+  sorts?: SortCondition[];
+  mode?: 'create' | 'edit';
+  initialSchema?: string;
+  initialTableName?: string;
+}
+
+export interface PersistedSession {
+  id: string;
+  title: string;
+  config?: ConnectionConfig;
+  tabs: PersistedTab[];
+  activeTabId: string | null;
+  mruTabIds: string[];
+}
+
+export interface PersistedWorkspace {
+  activeSessionId: string;
+  sessions: PersistedSession[];
 }

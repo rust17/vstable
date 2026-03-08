@@ -39,7 +39,7 @@ vstable 是一款专为开发者设计的现代数据库管理工具，支持可
 - **Electron Main (`frontend/src/main/`)**:
   - `daemon.ts`: 管理 Go 后端引擎进程的生命周期（启动、日志记录和停止）。
   - `index.ts`: 处理 IPC 路由（如 `db:connect`, `db:query`，并通过 HTTP 代理到 Go 引擎）以及窗口管理。
-  - `store.ts`: 处理应用程序配置以及加密凭据的持久化。
+  - `store.ts`: 处理应用程序配置、加密凭据以及工作区状态（标签页、会话）的持久化。
 - **React Renderer (`frontend/src/renderer/`)**:
   - `features/`: 包含核心功能模块：
     - `connection`: 数据库连接表单和管理。

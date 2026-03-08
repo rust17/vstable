@@ -21,8 +21,10 @@ export interface IElectronAPI {
 
   // Store
   getSavedConnections: () => Promise<any[]>;
-  saveConnection: (config: any) => Promise<void>;
+  saveConnection: (config: import('./types/session').ConnectionConfig) => Promise<void>;
   deleteConnection: (id: string) => Promise<void>;
+  getWorkspace: () => Promise<import('./types/session').PersistedWorkspace | null>;
+  saveWorkspace: (data: import('./types/session').PersistedWorkspace) => Promise<void>;
 }
 
 declare global {
