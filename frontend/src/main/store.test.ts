@@ -87,12 +87,13 @@ describe('Store', () => {
       );
     });
 
-    it('keeps plain text password when encryption is not available', () => {
+    it('completely strips password when encryption is not available', () => {
       (safeStorage.isEncryptionAvailable as any).mockReturnValue(false);
       const mockData = {
         sessions: [
           {
             config: {
+              id: 'conn-1',
               password: 'secret_password',
             },
           },
@@ -105,7 +106,7 @@ describe('Store', () => {
         sessions: [
           {
             config: {
-              password: 'secret_password',
+              id: 'conn-1',
             },
           },
         ],

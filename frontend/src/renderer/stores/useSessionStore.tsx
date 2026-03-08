@@ -118,6 +118,12 @@ export const createSessionStore = (id: string, onUpdateTitle: (title: string) =>
 
     connect: async (newConfig: ConnectionConfig) => {
       set({ loading: true, error: null });
+
+      // Generate ID if missing so it is reliably matched during workspace restore
+      if (!newConfig.id) {
+        newConfig.id = crypto.randomUUID();
+      }
+
       try {
         const result = await apiClient.connect(id, newConfig);
         if (result.success) {

@@ -34,6 +34,7 @@ export interface ConnectionConfig {
   port: number;
   user: string;
   password?: string;
+  encryptedPassword?: string;
   database: string;
 }
 

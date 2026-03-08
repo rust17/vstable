@@ -109,9 +109,8 @@ export function saveWorkspace(data: PersistedWorkspace): void {
             session.config.encryptedPassword = safeStorage
               .encryptString(session.config.password)
               .toString('base64');
-            delete session.config.password;
           }
-          // If encryption is not available, we KEEP session.config.password as plain text!
+          delete session.config.password;
         }
       }
     }

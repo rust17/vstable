@@ -25,9 +25,19 @@ function App() {
   useEffect(() => {
     const init = async () => {
       try {
-        const workspace: PersistedWorkspace = await apiClient.getWorkspace();
+        const workspace = await apiClient.getWorkspace();
+        const savedConnections = await (window as any).api.getSavedConnections();
+
         if (workspace?.sessions && workspace.sessions.length > 0) {
           const loadedSessions: Session[] = workspace.sessions.map((s: PersistedSession) => {
+            // Restore password from saved connections if missing
+            if (s.config && !s.config.password && !s.config.encryptedPassword) {
+              const match = savedConnections.find((c: any) => c.id === s.config!.id);
+              if (match?.password) {
+                s.config.password = match.password;
+              }
+            }
+
             // Restore session state
             sessionStatesRef.current[s.id] = {
               config: s.config,
