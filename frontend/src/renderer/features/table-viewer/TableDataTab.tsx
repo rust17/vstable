@@ -227,12 +227,17 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({
   const getEditValue = () => {
     if (!editingCell) return '';
     const { value, dataType } = editingCell;
-    if (dataType?.includes('json') && typeof value === 'object') {
+    if (
+      (dataType?.includes('json') || typeof value === 'object') &&
+      value !== null &&
+      !(value instanceof Date)
+    ) {
       return JSON.stringify(value, null, 2);
     } else if (
       dataType?.includes('timestamp') ||
       dataType?.includes('date') ||
-      dataType?.includes('time')
+      dataType?.includes('time') ||
+      value instanceof Date
     ) {
       return formatTimestamp(value);
     }

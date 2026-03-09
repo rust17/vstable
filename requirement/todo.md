@@ -413,3 +413,9 @@ add:
     - [ ] 触发器变更
         创建/修改触发器
         启用/禁用触发器
+
+---
+
+fix:
+    - [x] PostgreSQL JSON/JSONB 字段渲染成 `map[...]` 字符串
+    - [x] PostgreSQL UUID 字段渲染成字节数组 `[...]`
