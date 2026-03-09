@@ -1,4 +1,4 @@
-import { Check, Plus, Settings, X } from 'lucide-react';
+import { Check, Plus, Search, Settings, X } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import type { FilterCondition } from '../../../types/session';
 
@@ -11,6 +11,7 @@ interface CustomDropdownProps {
   align?: 'left' | 'center';
   testId?: string;
   disabled?: boolean;
+  searchable?: boolean;
 }
 
 const CustomDropdown: React.FC<CustomDropdownProps> = ({
@@ -22,8 +23,14 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   align = 'left',
   testId,
   disabled,
+  searchable,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredOptions = searchable
+    ? options.filter((opt) => opt.label.toLowerCase().includes(searchQuery.toLowerCase()))
+    : options;
 
   return (
     <div
@@ -38,23 +45,54 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       </div>
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-20" onClick={() => setIsOpen(false)} />
+          <div
+            className="fixed inset-0 z-20"
+            onClick={() => {
+              setIsOpen(false);
+              setSearchQuery('');
+            }}
+          />
           <div
             className={`absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl z-30 overflow-hidden animate-in fade-in zoom-in-95 duration-100 ${listClassName}`}
           >
-            <div className="max-h-[250px] overflow-y-auto py-1">
-              {options.map((opt) => (
-                <div
-                  key={opt.value}
-                  className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer ${align === 'center' ? 'text-center' : ''} ${opt.value === value ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700'}`}
-                  onClick={() => {
-                    onChange(opt.value);
-                    setIsOpen(false);
-                  }}
-                >
-                  {opt.label}
+            {searchable && (
+              <div className="px-2 py-1.5 border-b border-gray-100 bg-gray-50/50">
+                <div className="relative">
+                  <Search
+                    size={12}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    type="text"
+                    className="w-full bg-white border border-gray-200 rounded px-7 py-1 text-[10px] outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400/30"
+                    placeholder="column"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    autoFocus
+                  />
                 </div>
-              ))}
+              </div>
+            )}
+            <div className="max-h-[250px] overflow-y-auto py-1">
+              {filteredOptions.length > 0 ? (
+                filteredOptions.map((opt) => (
+                  <div
+                    key={opt.value}
+                    className={`px-3 py-1.5 text-xs hover:bg-gray-50 cursor-pointer ${align === 'center' ? 'text-center' : ''} ${opt.value === value ? 'text-primary-600 bg-primary-50 font-semibold' : 'text-gray-700'}`}
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                      setSearchQuery('');
+                    }}
+                  >
+                    {opt.label}
+                  </div>
+                ))
+              ) : (
+                <div className="px-3 py-2 text-[10px] text-gray-400 text-center italic">
+                  No matches
+                </div>
+              )}
             </div>
           </div>
         </>
@@ -139,6 +177,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 options={structure.map((c) => ({ label: c.column_name, value: c.column_name }))}
                 onChange={(val) => onUpdateFilter(filter.id, 'column', val)}
                 disabled={!filter.enabled}
+                searchable={true}
               />
               <CustomDropdown
                 testId={`filter-operator-${index}`}
