@@ -289,56 +289,77 @@ func mapRoutine(r *pb.RoutineDefinition) ast.RoutineDefinition {
 	}
 }
 
+func toSafeValue(v interface{}) interface{} {
+	if v == nil {
+		return nil
+	}
+
+	switch val := v.(type) {
+	case int:
+		return float64(val)
+	case int32:
+		return float64(val)
+	case int64:
+		return float64(val)
+	case uint32:
+		return float64(val)
+	case uint64:
+		return float64(val)
+	case float32:
+		return float64(val)
+	case float64:
+		return val
+	case *big.Int:
+		f, _ := new(big.Float).SetInt(val).Float64()
+		return f
+	case pgtype.Numeric:
+		if val.Valid {
+			f, _ := new(big.Float).SetInt(val.Int).Float64()
+			if val.Exp != 0 {
+				f *= math.Pow10(int(val.Exp))
+			}
+			return f
+		} else {
+			return nil
+		}
+	case pgtype.UUID:
+		if val.Valid {
+			return fmt.Sprintf("%x-%x-%x-%x-%x", val.Bytes[0:4], val.Bytes[4:6], val.Bytes[6:8], val.Bytes[8:10], val.Bytes[10:16])
+		}
+		return nil
+	case [16]byte:
+		return fmt.Sprintf("%x-%x-%x-%x-%x", val[0:4], val[4:6], val[6:8], val[8:10], val[10:16])
+	case time.Time:
+		return val.Format(time.RFC3339Nano)
+	case []byte:
+		return string(val)
+	case bool:
+		return val
+	case string:
+		return val
+	case map[string]interface{}:
+		newMap := make(map[string]interface{})
+		for k, v := range val {
+			newMap[k] = toSafeValue(v)
+		}
+		return newMap
+	case []interface{}:
+		newSlice := make([]interface{}, len(val))
+		for i, v := range val {
+			newSlice[i] = toSafeValue(v)
+		}
+		return newSlice
+	default:
+		return fmt.Sprintf("%v", val)
+	}
+}
+
 func RowsToStructs(rows []map[string]interface{}) []*structpb.Struct {
 	res := make([]*structpb.Struct, 0, len(rows))
 	for _, r := range rows {
 		safeMap := make(map[string]interface{})
 		for k, v := range r {
-			if v == nil {
-				safeMap[k] = nil
-				continue
-			}
-
-			switch val := v.(type) {
-			case int:
-				safeMap[k] = float64(val)
-			case int32:
-				safeMap[k] = float64(val)
-			case int64:
-				safeMap[k] = float64(val)
-			case uint32:
-				safeMap[k] = float64(val)
-			case uint64:
-				safeMap[k] = float64(val)
-			case float32:
-				safeMap[k] = float64(val)
-			case float64:
-				safeMap[k] = val
-			case *big.Int:
-				f, _ := new(big.Float).SetInt(val).Float64()
-				safeMap[k] = f
-			case pgtype.Numeric:
-				if val.Valid {
-					f, _ := new(big.Float).SetInt(val.Int).Float64()
-					if val.Exp != 0 {
-						f *= math.Pow10(int(val.Exp))
-					}
-					safeMap[k] = f
-				} else {
-					safeMap[k] = nil
-				}
-			case time.Time:
-				safeMap[k] = val.Format(time.RFC3339Nano)
-			case []byte:
-				safeMap[k] = string(val)
-			case bool:
-				safeMap[k] = val
-			case string:
-				safeMap[k] = val
-			default:
-				// Fallback for types like pgtype.Numeric or other custom structs
-				safeMap[k] = fmt.Sprintf("%v", val)
-			}
+			safeMap[k] = toSafeValue(v)
 		}
 		st, err := structpb.NewStruct(safeMap)
 		if err == nil {

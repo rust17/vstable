@@ -19,14 +19,14 @@ export const formatDisplayValue = (value: any, dataType?: string) => {
 
   const type = dataType?.toLowerCase() || '';
 
-  // If it's a JSON type, handle potential string-encoded JSON or direct objects
-  if (type.includes('json')) {
+  // If it's an object/array, or a JSON type, handle it
+  if (type.includes('json') || typeof value === 'object') {
     try {
-      // If it's a string that looks like JSON, try to parse it first to avoid extra escaping
-      const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+      // If it's a string that looks like JSON (only for json types), try to parse it
+      const parsed = type.includes('json') && typeof value === 'string' ? JSON.parse(value) : value;
       return JSON.stringify(parsed, null, 2);
     } catch (e) {
-      // If parsing fails (e.g. it's just a regular string in a json column), return as-is
+      // If parsing fails, return as-is
       return String(value);
     }
   }
