@@ -38,6 +38,13 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "resources/api",
+        "to": "api",
+        "filter": [
+          "**/*.proto"
+        ]
       }
     ],
     "mac": {
@@ -83,6 +90,8 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "@grpc/grpc-js": "^1.14.3",
+    "@grpc/proto-loader": "^0.8.0",
     "@monaco-editor/react": "^4.7.0",
     "@tailwindcss/postcss": "^4.1.18",
     "lucide-react": "^0.563.0",

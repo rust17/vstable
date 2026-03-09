@@ -24,8 +24,13 @@ test.describe('Schema Designer Tests', () => {
 
     // Wait for Go engine
     await expect(async () => {
-      const response = await window.request.get('http://127.0.0.1:39082/api/ping');
-      expect(response.ok()).toBeTruthy();
+      const pingOk = await window.evaluate(() =>
+        (window as any).api
+          .enginePing()
+          .then((r: any) => r.status === 'ok')
+          .catch(() => false)
+      );
+      expect(pingOk).toBeTruthy();
     }).toPass({ timeout: 15000 });
 
     // Connect to PostgreSQL
