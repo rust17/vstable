@@ -9,6 +9,7 @@
 - `cd frontend && npm run check` (Biome 格式化与静态检查)
 - `cd backend && go test -v ./...` (后端集成测试，需 Docker)
 - `cd frontend && npm run docker:up` (启动测试所需的 PG/MySQL 容器)
+- `cd backend && ./scripts/gen_proto.sh` (生成 gRPC 代码并同步协议文件到前端)
 
 ## Project overview
 
@@ -37,6 +38,7 @@ vstable 是一款专为开发者设计的现代数据库管理工具，支持可
   - `internal/ast`: 核心 Schema Diff 引擎。提供 AST 类型定义以及特定数据库方言（PostgreSQL/MySQL）的编译器，用于基于状态对齐生成精确的 DDL Diff。
   - `internal/db`: 数据库连接管理器和驱动程序抽象。
   - `main.go`: 启动 gRPC Server，处理来自 Electron 主进程的远程过程调用。
+  - `scripts/gen_proto.sh`: 构建脚本，用于从 `.proto` 文件生成 Go 代码，并同步协议定义到前端资源目录供运行时加载。
 - **Electron Main (`frontend/src/main/`)**:
   - `daemon.ts`: 管理 Go 后端引擎进程的生命周期（启动、日志记录和停止）。
   - `grpcClient.ts`: 封装 gRPC 客户端，通过严格类型的 Protobuf 协议与后端引擎通信。
