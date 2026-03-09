@@ -2,32 +2,138 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
+	"net"
 	"os"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"vstable-engine/internal/ast"
 	"vstable-engine/internal/db"
+	"vstable-engine/internal/mapper"
+	"vstable-engine/internal/pb"
 )
 
-type Response struct {
-	Success bool        `json:"success"`
-	Data    interface{} `json:"data,omitempty"`
-	Error   string      `json:"error,omitempty"`
+type engineServer struct {
+	pb.UnimplementedEngineServiceServer
+	dbManager *db.Manager
 }
 
-type ConnectRequest struct {
-	ID      string `json:"id"`
-	Dialect string `json:"dialect"`
-	DSN     string `json:"dsn"`
+func (s *engineServer) Ping(ctx context.Context, req *pb.PingRequest) (*pb.PingResponse, error) {
+	return &pb.PingResponse{Status: "ok"}, nil
 }
 
-type QueryRequest struct {
-	ID     string        `json:"id"`
-	SQL    string        `json:"sql"`
-	Params []interface{} `json:"params"`
+func (s *engineServer) Connect(ctx context.Context, req *pb.ConnectRequest) (*pb.ConnectResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	if err := s.dbManager.Connect(ctx, req.Id, req.Dialect, req.Dsn); err != nil {
+		return nil, status.Errorf(codes.Internal, "connect failed: %v", err)
+	}
+	return &pb.ConnectResponse{Success: true}, nil
+}
+
+func (s *engineServer) Disconnect(ctx context.Context, req *pb.DisconnectRequest) (*pb.DisconnectResponse, error) {
+	if err := s.dbManager.Disconnect(req.Id); err != nil {
+		return nil, status.Errorf(codes.Internal, "disconnect failed: %v", err)
+	}
+	return &pb.DisconnectResponse{Success: true}, nil
+}
+
+func (s *engineServer) Query(ctx context.Context, req *pb.QueryRequest) (*pb.QueryResponse, error) {
+	driver, err := s.dbManager.Get(req.Id)
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "session not found: %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	var params []interface{}
+	if req.Params != nil {
+		for _, v := range req.Params.Values {
+			params = append(params, v.AsInterface())
+		}
+	}
+
+	result, err := driver.Query(ctx, req.Sql, params)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "query error: %v", err)
+	}
+
+	fields := make([]*pb.FieldInfo, len(result.Fields))
+	for i, f := range result.Fields {
+		fields[i] = &pb.FieldInfo{
+			Name: f.Name,
+			Type: f.Type,
+		}
+	}
+
+	rows := mapper.RowsToStructs(result.Rows)
+
+	return &pb.QueryResponse{
+		Success: true,
+		Rows:    rows,
+		Fields:  fields,
+	}, nil
+}
+
+func (s *engineServer) GenerateAlterTable(ctx context.Context, req *pb.DiffRequest) (*pb.GenerateSQLResponse, error) {
+	astReq := mapper.ToASTDiffRequest(req)
+
+	compiler, err := ast.GetCompiler(req.Dialect)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "get compiler failed: %v", err)
+	}
+
+	sqls := compiler.GenerateAlterTableSql(astReq)
+	return &pb.GenerateSQLResponse{
+		Success: true,
+		Sqls:    sqls,
+	}, nil
+}
+
+func (s *engineServer) GenerateCreateTable(ctx context.Context, req *pb.DiffRequest) (*pb.GenerateSQLResponse, error) {
+	astReq := mapper.ToASTDiffRequest(req)
+
+	compiler, err := ast.GetCompiler(req.Dialect)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "get compiler failed: %v", err)
+	}
+
+	sqls := compiler.GenerateCreateTableSql(astReq)
+	return &pb.GenerateSQLResponse{
+		Success: true,
+		Sqls:    sqls,
+	}, nil
+}
+
+// UnaryInterceptor handles panics and generic errors
+func UnaryInterceptor(
+	ctx context.Context,
+	req interface{},
+	info *grpc.UnaryServerInfo,
+	handler grpc.UnaryHandler,
+) (resp interface{}, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = status.Errorf(codes.Internal, "panic: %v", r)
+		}
+	}()
+
+	resp, err = handler(ctx, req)
+	if err != nil {
+		// Just ensure it's a grpc status error
+		if _, ok := status.FromError(err); !ok {
+			err = status.Errorf(codes.Unknown, "%v", err)
+		}
+		log.Printf("[gRPC Error] %s: %v", info.FullMethod, err)
+	}
+	return resp, err
 }
 
 func main() {
@@ -36,124 +142,25 @@ func main() {
 		port = "39082"
 	}
 
+	// 50MB is generous for large schemas and query results
+	maxMsgSize := 1024 * 1024 * 50
+	
+	lis, err := net.Listen("tcp", ":"+port)
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(UnaryInterceptor),
+		grpc.MaxRecvMsgSize(maxMsgSize),
+		grpc.MaxSendMsgSize(maxMsgSize),
+	)
+
 	dbManager := db.NewManager()
-	mux := http.NewServeMux()
+	pb.RegisterEngineServiceServer(grpcServer, &engineServer{dbManager: dbManager})
 
-	// 健康检查
-	mux.HandleFunc("/api/ping", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
-	})
-
-	// 建立连接
-	mux.HandleFunc("/api/connect", func(w http.ResponseWriter, r *http.Request) {
-		var req ConnectRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			sendError(w, http.StatusBadRequest, err)
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		if err := dbManager.Connect(ctx, req.ID, req.Dialect, req.DSN); err != nil {
-			sendError(w, http.StatusInternalServerError, err)
-			return
-		}
-		sendJSON(w, http.StatusOK, Response{Success: true})
-	})
-
-	// 执行查询
-	mux.HandleFunc("/api/query", func(w http.ResponseWriter, r *http.Request) {
-		var req QueryRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			sendError(w, http.StatusBadRequest, err)
-			return
-		}
-
-		driver, err := dbManager.Get(req.ID)
-		if err != nil {
-			sendError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-
-		result, err := driver.Query(ctx, req.SQL, req.Params)
-		if err != nil {
-			sendError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		// 适配前端预期的格式
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"success": true,
-			"rows":    result.Rows,
-			"fields":  result.Fields,
-			"data":    result.Rows, // 兼容性字段
-		})
-	})
-
-	// 断开连接
-	mux.HandleFunc("/api/disconnect", func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
-		if err := dbManager.Disconnect(id); err != nil {
-			sendError(w, http.StatusInternalServerError, err)
-			return
-		}
-		sendJSON(w, http.StatusOK, Response{Success: true})
-	})
-
-	// SQL 生成：生成 ALTER TABLE SQL
-	mux.HandleFunc("/api/diff", func(w http.ResponseWriter, r *http.Request) {
-		var req ast.DiffRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			sendError(w, http.StatusBadRequest, err)
-			return
-		}
-
-		compiler, err := ast.GetCompiler(req.Dialect)
-		if err != nil {
-			sendError(w, http.StatusBadRequest, err)
-			return
-		}
-
-		sqls := compiler.GenerateAlterTableSql(req)
-		sendJSON(w, http.StatusOK, Response{Success: true, Data: sqls})
-	})
-
-	// SQL 生成：生成 CREATE TABLE SQL
-	mux.HandleFunc("/api/create-table", func(w http.ResponseWriter, r *http.Request) {
-		var req ast.DiffRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			sendError(w, http.StatusBadRequest, err)
-			return
-		}
-
-		compiler, err := ast.GetCompiler(req.Dialect)
-		if err != nil {
-			sendError(w, http.StatusBadRequest, err)
-			return
-		}
-
-		sqls := compiler.GenerateCreateTableSql(req)
-		sendJSON(w, http.StatusOK, Response{Success: true, Data: sqls})
-	})
-
-	addr := ":" + port
-	fmt.Printf("Engine listening on %s...\n", addr)
-	log.Fatal(http.ListenAndServe(addr, mux))
-}
-
-func sendJSON(w http.ResponseWriter, status int, resp interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(resp)
-}
-
-func sendError(w http.ResponseWriter, status int, err error) {
-	sendJSON(w, status, Response{Success: false, Error: err.Error()})
+	fmt.Printf("gRPC Engine listening on :%s...\n", port)
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }

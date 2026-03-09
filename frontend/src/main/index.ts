@@ -1,8 +1,11 @@
 import { is, optimizer } from '@electron-toolkit/utils';
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { join } from 'path';
+import { GrpcClient } from './grpcClient';
 import { logger } from './logger';
 import * as store from './store';
+
+let grpcClient: GrpcClient;
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -51,24 +54,7 @@ function handleIPC(channel: string, listener: (event: any, ...args: any[]) => an
   });
 }
 
-// 辅助函数：向 Go 引擎发送请求
-async function engineFetch(path: string, method: string, body?: any) {
-  const url = `http://127.0.0.1:${daemonManager.port}${path}`;
-  try {
-    const response = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    const result = await response.json();
-    return result;
-  } catch (error: any) {
-    console.error(`[Main] engineFetch error for ${path}:`, error.message, error.code);
-    return { success: false, error: `Engine communication error: ${error.message}` };
-  }
-}
-
-// 数据库 IPC 处理 (代理到 Go)
+// 数据库 IPC 处理 (代理到 Go gRPC)
 handleIPC('db:connect', async (_, id, config) => {
   // 处理保存的加密密码
   let password = config.password || '';
@@ -84,7 +70,7 @@ handleIPC('db:connect', async (_, id, config) => {
     dsn = `${config.user}:${password}@tcp(${config.host}:${config.port})/${config.database}`;
   }
 
-  return await engineFetch('/api/connect', 'POST', {
+  return await grpcClient.connect({
     id,
     dialect: config.dialect,
     dsn,
@@ -92,36 +78,34 @@ handleIPC('db:connect', async (_, id, config) => {
 });
 
 handleIPC('db:disconnect', async (_, id) => {
-  return await engineFetch(`/api/disconnect?id=${id}`, 'GET');
+  return await grpcClient.disconnect(id);
 });
 
 handleIPC('db:query', async (_, id, sql, params) => {
-  // query 接口前端需要返回的也是完整对象 { success, data, error }
-  return await engineFetch('/api/query', 'POST', {
-    id,
-    sql,
-    params: params || [],
-  });
+  return await grpcClient.query(id, sql, params || []);
 });
 
 // SQL 生成代理
 handleIPC('sql:generate-alter', async (_, req) => {
-  const result = await engineFetch('/api/diff', 'POST', req);
-  if (result.success) return result.data || [];
-  throw new Error(result.error || 'SQL generation failed');
+  try {
+    return await grpcClient.generateAlterTable(req);
+  } catch (err: any) {
+    throw new Error(err.message || 'SQL generation failed');
+  }
 });
 
 handleIPC('sql:generate-create', async (_, req) => {
-  const result = await engineFetch('/api/create-table', 'POST', req);
-  if (result.success) return result.data || [];
-  throw new Error(result.error || 'SQL generation failed');
+  try {
+    return await grpcClient.generateCreateTable(req);
+  } catch (err: any) {
+    throw new Error(err.message || 'SQL generation failed');
+  }
 });
 
 // Go Engine 通信测试代理
 handleIPC('engine:ping', async () => {
   try {
-    const response = await fetch(`http://127.0.0.1:${daemonManager.port}/api/ping`);
-    return await response.json();
+    return await grpcClient.ping();
   } catch (error: any) {
     console.error('Failed to ping Go engine:', error);
     throw error;
@@ -180,6 +164,7 @@ import { daemonManager } from './daemon';
 
 app.whenReady().then(() => {
   daemonManager.start();
+  grpcClient = new GrpcClient(daemonManager.port);
 
   // Set app user model id for windows
   if (process.platform === 'win32') {

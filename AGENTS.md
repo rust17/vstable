@@ -9,6 +9,7 @@
 - `cd frontend && npm run check` (Biome 格式化与静态检查)
 - `cd backend && go test -v ./...` (后端集成测试，需 Docker)
 - `cd frontend && npm run docker:up` (启动测试所需的 PG/MySQL 容器)
+- `cd backend && ./scripts/gen_proto.sh` (生成 gRPC 代码并同步协议文件到前端)
 
 ## Project overview
 
@@ -19,6 +20,7 @@ vstable 是一款专为开发者设计的现代数据库管理工具，支持可
 - **Frontend**: React 19 (TypeScript), TailwindCSS 4.0, Monaco Editor
 - **Desktop Runtime**: Electron 40, electron-vite
 - **Backend Engine**: Go 1.24 (vstable-engine)
+- **Communication**: gRPC, Protocol Buffers (Strict types)
 - **Database Drivers**: `pgx/v5` (PostgreSQL), `go-sql-driver/mysql` (MySQL)
 - **Testing**: Playwright (E2E), Vitest (Unit), Go test (Integration)
 - **Infrastructure**: Docker Compose (Database testing environments)
@@ -28,17 +30,19 @@ vstable 是一款专为开发者设计的现代数据库管理工具，支持可
 该项目采用解耦的三层架构：
 1. **Frontend (React)**: 基于 React 19、TailwindCSS 4.0 和 Monaco Editor 构建的现代用户界面。负责处理用户交互、SQL 编辑以及可视化的表结构设计。
 2. **Desktop Runtime (Electron)**: 作为操作系统与 Web 内容之间的桥梁。主进程（Main process）负责管理 Go 引擎的生命周期、持久化存储、IPC 路由以及原生窗口管理。
-3. **Backend Engine (Go)**: 一个使用 Go 1.24 编写的高性能守护进程。它在本地运行并向 Electron 主进程暴露 REST API（例如 `/api/connect`, `/api/query`）。它承担繁重的计算任务，包括数据库连接管理、AST 解析，以及基于状态对齐进行 Schema Diff 并生成精确的 DDL 语句。
+3. **Backend Engine (Go)**: 一个使用 Go 1.24 编写的高性能守护进程。它在本地运行并向 Electron 主进程暴露 gRPC API（定义于 `vstable.proto`）。它承担繁重的计算任务，包括数据库连接管理、AST 解析，以及基于状态对齐进行 Schema Diff 并生成精确的 DDL 语句。
 
 ## Major modules and interfaces
 
 - **Go Engine (`backend/`)**:
   - `internal/ast`: 核心 Schema Diff 引擎。提供 AST 类型定义以及特定数据库方言（PostgreSQL/MySQL）的编译器，用于基于状态对齐生成精确的 DDL Diff。
   - `internal/db`: 数据库连接管理器和驱动程序抽象。
-  - `main.go`: 处理来自 Electron 主进程 HTTP 请求的路由服务。
+  - `main.go`: 启动 gRPC Server，处理来自 Electron 主进程的远程过程调用。
+  - `scripts/gen_proto.sh`: 构建脚本，用于从 `.proto` 文件生成 Go 代码，并同步协议定义到前端资源目录供运行时加载。
 - **Electron Main (`frontend/src/main/`)**:
   - `daemon.ts`: 管理 Go 后端引擎进程的生命周期（启动、日志记录和停止）。
-  - `index.ts`: 处理 IPC 路由（如 `db:connect`, `db:query`，并通过 HTTP 代理到 Go 引擎）以及窗口管理。
+  - `grpcClient.ts`: 封装 gRPC 客户端，通过严格类型的 Protobuf 协议与后端引擎通信。
+  - `index.ts`: 处理 IPC 路由（如 `db:connect`, `db:query`，并通过 `grpcClient` 调用 Go 引擎）以及窗口管理。
   - `store.ts`: 处理应用程序配置、加密凭据以及工作区状态（标签页、会话）的持久化。
 - **React Renderer (`frontend/src/renderer/`)**:
   - `features/`: 包含核心功能模块：
