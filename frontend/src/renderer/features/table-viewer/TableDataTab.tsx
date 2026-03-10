@@ -147,6 +147,7 @@ export const TableTabPane: React.FC<TableTabPaneProps> = ({
       column: '',
       operator: '=',
       value: '',
+      value2: '',
       enabled: true,
     };
     if (tab.structure && tab.structure.length > 0) {

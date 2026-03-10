@@ -143,6 +143,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     { label: '<=', value: '<=' },
     { label: 'LIKE', value: 'LIKE' },
     { label: 'ILIKE', value: 'ILIKE' },
+    { label: 'IN', value: 'IN' },
+    { label: 'NOT IN', value: 'NOT IN' },
+    { label: 'IS NULL', value: 'IS NULL' },
+    { label: 'IS NOT NULL', value: 'IS NOT NULL' },
+    { label: 'BETWEEN', value: 'BETWEEN' },
   ];
 
   React.useEffect(() => {
@@ -181,26 +186,54 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               />
               <CustomDropdown
                 testId={`filter-operator-${index}`}
-                className="text-[11px] border-r border-gray-100 w-16 font-mono text-primary-600 h-full"
+                className="text-[11px] border-r border-gray-100 min-w-[120px] font-mono text-primary-600 h-full"
+                listClassName="min-w-[100px]"
                 align="center"
                 value={filter.operator}
                 options={operators}
                 onChange={(val) => onUpdateFilter(filter.id, 'operator', val)}
                 disabled={!filter.enabled}
               />
-              <input
-                ref={index === 0 ? filterInputRef : null}
-                data-testid={index === 0 ? 'filter-value-input' : `filter-value-${index}`}
-                type="text"
-                className={`flex-1 text-[11px] px-4 py-1.5 bg-transparent outline-none placeholder:text-gray-400 text-gray-700 h-full ${!filter.enabled ? 'cursor-not-allowed' : ''}`}
-                placeholder="Filter by value..."
-                value={filter.value}
-                onChange={(e) => onUpdateFilter(filter.id, 'value', e.target.value)}
-                disabled={!filter.enabled}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') onApplyFilters();
-                }}
-              />
+              {filter.operator !== 'IS NULL' && filter.operator !== 'IS NOT NULL' && (
+                <>
+                  <input
+                    ref={index === 0 ? filterInputRef : null}
+                    data-testid={index === 0 ? 'filter-value-input' : `filter-value-${index}`}
+                    type="text"
+                    className={`flex-1 text-[11px] px-4 py-1.5 bg-transparent outline-none placeholder:text-gray-400 text-gray-700 h-full ${!filter.enabled ? 'cursor-not-allowed' : ''}`}
+                    placeholder={
+                      filter.operator === 'IN' || filter.operator === 'NOT IN'
+                        ? 'e.g., val1, val2'
+                        : 'Filter by value...'
+                    }
+                    value={filter.value}
+                    onChange={(e) => onUpdateFilter(filter.id, 'value', e.target.value)}
+                    disabled={!filter.enabled}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') onApplyFilters();
+                    }}
+                  />
+                  {filter.operator === 'BETWEEN' && (
+                    <>
+                      <span className="text-[10px] font-bold text-gray-400 px-2 select-none self-center">
+                        AND
+                      </span>
+                      <input
+                        data-testid={`filter-value2-${index}`}
+                        type="text"
+                        className={`flex-1 text-[11px] px-4 py-1.5 bg-transparent outline-none placeholder:text-gray-400 text-gray-700 h-full ${!filter.enabled ? 'cursor-not-allowed' : ''}`}
+                        placeholder="Filter by value..."
+                        value={filter.value2 || ''}
+                        onChange={(e) => onUpdateFilter(filter.id, 'value2', e.target.value)}
+                        disabled={!filter.enabled}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') onApplyFilters();
+                        }}
+                      />
+                    </>
+                  )}
+                </>
+              )}
             </div>
             <div className="flex items-center gap-1">
               <button

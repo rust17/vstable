@@ -74,7 +74,16 @@ export const createWorkspaceStore = (initialState?: Partial<WorkspaceState>) => 
         results: null,
         structure: [],
         query: `SELECT * FROM "${schema}"."${name}"`,
-        filters: [{ id: crypto.randomUUID(), column: '', operator: '=', value: '', enabled: true }],
+        filters: [
+          {
+            id: crypto.randomUUID(),
+            column: '',
+            operator: '=',
+            value: '',
+            value2: '',
+            enabled: true,
+          },
+        ],
       };
 
       set((state) => ({ tabs: [...state.tabs, newTab] }));
