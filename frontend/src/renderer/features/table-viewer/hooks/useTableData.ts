@@ -33,9 +33,29 @@ export const useTableData = (tab: TableTab) => {
         let whereClause = '';
         if (filters.length > 0) {
           const conditions = filters
-            .filter((f) => f.enabled && f.column && f.value)
+            .filter(
+              (f) =>
+                f.enabled &&
+                f.column &&
+                (f.operator === 'IS NULL' || f.operator === 'IS NOT NULL' || f.value)
+            )
             .map((f) => {
-              const val = f.value.replace(/'/g, "''");
+              if (f.operator === 'IS NULL' || f.operator === 'IS NOT NULL') {
+                return `${quote(f.column!)} ${f.operator}`;
+              }
+              if (f.operator === 'BETWEEN') {
+                const val1 = (f.value || '').replace(/'/g, "''");
+                const val2 = (f.value2 || '').replace(/'/g, "''");
+                return `${quote(f.column!)} BETWEEN '${val1}' AND '${val2}'`;
+              }
+              if (f.operator === 'IN' || f.operator === 'NOT IN') {
+                const vals = (f.value || '')
+                  .split(',')
+                  .map((v) => `'${v.trim().replace(/'/g, "''")}'`)
+                  .join(', ');
+                return `${quote(f.column!)} ${f.operator} (${vals})`;
+              }
+              const val = (f.value || '').replace(/'/g, "''");
               return `${quote(f.column!)} ${f.operator} '${val}'`;
             });
           if (conditions.length > 0) {

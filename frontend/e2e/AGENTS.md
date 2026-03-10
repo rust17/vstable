@@ -39,7 +39,7 @@
 - A-01 SQL Console: 使用快捷键 (Cmd/Ctrl+T) 打开新页签，执行批量 SQL，验证结果统计显示。
 - A-02 Pagination: 验证数据超过每页限额（默认 100）时出现分页控件，点击 "Next" 翻页。
 - A-03 Sorting: 点击列头切换升序/降序状态。
-- A-04 Filtering: 使用 Filter Bar 添加条件（如 `price > 100`），验证行数精确匹配。
+- A-04 Filtering: 使用 Filter Bar 测试包含 `=`, `>`, `BETWEEN`, `IN`, `NOT IN`, `IS NULL`, `IS NOT NULL` 等多种比较操作符，验证数据精确匹配。
 
 **Resilience and Errors**
 - R-01 Constraint Violation: 尝试插入重复主键或非法格式（如 UUID 列填入普通字符串），验证 AlertModal 报错。

@@ -71,6 +71,7 @@ export interface FilterCondition {
   column: string;
   operator: string;
   value: string;
+  value2?: string;
   enabled: boolean;
 }
 
