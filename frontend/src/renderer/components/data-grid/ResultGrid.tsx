@@ -116,6 +116,7 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
       for (let i = start; i <= end; i++) {
         newSelection.add(i);
       }
+      setLastSelectedIndex(index);
     } else {
       newSelection.add(index);
       setLastSelectedIndex(index);
@@ -223,9 +224,13 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
                 key={i}
                 data-selected={selectedRowIndices.has(i) ? 'true' : 'false'}
                 onClick={(e) => {
-                  // If user is selecting text, don't trigger row selection
+                  const isMac = window.navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+                  const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
+                  // If user is selecting text, don't trigger row selection,
+                  // unless they are using selection modifiers (Shift/Cmd/Ctrl)
                   const selection = window.getSelection();
-                  if (selection && selection.toString().length > 0) return;
+                  if (selection && selection.toString().length > 0 && !e.shiftKey && !cmdOrCtrl)
+                    return;
                   handleRowClick(e, i);
                 }}
                 className={`${selectedRowIndices.has(i) ? 'bg-primary-100' : 'hover:bg-primary-50/50'} border-b border-gray-100 transition-colors cursor-context-menu`}
