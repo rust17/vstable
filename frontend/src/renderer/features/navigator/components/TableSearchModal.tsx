@@ -1,6 +1,8 @@
 import { Database, Table as TableIcon } from 'lucide-react';
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useWorkspaceStore } from '../../../stores/useWorkspaceStore';
+import { fuzzyMatch } from '../../../utils/fuzzyMatch';
 
 interface TableSearchModalProps {
   isOpen: boolean;
@@ -8,6 +10,36 @@ interface TableSearchModalProps {
   tables: { table_name: string; table_schema: string }[];
   onSelect: (schema: string, name: string) => void;
 }
+
+const HighlightedText = ({
+  text,
+  matches,
+  isSelected,
+}: {
+  text: string;
+  matches: number[];
+  isSelected: boolean;
+}) => {
+  if (!matches || matches.length === 0) return <span>{text}</span>;
+
+  return (
+    <span>
+      {text.split('').map((char, i) => {
+        const isMatch = matches.includes(i);
+        return (
+          <span
+            key={i}
+            className={
+              isMatch ? (isSelected ? 'text-white font-bold' : 'text-primary-600 font-bold') : ''
+            }
+          >
+            {char}
+          </span>
+        );
+      })}
+    </span>
+  );
+};
 
 export const TableSearchModal: React.FC<TableSearchModalProps> = ({
   isOpen,
@@ -18,6 +50,23 @@ export const TableSearchModal: React.FC<TableSearchModalProps> = ({
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
 
+  const mruTabIds = useWorkspaceStore((state) => state.mruTabIds);
+  const tabs = useWorkspaceStore((state) => state.tabs);
+
+  const mruTableIndex = useMemo(() => {
+    const map = new Map<string, number>();
+    mruTabIds.forEach((id, index) => {
+      const tab = tabs.find((t) => t.id === id);
+      if (tab && tab.type === 'table') {
+        const key = `${tab.schema}.${tab.name}`;
+        if (!map.has(key)) {
+          map.set(key, index);
+        }
+      }
+    });
+    return map;
+  }, [mruTabIds, tabs]);
+
   useEffect(() => {
     if (isOpen) {
       setQuery('');
@@ -25,13 +74,66 @@ export const TableSearchModal: React.FC<TableSearchModalProps> = ({
     }
   }, [isOpen]);
 
-  const filtered = tables
-    .filter(
-      (t) =>
-        t.table_name.toLowerCase().includes(query.toLowerCase()) ||
-        t.table_schema.toLowerCase().includes(query.toLowerCase())
-    )
-    .slice(0, 10);
+  const filtered = useMemo(() => {
+    if (!query) {
+      const mruTables = tables
+        .filter((t) => mruTableIndex.has(`${t.table_schema}.${t.table_name}`))
+        .map((t) => ({
+          ...t,
+          score: 0,
+          mruIndex: mruTableIndex.get(`${t.table_schema}.${t.table_name}`)!,
+          matches: [] as number[],
+        }))
+        .sort((a, b) => a.mruIndex - b.mruIndex);
+
+      if (mruTables.length > 0) return mruTables;
+
+      return tables.map((t) => ({
+        ...t,
+        score: 0,
+        mruIndex: Infinity,
+        matches: [] as number[],
+      }));
+    }
+
+    const scored = tables
+      .map((t) => {
+        const match = fuzzyMatch(query, t.table_name);
+
+        // Optionally fallback to schema matching if table_name doesn't match
+        if (!match) {
+          const schemaMatch = fuzzyMatch(query, t.table_schema);
+          if (schemaMatch) {
+            return {
+              ...t,
+              score: schemaMatch.score - 50, // penalty for matching schema instead of table
+              mruIndex: mruTableIndex.has(`${t.table_schema}.${t.table_name}`)
+                ? mruTableIndex.get(`${t.table_schema}.${t.table_name}`)!
+                : Infinity,
+              matches: [] as number[], // don't highlight table name if matched schema
+            };
+          }
+          return null;
+        }
+
+        return {
+          ...t,
+          score: match.score,
+          mruIndex: mruTableIndex.has(`${t.table_schema}.${t.table_name}`)
+            ? mruTableIndex.get(`${t.table_schema}.${t.table_name}`)!
+            : Infinity,
+          matches: match.matches,
+        };
+      })
+      .filter((t): t is NonNullable<typeof t> => t !== null);
+
+    return scored.sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+      return a.mruIndex - b.mruIndex;
+    });
+  }, [query, tables, mruTableIndex]);
 
   if (!isOpen) return null;
 
@@ -90,7 +192,13 @@ export const TableSearchModal: React.FC<TableSearchModalProps> = ({
                   className={i === selectedIndex ? 'text-primary-200' : 'text-gray-400'}
                 />
                 <div className="flex flex-col">
-                  <span className="text-sm font-semibold">{t.table_name}</span>
+                  <span className="text-sm font-semibold">
+                    <HighlightedText
+                      text={t.table_name}
+                      matches={t.matches}
+                      isSelected={i === selectedIndex}
+                    />
+                  </span>
                   <span
                     className={`text-[10px] ${i === selectedIndex ? 'text-primary-100' : 'text-gray-400'}`}
                   >
