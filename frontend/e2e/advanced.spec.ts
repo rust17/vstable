@@ -176,7 +176,10 @@ test.describe('Advanced Features Tests', () => {
     // Column Dropdown
     const colDropdown = activeTab.locator('div[data-testid="filter-column-0"]');
     await colDropdown.click();
-    await colDropdown.locator('div').filter({ hasText: /^price$/ }).click();
+    await colDropdown
+      .locator('div')
+      .filter({ hasText: /^price$/ })
+      .click();
 
     const opDropdown = activeTab.locator('div[data-testid="filter-operator-0"]');
     const valueInput = activeTab.locator('input[data-testid="filter-value-input"]');
@@ -190,7 +193,10 @@ test.describe('Advanced Features Tests', () => {
 
     // 5. Test `BETWEEN` operator
     await opDropdown.click();
-    await opDropdown.locator('div').filter({ hasText: /^BETWEEN$/ }).click();
+    await opDropdown
+      .locator('div')
+      .filter({ hasText: /^BETWEEN$/ })
+      .click();
     await valueInput.fill('10');
     await activeTab.locator('input[data-testid="filter-value2-0"]').fill('15');
     await window.keyboard.press('Enter');
@@ -205,7 +211,10 @@ test.describe('Advanced Features Tests', () => {
 
     // 7. Test `NOT IN` operator
     await opDropdown.click();
-    await opDropdown.locator('div').filter({ hasText: /^NOT IN$/ }).click();
+    await opDropdown
+      .locator('div')
+      .filter({ hasText: /^NOT IN$/ })
+      .click();
     await valueInput.fill('1, 2, 3');
     await window.keyboard.press('Enter');
     // Total is 106, minus 3 = 103. Current page should show 100.
@@ -213,14 +222,20 @@ test.describe('Advanced Features Tests', () => {
 
     // 8. Test `IS NULL` operator
     await opDropdown.click();
-    await opDropdown.locator('div').filter({ hasText: /^IS NULL$/ }).click();
+    await opDropdown
+      .locator('div')
+      .filter({ hasText: /^IS NULL$/ })
+      .click();
     // Simulate refresh shortcut to apply since input is hidden
     await window.keyboard.press(`${mod}+r`);
     await expect(activeTab.locator('tbody tr')).toHaveCount(1, { timeout: 10000 });
 
     // 9. Test `IS NOT NULL` operator
     await opDropdown.click();
-    await opDropdown.locator('div').filter({ hasText: /^IS NOT NULL$/ }).click();
+    await opDropdown
+      .locator('div')
+      .filter({ hasText: /^IS NOT NULL$/ })
+      .click();
     // Simulate refresh
     await window.keyboard.press(`${mod}+r`);
     // Non-null rows = 105. Current page shows 100.

@@ -115,6 +115,13 @@ const SessionContent: React.FC<{
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
 
+  // Sync sidebar schema with the active table's schema
+  useEffect(() => {
+    if (activeTab?.type === 'table' && activeTab.schema && activeTab.schema !== currentSchema) {
+      setCurrentSchema(activeTab.schema);
+    }
+  }, [activeTab, currentSchema, setCurrentSchema]);
+
   // Use global shortcuts
   useShortcutStore(isActive, setShowTableSearch);
 

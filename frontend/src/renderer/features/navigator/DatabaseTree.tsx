@@ -1,6 +1,6 @@
 import { Check, Database, Plus, RefreshCw, Table as TableIcon, Trash2 } from 'lucide-react';
 import type React from 'react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSession } from '../../stores/useSessionStore';
 
 interface DatabaseTreeProps {
@@ -39,6 +39,17 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
   const [dbListOpen, setDbListOpen] = useState(false);
   const [schemaListOpen, setSchemaListOpen] = useState(false);
   const [tableFilter, setTableFilter] = useState('');
+  const activeItemRef = useRef<HTMLDivElement>(null);
+
+  // Scroll active table into view when it changes
+  useEffect(() => {
+    if (activeTable && activeItemRef.current) {
+      activeItemRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }
+  }, [activeTable, tableFilter]);
 
   // Multi-select state
   const [selectedDbs, setSelectedDbs] = useState<Set<string>>(new Set());
@@ -324,6 +335,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
             return (
               <div
                 key={i}
+                ref={isActive ? activeItemRef : null}
                 data-testid={`table-item-${table.table_name}`}
                 onClick={(e) => handleTableClick(e, table.table_schema, table.table_name)}
                 className={`group flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors text-gray-600 cursor-pointer ${isActive ? 'bg-primary-100 text-primary-700' : isSelected ? 'bg-gray-100' : 'hover:bg-primary-50'}`}
