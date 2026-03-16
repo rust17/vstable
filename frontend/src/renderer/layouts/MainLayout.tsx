@@ -1,5 +1,4 @@
-import type React from 'react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AlertModal } from '../components/ui/AlertModal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { TabSwitcher } from '../components/ui/TabSwitcher';
@@ -33,7 +32,7 @@ const SessionContent: React.FC<{
   isActive: boolean;
   initialConfig?: any;
   onStateChange?: (id: string, state: any) => void;
-}> = ({ isActive, initialConfig, onStateChange }) => {
+}> = React.memo(({ isActive, initialConfig, onStateChange }) => {
   const { isConnected, config, sessionId, query, buildQuery, connect, disconnect, capabilities } =
     useSession();
   const q = capabilities?.quoteChar || '"';
@@ -309,49 +308,53 @@ const SessionContent: React.FC<{
 
             {/* Tab Content */}
             <div className="flex-1 flex flex-col overflow-hidden relative bg-white">
-              {tabs.map((tab) => (
-                <div
-                  key={tab.id}
-                  data-testid={
-                    activeTabId === tab.id ? 'active-tab-content' : `inactive-tab-content-${tab.id}`
-                  }
-                  className="w-full h-full"
-                  style={{ display: activeTabId === tab.id ? 'block' : 'none' }}
-                >
-                  {tab.type === 'table' ? (
-                    <TableTabPane
-                      tab={tab}
-                      isActive={activeTabId === tab.id}
-                      onUpdateTab={(updates) => updateTab(tab.id, updates)}
-                      connectionId={sessionId}
-                      onOpenStructure={(schema, name) => openStructure(schema, name, 'edit')}
-                    />
-                  ) : tab.type === 'query' ? (
-                    <QueryTabPane
-                      tab={tab}
-                      isActive={activeTabId === tab.id}
-                      onUpdateTab={(updates) => updateTab(tab.id, updates)}
-                    />
-                  ) : (
-                    <StructureView
-                      connectionId={sessionId}
-                      schema={tab.initialSchema || currentSchema}
-                      tableName={tab.initialTableName || ''}
-                      mode={tab.mode || 'edit'}
-                      onClose={() => closeTab(tab.id)}
-                      onSaveSuccess={(schema, name) => {
-                        updateTab(tab.id, {
-                          mode: 'edit',
-                          name: `Structure: ${name}`,
-                          initialSchema: schema,
-                          initialTableName: name,
-                        });
-                        fetchTables();
-                      }}
-                    />
-                  )}
-                </div>
-              ))}
+              {[...tabs]
+                .sort((a, b) => a.id.localeCompare(b.id))
+                .map((tab) => (
+                  <div
+                    key={tab.id}
+                    data-testid={
+                      activeTabId === tab.id
+                        ? 'active-tab-content'
+                        : `inactive-tab-content-${tab.id}`
+                    }
+                    className="w-full h-full"
+                    style={{ display: activeTabId === tab.id ? 'block' : 'none' }}
+                  >
+                    {tab.type === 'table' ? (
+                      <TableTabPane
+                        tab={tab}
+                        isActive={activeTabId === tab.id}
+                        onUpdateTab={(updates) => updateTab(tab.id, updates)}
+                        connectionId={sessionId}
+                        onOpenStructure={(schema, name) => openStructure(schema, name, 'edit')}
+                      />
+                    ) : tab.type === 'query' ? (
+                      <QueryTabPane
+                        tab={tab}
+                        isActive={activeTabId === tab.id}
+                        onUpdateTab={(updates) => updateTab(tab.id, updates)}
+                      />
+                    ) : (
+                      <StructureView
+                        connectionId={sessionId}
+                        schema={tab.initialSchema || currentSchema}
+                        tableName={tab.initialTableName || ''}
+                        mode={tab.mode || 'edit'}
+                        onClose={() => closeTab(tab.id)}
+                        onSaveSuccess={(schema, name) => {
+                          updateTab(tab.id, {
+                            mode: 'edit',
+                            name: `Structure: ${name}`,
+                            initialSchema: schema,
+                            initialTableName: name,
+                          });
+                          fetchTables();
+                        }}
+                      />
+                    )}
+                  </div>
+                ))}
               {tabs.length === 0 && (
                 <div className="flex-1 flex flex-col items-center justify-center text-gray-300 italic bg-gray-50/30">
                   Select a table from the sidebar to view its data
@@ -406,11 +409,11 @@ const SessionContent: React.FC<{
       )}
     </div>
   );
-};
+});
 
-export const SessionView: React.FC<SessionViewProps> = (props) => {
+export const SessionView: React.FC<SessionViewProps> = React.memo((props) => {
   return (
-    <SessionProvider id={props.id} onUpdateTitle={props.onUpdateTitle}>
+    <SessionProvider id={props.id} onUpdateTitle={(title) => props.onUpdateTitle(props.id, title)}>
       <WorkspaceStoreWrapper
         isActive={props.isActive}
         initialConfig={props.initialConfig}
@@ -419,7 +422,7 @@ export const SessionView: React.FC<SessionViewProps> = (props) => {
       />
     </SessionProvider>
   );
-};
+});
 
 interface WorkspaceStoreWrapperProps {
   isActive: boolean;
@@ -428,21 +431,18 @@ interface WorkspaceStoreWrapperProps {
   onStateChange?: (id: string, state: any) => void;
 }
 
-const WorkspaceStoreWrapper: React.FC<WorkspaceStoreWrapperProps> = ({
-  isActive,
-  initialConfig,
-  initialWorkspace,
-  onStateChange,
-}) => {
-  const [store] = useState(() => createWorkspaceStore(initialWorkspace));
+const WorkspaceStoreWrapper: React.FC<WorkspaceStoreWrapperProps> = React.memo(
+  ({ isActive, initialConfig, initialWorkspace, onStateChange }) => {
+    const [store] = useState(() => createWorkspaceStore(initialWorkspace));
 
-  return (
-    <WorkspaceContext.Provider value={store}>
-      <SessionContent
-        isActive={isActive}
-        initialConfig={initialConfig}
-        onStateChange={onStateChange}
-      />
-    </WorkspaceContext.Provider>
-  );
-};
+    return (
+      <WorkspaceContext.Provider value={store}>
+        <SessionContent
+          isActive={isActive}
+          initialConfig={initialConfig}
+          onStateChange={onStateChange}
+        />
+      </WorkspaceContext.Provider>
+    );
+  }
+);

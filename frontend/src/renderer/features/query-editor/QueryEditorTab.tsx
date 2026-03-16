@@ -13,7 +13,7 @@ interface QueryTabPaneProps {
 }
 
 export const QueryTabPane: React.FC<QueryTabPaneProps> = ({ tab, isActive, onUpdateTab }) => {
-  const { query } = useSession();
+  const { query: runQuery, sessionId } = useSession();
   const [executing, setExecuting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +28,7 @@ export const QueryTabPane: React.FC<QueryTabPaneProps> = ({ tab, isActive, onUpd
     onUpdateTab({ results: null });
 
     try {
-      const res = await query(tab.query);
+      const res = await runQuery(tab.query);
       if (res.success) {
         onUpdateTab({ results: { rows: res.rows || [], fields: res.fields || [] } });
       } else {
@@ -69,6 +69,7 @@ export const QueryTabPane: React.FC<QueryTabPaneProps> = ({ tab, isActive, onUpd
             height="100%"
             defaultLanguage="sql"
             theme="vs"
+            path={`session-${sessionId}-tab-${tab.id}.sql`}
             value={tab.query}
             onChange={(val) => onUpdateTab({ query: val || '' })}
             options={{
