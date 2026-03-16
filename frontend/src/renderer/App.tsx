@@ -1,7 +1,7 @@
 import { Plus, X } from 'lucide-react';
-import type React from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { apiClient } from './api/client';
+import { useDraggableSort } from './hooks/useDraggableSort';
 import { SessionView } from './layouts/MainLayout';
 import type { PersistedSession, PersistedWorkspace } from './types/session';
 
@@ -12,10 +12,49 @@ interface Session {
   initialWorkspace?: any;
 }
 
+interface SessionsContentProps {
+  sessions: Session[];
+  activeSessionId: string | null;
+  onStateChange: (id: string, state: any) => void;
+  onUpdateTitle: (id: string, title: string) => void;
+}
+
+const SessionsContent: React.FC<SessionsContentProps> = React.memo(
+  ({ sessions, activeSessionId, onStateChange, onUpdateTitle }) => {
+    // Sort by ID to maintain stable DOM position regardless of tab order
+    const stableSessions = [...sessions].sort((a, b) => a.id.localeCompare(b.id));
+
+    return (
+      <div className="flex-1 overflow-hidden relative bg-white">
+        {stableSessions.map((session) => (
+          <SessionView
+            key={session.id}
+            id={session.id}
+            isActive={activeSessionId === session.id}
+            initialConfig={session.initialConfig}
+            initialWorkspace={session.initialWorkspace}
+            onStateChange={onStateChange}
+            onUpdateTitle={onUpdateTitle}
+          />
+        ))}
+      </div>
+    );
+  }
+);
+
 function App() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+
+  const { getDragHandlers, getIndicatorClass } = useDraggableSort((dragIdx, dropIdx) => {
+    setSessions((prev) => {
+      const newSessions = [...prev];
+      const [draggedItem] = newSessions.splice(dragIdx, 1);
+      newSessions.splice(dropIdx, 0, draggedItem);
+      return newSessions;
+    });
+  });
 
   // Store the latest state of each session reported by SessionView
   const sessionStatesRef = useRef<Record<string, any>>({});
@@ -120,6 +159,14 @@ function App() {
     [saveWorkspace]
   );
 
+  const handleUpdateTitle = useCallback(
+    (id: string, title: string) => {
+      setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, title } : s)));
+      saveWorkspace();
+    },
+    [saveWorkspace]
+  );
+
   const handleAddSession = () => {
     const newSession = { id: crypto.randomUUID(), title: 'New Connection' };
     setSessions([...sessions, newSession]);
@@ -159,13 +206,14 @@ function App() {
     <div className="flex flex-col h-screen bg-white overflow-hidden">
       {/* Titlebar / Tab Bar */}
       <div className="titlebar h-11 flex items-end bg-[#f3f3f3] border-b border-gray-200 pl-20 pr-4 select-none draggable-region">
-        <div className="flex items-end gap-1 overflow-x-auto scrollbar-hide h-full">
-          {sessions.map((session) => (
+        <div className="flex items-end gap-1 overflow-x-auto scrollbar-hide h-full no-drag">
+          {sessions.map((session, index) => (
             <div
               key={session.id}
+              {...getDragHandlers(index)}
               data-testid="session-tab"
               onClick={() => setActiveSessionId(session.id)}
-              className={`group flex items-center gap-2 px-4 h-9 text-[11px] font-medium rounded-t-lg cursor-pointer transition-all border-t border-x no-drag ${activeSessionId === session.id ? 'bg-white text-gray-800 border-gray-200 -mb-[1px] z-10 shadow-[0_-1px_3px_rgba(0,0,0,0.02)]' : 'bg-transparent text-gray-500 hover:bg-gray-200/50 border-transparent'}`}
+              className={`group flex items-center gap-2 px-4 h-9 text-[11px] font-medium rounded-t-lg cursor-pointer transition-all border-t border-x ${activeSessionId === session.id ? 'bg-white text-gray-800 border-gray-200 -mb-[1px] z-10 shadow-[0_-1px_3px_rgba(0,0,0,0.02)]' : 'bg-transparent text-gray-500 hover:bg-gray-200/50 border-transparent'} ${getIndicatorClass(index)}`}
             >
               <span className="max-w-[120px] truncate flex-1">{session.title}</span>
               <button
@@ -197,22 +245,12 @@ function App() {
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-hidden relative bg-white">
-        {sessions.map((session) => (
-          <SessionView
-            key={session.id}
-            id={session.id}
-            isActive={activeSessionId === session.id}
-            initialConfig={session.initialConfig}
-            initialWorkspace={session.initialWorkspace}
-            onStateChange={handleStateChange}
-            onUpdateTitle={(title) => {
-              setSessions((prev) => prev.map((s) => (s.id === session.id ? { ...s, title } : s)));
-              saveWorkspace();
-            }}
-          />
-        ))}
-      </div>
+      <SessionsContent
+        sessions={sessions}
+        activeSessionId={activeSessionId}
+        onStateChange={handleStateChange}
+        onUpdateTitle={handleUpdateTitle}
+      />
     </div>
   );
 }

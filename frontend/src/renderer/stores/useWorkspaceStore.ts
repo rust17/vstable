@@ -21,6 +21,7 @@ interface WorkspaceState {
   closeOthers: (id: string) => void;
   closeToRight: (id: string) => void;
   closeAll: () => void;
+  moveTab: (dragIndex: number, hoverIndex: number) => void;
 }
 
 type WorkspaceStore = ReturnType<typeof createWorkspaceStore>;
@@ -186,6 +187,16 @@ export const createWorkspaceStore = (initialState?: Partial<WorkspaceState>) => 
     },
 
     closeAll: () => set({ tabs: [], activeTabId: null, mruTabIds: [] }),
+
+    moveTab: (dragIndex, hoverIndex) => {
+      set((state) => {
+        const newTabs = [...state.tabs];
+        const dragItem = newTabs[dragIndex];
+        newTabs.splice(dragIndex, 1);
+        newTabs.splice(hoverIndex, 0, dragItem);
+        return { tabs: newTabs };
+      });
+    },
   }));
 };
 

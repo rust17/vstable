@@ -2,6 +2,7 @@ import { Play, Settings, Table as TableIcon, X } from 'lucide-react';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Tooltip } from '../components/ui/Tooltip';
+import { useDraggableSort } from '../hooks/useDraggableSort';
 import { useWorkspaceStore } from '../stores/useWorkspaceStore';
 import type { TableTab } from '../types/session';
 
@@ -11,16 +12,24 @@ interface TabWorkspaceProps {
 }
 
 export const TabWorkspace: React.FC<TabWorkspaceProps> = ({ isMaximized, setIsMaximized }) => {
-  const { tabs, activeTabId, setActiveTabId, closeTab, closeOthers, closeToRight, closeAll } =
-    useWorkspaceStore((s) => s);
+  const {
+    tabs,
+    activeTabId,
+    setActiveTabId,
+    closeTab,
+    closeOthers,
+    closeToRight,
+    closeAll,
+    moveTab,
+  } = useWorkspaceStore((s) => s);
 
   const [tabContextMenu, setTabContextMenu] = useState<{
     x: number;
     y: number;
     tabId: string;
   } | null>(null);
+  const { getDragHandlers, getIndicatorClass } = useDraggableSort(moveTab);
   const tabContainerRef = useRef<HTMLDivElement>(null);
-
   // Scroll active tab into view
   useEffect(() => {
     if (activeTabId && tabContainerRef.current) {
@@ -46,12 +55,13 @@ export const TabWorkspace: React.FC<TabWorkspaceProps> = ({ isMaximized, setIsMa
             if (e.target === e.currentTarget) setIsMaximized(!isMaximized);
           }}
         >
-          {tabs.map((tab: TableTab) => (
+          {tabs.map((tab: TableTab, index: number) => (
             <Tooltip
               key={tab.id}
               content={tab.type === 'table' ? `${tab.schema}.${tab.name}` : tab.name}
             >
               <div
+                {...getDragHandlers(index)}
                 data-testid={`tab-table-${tab.name}`}
                 data-active={activeTabId === tab.id}
                 onClick={() => setActiveTabId(tab.id)}
@@ -60,7 +70,7 @@ export const TabWorkspace: React.FC<TabWorkspaceProps> = ({ isMaximized, setIsMa
                   e.preventDefault();
                   setTabContextMenu({ x: e.clientX, y: e.clientY, tabId: tab.id });
                 }}
-                className={`group flex items-center gap-2 px-4 h-9 text-[11px] font-medium rounded-t-lg cursor-pointer transition-all border-x border-t ${activeTabId === tab.id ? 'bg-white text-primary-600 border-gray-200 -mb-[1px] z-10 shadow-[0_-1px_3px_rgba(0,0,0,0.02)]' : 'bg-transparent text-gray-500 hover:bg-gray-200/50 border-transparent'}`}
+                className={`group flex items-center gap-2 px-4 h-9 text-[11px] font-medium rounded-t-lg cursor-pointer transition-all border-t ${activeTabId === tab.id ? 'bg-white text-primary-600 border-x border-gray-200 -mb-[1px] z-10 shadow-[0_-1px_3px_rgba(0,0,0,0.02)]' : 'bg-transparent text-gray-500 hover:bg-gray-200/50 border-x border-transparent'} ${getIndicatorClass(index)}`}
               >
                 {tab.type === 'table' ? (
                   <TableIcon
