@@ -50,7 +50,7 @@ export const TabWorkspace: React.FC<TabWorkspaceProps> = ({ isMaximized, setIsMa
       >
         <div
           ref={tabContainerRef}
-          className="flex items-end gap-1 overflow-x-auto no-drag scrollbar-hide flex-1 h-full"
+          className="flex items-end gap-1 overflow-x-auto no-drag scrollbar-hide flex-1 h-full elastic-scroll"
           onDoubleClick={(e) => {
             if (e.target === e.currentTarget) setIsMaximized(!isMaximized);
           }}

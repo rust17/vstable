@@ -43,7 +43,7 @@ export const TabSwitcher: React.FC<TabSwitcherProps> = ({
         </div>
         <div
           ref={scrollRef}
-          className="py-1 max-h-[50vh] overflow-y-auto overscroll-contain bg-white"
+          className="py-1 max-h-[50vh] overflow-y-auto overscroll-contain bg-white elastic-scroll"
         >
           {mruTabIds.map((id, index) => {
             const tab = tabs.find((t) => t.id === id);

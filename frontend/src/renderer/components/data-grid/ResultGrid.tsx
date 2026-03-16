@@ -156,7 +156,7 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
     <div
       ref={containerRef}
       data-testid="results-scroll"
-      className="flex-1 overflow-auto pb-12 elastic-scroll overscroll-y-auto relative"
+      className="flex-1 overflow-auto pb-12 elastic-scroll relative"
       onMouseDown={handleMouseDown}
       onContextMenu={(e) => {
         e.preventDefault();

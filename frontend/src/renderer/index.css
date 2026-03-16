@@ -66,8 +66,9 @@ body {
 
 /* 橡皮筋滚动效果 */
 .elastic-scroll {
-  overscroll-behavior: auto;
+  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch; /* 启用 iOS/macOS 风格的平滑滚动和回弹 */
+  will-change: scroll-position;
 }
 
 /* 移除所有按钮的焦点边框 */

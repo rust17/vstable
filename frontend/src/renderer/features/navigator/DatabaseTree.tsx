@@ -270,7 +270,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
       </div>
 
       {/* Scrollable Table List */}
-      <div className="flex-1 overflow-y-auto elastic-scroll overscroll-y-auto bg-white p-3 pt-4">
+      <div className="flex-1 overflow-y-auto elastic-scroll bg-white p-3 pt-4">
         {/* Table List Header */}
         <div className="flex items-center justify-between mb-3 pb-1 border-b border-gray-100 shrink-0 px-1">
           <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">

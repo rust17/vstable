@@ -179,7 +179,7 @@ export const TableSearchModal: React.FC<TableSearchModalProps> = ({
             />
           </div>
         </div>
-        <div className="max-h-[50vh] overflow-y-auto py-2 elastic-scroll overscroll-y-auto">
+        <div className="max-h-[50vh] overflow-y-auto py-2 elastic-scroll">
           {filtered.length > 0 ? (
             filtered.map((t, i) => (
               <div
