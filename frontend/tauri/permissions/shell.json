@@ -1,0 +1,8 @@
+{
+  "identifier": "allow-vstable-sidecar",
+  "description": "allows the vstable sidecar command",
+  "commands": [
+    "shell:sidecar-vstable"
+  ],
+  "local": true
+}

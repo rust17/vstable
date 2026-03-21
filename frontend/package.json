@@ -6,66 +6,30 @@
     "type": "git",
     "url": "https://github.com/rust17/vstable.git"
   },
-  "main": "./out/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
-    "build": "electron-vite build",
-    "preview": "electron-vite preview",
-    "postinstall": "electron-builder install-app-deps",
-    "package:mac": "npm run build && electron-builder --mac",
+    "dev": "tauri dev",
+    "build:sidecar": "node scripts/build-sidecar.js",
+    "dev-frontend": "vite --port 1420",
+    "build": "tauri build",
+    "build-frontend": "vite build",
+    "preview": "vite preview",
     "test": "vitest",
-    "test:e2e": "npm run build && playwright test",
+    "test:e2e": "playwright test",
     "docker:up": "docker compose -f docker-compose.yml up -d",
     "docker:down": "docker compose -f docker-compose.yml down -v",
     "lint": "biome lint .",
     "format": "biome format --write .",
     "check": "biome check --write ."
   },
-  "build": {
-    "appId": "com.vstable.app",
-    "productName": "vstable",
-    "directories": {
-      "output": "dist"
-    },
-    "icon": "resources/icons",
-    "files": [
-      "out/**/*"
-    ],
-    "extraResources": [
-      {
-        "from": "engine",
-        "to": "engine",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "resources/api",
-        "to": "api",
-        "filter": [
-          "**/*.proto"
-        ]
-      }
-    ],
-    "mac": {
-      "icon": "resources/icons",
-      "category": "public.app-category.developer-tools",
-      "target": [
-        "dmg",
-        "zip"
-      ],
-      "extendInfo": {
-        "NSAppleEventsUsageDescription": "Please give access to AppleEvents to allow this app to interact with the system."
-      }
-    }
-  },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "devDependencies": {
     "@biomejs/biome": "2.4.5",
     "@playwright/test": "^1.58.2",
+    "@tauri-apps/api": "^2.10.1",
+    "@tauri-apps/cli": "^2.10.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -76,9 +40,6 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.4",
     "autoprefixer": "^10.4.24",
-    "electron": "^40.2.1",
-    "electron-builder": "^26.7.0",
-    "electron-vite": "^5.0.0",
     "jsdom": "^28.0.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
@@ -88,12 +49,10 @@
     "wait-on": "^9.0.4"
   },
   "dependencies": {
-    "@electron-toolkit/preload": "^3.0.2",
-    "@electron-toolkit/utils": "^4.0.0",
-    "@grpc/grpc-js": "^1.14.3",
-    "@grpc/proto-loader": "^0.8.0",
     "@monaco-editor/react": "^4.7.0",
     "@tailwindcss/postcss": "^4.1.18",
+    "@tauri-apps/plugin-shell": "^2.2.0",
+    "@tauri-apps/plugin-store": "^2.2.0",
     "lucide-react": "^0.563.0",
     "mysql2": "^3.18.2",
     "pg": "^8.18.0",

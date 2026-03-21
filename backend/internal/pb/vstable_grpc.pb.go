@@ -20,7 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	EngineService_Ping_FullMethodName                = "/vstable.EngineService/Ping"
-	EngineService_Connect_FullMethodName             = "/vstable.EngineService/Connect"
+	EngineService_DbConnect_FullMethodName           = "/vstable.EngineService/DbConnect"
 	EngineService_Disconnect_FullMethodName          = "/vstable.EngineService/Disconnect"
 	EngineService_Query_FullMethodName               = "/vstable.EngineService/Query"
 	EngineService_GenerateAlterTable_FullMethodName  = "/vstable.EngineService/GenerateAlterTable"
@@ -32,7 +32,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EngineServiceClient interface {
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
-	Connect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (*ConnectResponse, error)
+	DbConnect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (*ConnectResponse, error)
 	Disconnect(ctx context.Context, in *DisconnectRequest, opts ...grpc.CallOption) (*DisconnectResponse, error)
 	Query(ctx context.Context, in *QueryRequest, opts ...grpc.CallOption) (*QueryResponse, error)
 	GenerateAlterTable(ctx context.Context, in *DiffRequest, opts ...grpc.CallOption) (*GenerateSQLResponse, error)
@@ -57,10 +57,10 @@ func (c *engineServiceClient) Ping(ctx context.Context, in *PingRequest, opts ..
 	return out, nil
 }
 
-func (c *engineServiceClient) Connect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (*ConnectResponse, error) {
+func (c *engineServiceClient) DbConnect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (*ConnectResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ConnectResponse)
-	err := c.cc.Invoke(ctx, EngineService_Connect_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, EngineService_DbConnect_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (c *engineServiceClient) GenerateCreateTable(ctx context.Context, in *DiffR
 // for forward compatibility.
 type EngineServiceServer interface {
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
-	Connect(context.Context, *ConnectRequest) (*ConnectResponse, error)
+	DbConnect(context.Context, *ConnectRequest) (*ConnectResponse, error)
 	Disconnect(context.Context, *DisconnectRequest) (*DisconnectResponse, error)
 	Query(context.Context, *QueryRequest) (*QueryResponse, error)
 	GenerateAlterTable(context.Context, *DiffRequest) (*GenerateSQLResponse, error)
@@ -130,8 +130,8 @@ type UnimplementedEngineServiceServer struct{}
 func (UnimplementedEngineServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Ping not implemented")
 }
-func (UnimplementedEngineServiceServer) Connect(context.Context, *ConnectRequest) (*ConnectResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Connect not implemented")
+func (UnimplementedEngineServiceServer) DbConnect(context.Context, *ConnectRequest) (*ConnectResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DbConnect not implemented")
 }
 func (UnimplementedEngineServiceServer) Disconnect(context.Context, *DisconnectRequest) (*DisconnectResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Disconnect not implemented")
@@ -184,20 +184,20 @@ func _EngineService_Ping_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
-func _EngineService_Connect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _EngineService_DbConnect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ConnectRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(EngineServiceServer).Connect(ctx, in)
+		return srv.(EngineServiceServer).DbConnect(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: EngineService_Connect_FullMethodName,
+		FullMethod: EngineService_DbConnect_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EngineServiceServer).Connect(ctx, req.(*ConnectRequest))
+		return srv.(EngineServiceServer).DbConnect(ctx, req.(*ConnectRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -286,8 +286,8 @@ var EngineService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _EngineService_Ping_Handler,
 		},
 		{
-			MethodName: "Connect",
-			Handler:    _EngineService_Connect_Handler,
+			MethodName: "DbConnect",
+			Handler:    _EngineService_DbConnect_Handler,
 		},
 		{
 			MethodName: "Disconnect",

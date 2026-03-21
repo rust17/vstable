@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="frontend/resources/icons/128.png" width="96" alt="VSTable Logo" style="border-radius: 20%;" />
+  <img src="frontend/tauri/icons/128x128.png" width="96" alt="VSTable Logo" style="border-radius: 20%;" />
 </p>
 
 <h1 align="center">VSTable</h1>

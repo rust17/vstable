@@ -27,7 +27,7 @@ func (s *engineServer) Ping(ctx context.Context, req *pb.PingRequest) (*pb.PingR
 	return &pb.PingResponse{Status: "ok"}, nil
 }
 
-func (s *engineServer) Connect(ctx context.Context, req *pb.ConnectRequest) (*pb.ConnectResponse, error) {
+func (s *engineServer) DbConnect(ctx context.Context, req *pb.ConnectRequest) (*pb.ConnectResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 

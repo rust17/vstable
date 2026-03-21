@@ -8,7 +8,7 @@ import "google/protobuf/wrappers.proto";
 
 service EngineService {
   rpc Ping(PingRequest) returns (PingResponse);
-  rpc Connect(ConnectRequest) returns (ConnectResponse);
+  rpc DbConnect(ConnectRequest) returns (ConnectResponse);
   rpc Disconnect(DisconnectRequest) returns (DisconnectResponse);
   rpc Query(QueryRequest) returns (QueryResponse);
   rpc GenerateAlterTable(DiffRequest) returns (GenerateSQLResponse);

@@ -7,10 +7,10 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: 'src/renderer/test/setup.tsx',
+    setupFiles: 'src/test/setup.tsx',
     exclude: ['e2e/**', 'node_modules/**'],
     alias: {
-      '@renderer': resolve(__dirname, 'src/renderer'),
+      '@renderer': resolve(__dirname, 'src'),
       '@core': resolve(__dirname, 'src/core'),
       '@infrastructure': resolve(__dirname, 'src/infrastructure'),
     },
