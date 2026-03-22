@@ -41,6 +41,9 @@ pub fn run() {
         }
       });
 
+      // Give the sidecar some time to start before the frontend tries to connect
+      std::thread::sleep(std::time::Duration::from_secs(2));
+
       Ok(())
     })
     .run(tauri::generate_context!())
