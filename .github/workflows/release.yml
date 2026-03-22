@@ -9,8 +9,11 @@ jobs:
   build:
     name: Build and Release
     strategy:
+      fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        include:
+          - os: macos-latest
+          - os: windows-latest
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
@@ -28,25 +31,27 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
+          cache-dependency-path: backend/go.sum
 
-      - name: Install dependencies
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: frontend/tauri -> target
+
+      - name: Install frontend dependencies
         run: cd frontend && npm install
 
-      - name: Build Go Engine
-        run: |
-          mkdir -p frontend/engine
-          cd backend
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            go build -o ../frontend/engine/vstable-engine.exe main.go
-          else
-            go build -o ../frontend/engine/vstable-engine main.go
-          fi
-        shell: bash
-
-      - name: Build and Publish
+      - name: Build and Release
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cd frontend
-          npm run build
-          npx electron-builder --publish always
+        with:
+          tagName: v__VERSION__ # tauri-action will replace this with package.json version if needed, or use the tag
+          releaseName: "vstable v__VERSION__"
+          releaseBody: "See the assets below to download."
+          releaseDraft: true
+          prerelease: false
+          projectPath: frontend
