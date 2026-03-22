@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "tauri dev",
+    "tauri": "tauri",
     "build:sidecar": "node scripts/build-sidecar.js",
     "dev-frontend": "vite --port 1420",
     "build": "tauri build",
