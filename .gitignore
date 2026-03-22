@@ -13,29 +13,27 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 backend/log.txt
+tmp.prompt
+.engine.pid
 
 # --- Environment ---
 .env*
 !.env.example
 
-# --- Frontend (Node.js/Electron) ---
+# --- Frontend (Node.js/Tauri) ---
 node_modules/
 frontend/node_modules/
-frontend/out/
 frontend/dist/
-frontend/release/
-frontend/.parcel-cache/
-frontend/.eslintcache
-frontend/.vite/
-frontend/package-lock.json
+frontend/out/
+frontend/tauri/target/
+frontend/tauri/bin/vstable-*
+frontend/tauri/gen/
 frontend/test-results/
 frontend/playwright-report/
-frontend/blob-report/
-frontend/playwright/.cache/
 frontend/*.tsbuildinfo
 
 # --- Backend (Go) ---
-backend/engine
+backend/vstable
 backend/vstable-engine
 backend/bin/
 backend/vendor/
@@ -52,3 +50,4 @@ coverage/
 docker-data/
 *.db
 *.sqlite
+dist/

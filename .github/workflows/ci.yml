@@ -68,7 +68,5 @@ jobs:
         run: cd frontend && npm install
       - name: Install Playwright Browsers
         run: cd frontend && npx playwright install --with-deps
-      - name: Start Docker Databases
-        run: cd frontend && docker compose up -d --wait
       - name: Run E2E Tests
-        run: cd frontend && xvfb-run --auto-servernum --server-args="-screen 0 1280x960x24" npm run test:e2e
+        run: cd frontend && npm run test:e2e

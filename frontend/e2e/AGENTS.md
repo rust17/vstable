@@ -1,22 +1,21 @@
 # Agent Context: Frontend E2E Tests
 
 ## Goals and Scope
-- 验证 `vstable` Electron 客户端的核心 UI 交互逻辑。
+- 验证 `vstable` 客户端的核心 UI 交互逻辑。
 - 测试重点：数据库连接管理、架构设计器（Schema Designer）、数据网格（Data Grid）CRUD、分页与过滤。
+- **架构**：基于 Playwright 的 Web 自动化测试，通过 Mock Tauri IPC 桥接层与 Go 引擎通信。
 - **不在范围内**：底层的 Go 引擎单元测试、纯前端组件的 Vitest 单元测试。
 
 ## Execution Rules
 - **运行命令**：在 `frontend/` 目录下执行 `npm run test:e2e`。
-- **环境隔离**：
-  - 必须为每个测试用例创建唯一的 `userDataDir`（使用 `fs.mkdtempSync`）。
-  - 启动参数需包含 `--user-data-dir=${userDataDir}`。
-- **前置依赖**：
-  - `global-setup.ts` 会自动运行 `docker-compose up` 并编译后端 `vstable-engine`。
-  - 测试开始前需等待 `http://127.0.0.1:39082/api/ping` 返回 OK 以确保引擎就绪。
+- **环境要求**：
+  - 本地运行会自动通过 `global-setup.ts` 启动 Docker 容器和 Go 引擎后台进程。
+  - 测试通过 `fixture.ts` 注入 `window.__TAURI_INTERNALS__` 实现底层模拟。
 - **最佳实践**：
   - 优先使用 `data-testid` 定位器。
   - 使用 `expect(...).toPass()` 处理异步延迟（如数据库响应或动画）。
-  - 测试结束后必须调用 `electronApp.close()` 并清理临时目录。
+  - 测试用例应从 `import { test, expect } from './fixture'` 导入以启用 Tauri 模拟。
+  - 为了尽可能还原真实环境，`./fixture` 只能用于模拟 Tauri 相关的调用，而不能处理业务逻辑。
 
 ## Test Matrix
 
@@ -44,6 +43,3 @@
 **Resilience and Errors**
 - R-01 Constraint Violation: 尝试插入重复主键或非法格式（如 UUID 列填入普通字符串），验证 AlertModal 报错。
 - R-02 Connection Failure: 输入错误的凭据，验证 UI 显示明确的错误提示。
-
-**Workspace Persistence**
-- P-01 Restore Session: 连接数据库并打开页签，执行创建表格 SQL，打开表格后重启应用，验证自动连接并恢复之前的页签状态。

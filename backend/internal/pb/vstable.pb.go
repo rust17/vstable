@@ -1563,10 +1563,10 @@ const file_api_vstable_proto_rawDesc = "" +
 	"\x06config\x18\x13 \x01(\v2\x17.vstable.DatabaseConfigR\x06config\"C\n" +
 	"\x13GenerateSQLResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x12\n" +
-	"\x04sqls\x18\x02 \x03(\tR\x04sqls2\x96\x03\n" +
+	"\x04sqls\x18\x02 \x03(\tR\x04sqls2\x98\x03\n" +
 	"\rEngineService\x123\n" +
-	"\x04Ping\x12\x14.vstable.PingRequest\x1a\x15.vstable.PingResponse\x12<\n" +
-	"\aConnect\x12\x17.vstable.ConnectRequest\x1a\x18.vstable.ConnectResponse\x12E\n" +
+	"\x04Ping\x12\x14.vstable.PingRequest\x1a\x15.vstable.PingResponse\x12>\n" +
+	"\tDbConnect\x12\x17.vstable.ConnectRequest\x1a\x18.vstable.ConnectResponse\x12E\n" +
 	"\n" +
 	"Disconnect\x12\x1a.vstable.DisconnectRequest\x1a\x1b.vstable.DisconnectResponse\x126\n" +
 	"\x05Query\x12\x15.vstable.QueryRequest\x1a\x16.vstable.QueryResponse\x12H\n" +
@@ -1642,13 +1642,13 @@ var file_api_vstable_proto_depIdxs = []int32{
 	15, // 27: vstable.DiffRequest.deleted_routines:type_name -> vstable.RoutineDefinition
 	16, // 28: vstable.DiffRequest.config:type_name -> vstable.DatabaseConfig
 	0,  // 29: vstable.EngineService.Ping:input_type -> vstable.PingRequest
-	2,  // 30: vstable.EngineService.Connect:input_type -> vstable.ConnectRequest
+	2,  // 30: vstable.EngineService.DbConnect:input_type -> vstable.ConnectRequest
 	4,  // 31: vstable.EngineService.Disconnect:input_type -> vstable.DisconnectRequest
 	6,  // 32: vstable.EngineService.Query:input_type -> vstable.QueryRequest
 	17, // 33: vstable.EngineService.GenerateAlterTable:input_type -> vstable.DiffRequest
 	17, // 34: vstable.EngineService.GenerateCreateTable:input_type -> vstable.DiffRequest
 	1,  // 35: vstable.EngineService.Ping:output_type -> vstable.PingResponse
-	3,  // 36: vstable.EngineService.Connect:output_type -> vstable.ConnectResponse
+	3,  // 36: vstable.EngineService.DbConnect:output_type -> vstable.ConnectResponse
 	5,  // 37: vstable.EngineService.Disconnect:output_type -> vstable.DisconnectResponse
 	8,  // 38: vstable.EngineService.Query:output_type -> vstable.QueryResponse
 	18, // 39: vstable.EngineService.GenerateAlterTable:output_type -> vstable.GenerateSQLResponse
