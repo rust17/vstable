@@ -206,7 +206,7 @@ function App() {
     <div className="flex flex-col h-screen bg-white overflow-hidden">
       {/* Titlebar / Tab Bar */}
       <div className="titlebar h-11 flex items-end bg-[#f3f3f3] border-b border-gray-200 pl-20 pr-4 select-none draggable-region">
-        <div className="flex items-end gap-1 overflow-x-auto scrollbar-hide h-full no-drag">
+        <div className="flex items-end gap-1 overflow-hidden scrollbar-hide h-full no-drag">
           {sessions.map((session, index) => (
             <div
               key={session.id}
