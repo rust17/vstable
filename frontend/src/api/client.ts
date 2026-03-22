@@ -29,9 +29,15 @@ export const apiClient = {
 
   enginePing: async (): Promise<boolean> => invoke('engine_ping'),
 
-  generateAlterSql: async (req: any): Promise<string[]> => invoke('sql_generate_alter', { req }),
+  generateAlterSql: async (req: any): Promise<string[]> => {
+    const res: any = await invoke('sql_generate_alter', { req });
+    return res.sqls || [];
+  },
 
-  generateCreateSql: async (req: any): Promise<string[]> => invoke('sql_generate_create', { req }),
+  generateCreateSql: async (req: any): Promise<string[]> => {
+    const res: any = await invoke('sql_generate_create', { req });
+    return res.sqls || [];
+  },
 
   toggleMaximize: async (): Promise<void> => invoke('window_toggle_maximize'),
 
