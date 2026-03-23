@@ -42,7 +42,7 @@ pub fn run() {
       });
 
       // Give the sidecar some time to start before the frontend tries to connect
-      std::thread::sleep(std::time::Duration::from_secs(1));
+      std::thread::sleep(std::time::Duration::from_millis(500));
 
       Ok(())
     })
