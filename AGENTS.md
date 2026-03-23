@@ -108,7 +108,7 @@ Allowed types:
 
 1. 确保 `master` 分支代码已更新 (pull latest)。
 2. 创建发布分支，如 `release-v1.2.0`。
-3. 更新 `frontend/package.json` 中的版本号。
+3. 更新 `frontend/package.json`、`frontend/tauri/tauri.conf.json` 中的版本号。
 4. 运行全链路测试 (`npm run test:e2e` 与 `go test ./...`) 确保版本稳定性。
 5. 提交变更并创建 PR。
 6. PR 合并后，切换回 `master` 分支并拉取最新代码。
