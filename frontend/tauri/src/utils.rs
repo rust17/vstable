@@ -47,7 +47,16 @@ pub fn prost_value_to_json(v: prost_types::Value) -> serde_json::Value {
         Some(Kind::NumberValue(n)) => serde_json::Value::Number(
             serde_json::Number::from_f64(n).unwrap_or(serde_json::Number::from(0)),
         ),
-        Some(Kind::StringValue(s)) => serde_json::Value::String(s),
+        Some(Kind::StringValue(s)) => {
+            // Attempt to parse string as JSON. If it's a valid JSON object or array,
+            // return the parsed value instead of the string.
+            if (s.starts_with('{') && s.ends_with('}')) || (s.starts_with('[') && s.ends_with(']')) {
+                if let Ok(json_val) = serde_json::from_str(&s) {
+                    return json_val;
+                }
+            }
+            serde_json::Value::String(s)
+        }
         Some(Kind::ListValue(l)) => {
             serde_json::Value::Array(l.values.into_iter().map(prost_value_to_json).collect())
         }
