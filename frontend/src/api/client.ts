@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { LazyStore } from '@tauri-apps/plugin-store';
+import { info } from '@tauri-apps/plugin-log';
 import type { ConnectionConfig, PersistedWorkspace, QueryResult } from '../types/session';
 
 /**
@@ -8,6 +9,14 @@ import type { ConnectionConfig, PersistedWorkspace, QueryResult } from '../types
  */
 
 const store = new LazyStore('settings.json');
+
+const callApi = async <T>(command: string, args: Record<string, any> = {}): Promise<T> => {
+  const traceId = crypto.randomUUID();
+  const payload = { ...args, traceId };
+  // Log the outgoing request to the unified log file
+  info(`[${traceId}] IPC Call: ${command} | args: ${JSON.stringify(args)}`);
+  return invoke<T>(command, payload);
+};
 
 export const apiClient = {
   // Database Operations
@@ -19,23 +28,23 @@ export const apiClient = {
     } else {
       dsn = `postgres://${user}:${password}@${host}:${port}/${database}?sslmode=disable`;
     }
-    return invoke('db_connect', { id, dialect, dsn });
+    return callApi('db_connect', { id, dialect, dsn });
   },
 
   query: async (id: string, sql: string, params?: any[]): Promise<QueryResult> =>
-    invoke('db_query', { id, sql, params }),
+    callApi('db_query', { id, sql, params }),
 
-  disconnect: async (id: string): Promise<void> => invoke('db_disconnect', { id }),
+  disconnect: async (id: string): Promise<void> => callApi('db_disconnect', { id }),
 
-  enginePing: async (): Promise<boolean> => invoke('engine_ping'),
+  enginePing: async (): Promise<boolean> => callApi('engine_ping'),
 
   generateAlterSql: async (req: any): Promise<string[]> => {
-    const res: any = await invoke('sql_generate_alter', { req });
+    const res: any = await callApi('sql_generate_alter', { req });
     return res.sqls || [];
   },
 
   generateCreateSql: async (req: any): Promise<string[]> => {
-    const res: any = await invoke('sql_generate_create', { req });
+    const res: any = await callApi('sql_generate_create', { req });
     return res.sqls || [];
   },
 

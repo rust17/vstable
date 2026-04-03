@@ -10,6 +10,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	"vstable-engine/internal/ast"
@@ -125,13 +126,24 @@ func UnaryInterceptor(
 		}
 	}()
 
+	traceID := "unknown"
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if vals := md.Get("x-trace-id"); len(vals) > 0 {
+			traceID = vals[0]
+		}
+	}
+
+	log.Printf("[%s] gRPC Request: %s | payload: %+v", traceID, info.FullMethod, req)
+
 	resp, err = handler(ctx, req)
 	if err != nil {
 		// Just ensure it's a grpc status error
 		if _, ok := status.FromError(err); !ok {
 			err = status.Errorf(codes.Unknown, "%v", err)
 		}
-		log.Printf("[gRPC Error] %s: %v", info.FullMethod, err)
+		log.Printf("[%s] gRPC Response: %s | error: %v", traceID, info.FullMethod, err)
+	} else {
+		log.Printf("[%s] gRPC Response: %s | success", traceID, info.FullMethod)
 	}
 	return resp, err
 }
