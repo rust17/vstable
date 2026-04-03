@@ -82,7 +82,8 @@ pub async fn engine_ping(state: State<'_, GrpcState>) -> Result<bool, String> {
 pub async fn sql_generate_alter(state: State<'_, GrpcState>, req: serde_json::Value) -> Result<serde_json::Value, String> {
     let mut client_lock = state.client.lock().await;
     let client = client_lock.as_mut().ok_or("Not connected")?;
-    let request = tonic::Request::new(json_to_diff_request(req));
+    let diff_req = json_to_diff_request(req)?;
+    let request = tonic::Request::new(diff_req);
     let response = client.generate_alter_table(request).await.map_err(|e| e.to_string())?;
     let inner = response.into_inner();
     Ok(serde_json::json!({ "success": inner.success, "sqls": inner.sqls }))
@@ -92,7 +93,8 @@ pub async fn sql_generate_alter(state: State<'_, GrpcState>, req: serde_json::Va
 pub async fn sql_generate_create(state: State<'_, GrpcState>, req: serde_json::Value) -> Result<serde_json::Value, String> {
     let mut client_lock = state.client.lock().await;
     let client = client_lock.as_mut().ok_or("Not connected")?;
-    let request = tonic::Request::new(json_to_diff_request(req));
+    let diff_req = json_to_diff_request(req)?;
+    let request = tonic::Request::new(diff_req);
     let response = client.generate_create_table(request).await.map_err(|e| e.to_string())?;
     let inner = response.into_inner();
     Ok(serde_json::json!({ "success": inner.success, "sqls": inner.sqls }))

@@ -65,77 +65,129 @@ pub fn prost_value_to_json(v: prost_types::Value) -> serde_json::Value {
     }
 }
 
-pub fn json_to_diff_request(v: serde_json::Value) -> DiffRequest {
-    DiffRequest {
-        dialect: v["dialect"].as_str().unwrap_or("").to_string(),
-        schema: v["schema"].as_str().unwrap_or("").to_string(),
-        table_name: v["table"].as_str().unwrap_or("").to_string(),
-        old_table_name: v["original_name"].as_str().unwrap_or("").to_string(),
-        columns: json_to_vec_column(v["columns"].clone()),
-        deleted_columns: json_to_vec_column(v["deleted_columns"].clone()),
-        indexes: json_to_vec_index(v["indexes"].clone()),
-        deleted_indexes: json_to_vec_index(v["deleted_indexes"].clone()),
-        foreign_keys: vec![],
-        deleted_foreign_keys: vec![],
-        check_constraints: vec![],
-        deleted_checks: vec![],
-        views: vec![],
-        deleted_views: vec![],
-        triggers: vec![],
-        deleted_triggers: vec![],
-        routines: vec![],
-        deleted_routines: vec![],
-        config: None,
-    }
+use serde::Deserialize;
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct DiffRequestDto {
+    #[serde(default)]
+    pub dialect: String,
+    #[serde(default)]
+    pub schema: String,
+    #[serde(default)]
+    pub table_name: String,
+    #[serde(default)]
+    pub old_table_name: String,
+    #[serde(default)]
+    pub columns: Vec<ColumnDefinitionDto>,
+    #[serde(default)]
+    pub deleted_columns: Vec<ColumnDefinitionDto>,
+    #[serde(default)]
+    pub indexes: Vec<IndexDefinitionDto>,
+    #[serde(default)]
+    pub deleted_indexes: Vec<IndexDefinitionDto>,
 }
 
-fn json_to_vec_column(v: serde_json::Value) -> Vec<ColumnDefinition> {
-    v.as_array()
-        .unwrap_or(&vec![])
-        .iter()
-        .map(|c| ColumnDefinition {
-            name: c["name"].as_str().unwrap_or("").to_string(),
-            r#type: c["type"].as_str().unwrap_or("").to_string(),
-            nullable: c["nullable"].as_bool().unwrap_or(true),
-            default_value: c["default_value"].as_str().map(|s| s.to_string()),
-            is_primary_key: c["primary_key"].as_bool().unwrap_or(false),
-            is_auto_increment: c["auto_increment"].as_bool().unwrap_or(false),
-            comment: c["comment"].as_str().unwrap_or("").to_string(),
-            length: c["length"]
-                .as_i64()
-                .map(|i| json_to_prost_value(serde_json::Value::Number(i.into()))),
-            precision: c["precision"]
-                .as_i64()
-                .map(|i| json_to_prost_value(serde_json::Value::Number(i.into()))),
-            scale: c["scale"]
-                .as_i64()
-                .map(|i| json_to_prost_value(serde_json::Value::Number(i.into()))),
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ColumnDefinitionDto {
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub r#type: String,
+    #[serde(default = "default_true")]
+    pub nullable: bool,
+    pub default_value: Option<String>,
+    #[serde(default)]
+    pub is_primary_key: bool,
+    #[serde(default)]
+    pub is_auto_increment: bool,
+    #[serde(default)]
+    pub comment: String,
+    pub length: Option<i64>,
+    pub precision: Option<i64>,
+    pub scale: Option<i64>,
+    #[serde(default = "default_original_index")]
+    pub original_index: i32,
+}
+
+fn default_true() -> bool { true }
+fn default_original_index() -> i32 { -1 }
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct IndexDefinitionDto {
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub columns: Vec<String>,
+    #[serde(default)]
+    pub is_unique: bool,
+}
+
+impl From<ColumnDefinitionDto> for ColumnDefinition {
+    fn from(dto: ColumnDefinitionDto) -> Self {
+        ColumnDefinition {
+            name: dto.name,
+            r#type: dto.r#type,
+            nullable: dto.nullable,
+            default_value: dto.default_value,
+            is_primary_key: dto.is_primary_key,
+            is_auto_increment: dto.is_auto_increment,
+            comment: dto.comment,
+            length: dto.length.map(|i| json_to_prost_value(serde_json::Value::Number(i.into()))),
+            precision: dto.precision.map(|i| json_to_prost_value(serde_json::Value::Number(i.into()))),
+            scale: dto.scale.map(|i| json_to_prost_value(serde_json::Value::Number(i.into()))),
             enum_values: vec![],
             id: "".to_string(),
             is_default_expression: false,
             is_identity: false,
             original: None,
-            original_index: c["original_index"].as_i64().map(|i| i as i32).unwrap_or(-1),
+            original_index: dto.original_index,
             pk_constraint_name: "".to_string(),
-        })
-        .collect()
+        }
+    }
 }
 
-fn json_to_vec_index(v: serde_json::Value) -> Vec<IndexDefinition> {
-    v.as_array()
-        .unwrap_or(&vec![])
-        .iter()
-        .map(|i| IndexDefinition {
-            name: i["name"].as_str().unwrap_or("").to_string(),
-            columns: i["columns"]
-                .as_array()
-                .unwrap_or(&vec![])
-                .iter()
-                .map(|s| s.as_str().unwrap_or("").to_string())
-                .collect(),
-            is_unique: i["unique"].as_bool().unwrap_or(false),
+impl From<IndexDefinitionDto> for IndexDefinition {
+    fn from(dto: IndexDefinitionDto) -> Self {
+        IndexDefinition {
+            name: dto.name,
+            columns: dto.columns,
+            is_unique: dto.is_unique,
             id: "".to_string(),
             original: None,
-        })
-        .collect()
+        }
+    }
+}
+
+impl From<DiffRequestDto> for DiffRequest {
+    fn from(dto: DiffRequestDto) -> Self {
+        DiffRequest {
+            dialect: dto.dialect,
+            schema: dto.schema,
+            table_name: dto.table_name,
+            old_table_name: dto.old_table_name,
+            columns: dto.columns.into_iter().map(|c| c.into()).collect(),
+            deleted_columns: dto.deleted_columns.into_iter().map(|c| c.into()).collect(),
+            indexes: dto.indexes.into_iter().map(|i| i.into()).collect(),
+            deleted_indexes: dto.deleted_indexes.into_iter().map(|i| i.into()).collect(),
+            foreign_keys: vec![],
+            deleted_foreign_keys: vec![],
+            check_constraints: vec![],
+            deleted_checks: vec![],
+            views: vec![],
+            deleted_views: vec![],
+            triggers: vec![],
+            deleted_triggers: vec![],
+            routines: vec![],
+            deleted_routines: vec![],
+            config: None,
+        }
+    }
+}
+
+pub fn json_to_diff_request(v: serde_json::Value) -> Result<DiffRequest, String> {
+    let dto: DiffRequestDto = serde_json::from_value(v).map_err(|e| format!("Invalid DiffRequest format: {}", e))?;
+    Ok(dto.into())
 }
