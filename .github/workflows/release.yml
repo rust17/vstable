@@ -41,10 +41,7 @@ jobs:
         with:
           workspaces: frontend/tauri -> target
 
-      - name: Install protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
 
       - name: Install frontend dependencies
         run: cd frontend && npm install
