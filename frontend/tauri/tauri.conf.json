@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "vstable",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "identifier": "com.rust17.vstable",
   "build": {
     "frontendDist": "../dist",
@@ -28,8 +28,7 @@
     }
   },
   "plugins": {
-    "shell": {
-    }
+    "shell": {}
   },
   "bundle": {
     "active": true,
