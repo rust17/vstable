@@ -823,6 +823,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
             length: c.length != null && c.length !== '' ? Number(c.length) : undefined,
             precision: c.precision != null && c.precision !== '' ? Number(c.precision) : undefined,
             scale: c.scale != null && c.scale !== '' ? Number(c.scale) : undefined,
+            defaultValue: c.defaultValue === null ? undefined : String(c.defaultValue),
           })),
           indexes,
         });
@@ -839,6 +840,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
             length: c.length != null && c.length !== '' ? Number(c.length) : undefined,
             precision: c.precision != null && c.precision !== '' ? Number(c.precision) : undefined,
             scale: c.scale != null && c.scale !== '' ? Number(c.scale) : undefined,
+            defaultValue: c.defaultValue === null ? undefined : String(c.defaultValue),
           })),
           indexes,
           deletedColumns: deletedColumns.map((c) => ({
@@ -846,6 +848,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
             length: c.length != null && c.length !== '' ? Number(c.length) : undefined,
             precision: c.precision != null && c.precision !== '' ? Number(c.precision) : undefined,
             scale: c.scale != null && c.scale !== '' ? Number(c.scale) : undefined,
+            defaultValue: c.defaultValue === null ? undefined : String(c.defaultValue),
           })),
           deletedIndexes,
         });
@@ -881,6 +884,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
             length: c.length != null && c.length !== '' ? Number(c.length) : undefined,
             precision: c.precision != null && c.precision !== '' ? Number(c.precision) : undefined,
             scale: c.scale != null && c.scale !== '' ? Number(c.scale) : undefined,
+            defaultValue: c.defaultValue === null ? undefined : String(c.defaultValue),
           })),
           indexes,
         });
@@ -895,6 +899,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
             length: c.length != null && c.length !== '' ? Number(c.length) : undefined,
             precision: c.precision != null && c.precision !== '' ? Number(c.precision) : undefined,
             scale: c.scale != null && c.scale !== '' ? Number(c.scale) : undefined,
+            defaultValue: c.defaultValue === null ? undefined : String(c.defaultValue),
           })),
           indexes,
           deletedColumns: deletedColumns.map((c) => ({
@@ -902,6 +907,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
             length: c.length != null && c.length !== '' ? Number(c.length) : undefined,
             precision: c.precision != null && c.precision !== '' ? Number(c.precision) : undefined,
             scale: c.scale != null && c.scale !== '' ? Number(c.scale) : undefined,
+            defaultValue: c.defaultValue === null ? undefined : String(c.defaultValue),
           })),
           deletedIndexes,
         });

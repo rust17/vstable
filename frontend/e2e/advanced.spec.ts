@@ -7,12 +7,16 @@ test.describe('Advanced Features Tests', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
 
-    // Wait for engine
+    // Wait for Go Engine to be reachable via gRPC-Web
     await expect(async () => {
-      const pingOk = await page.evaluate(() =>
-        (window as any).__TAURI_INTERNALS__.invoke('engine_ping').catch(() => false)
+      const ok = await page.evaluate(() =>
+        fetch('http://localhost:39082/vstable.EngineService/Ping', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/grpc-web-text', 'x-grpc-web': '1' },
+          body: 'AAAAAAA=',
+        }).then((r) => r.ok).catch(() => false)
       );
-      expect(pingOk).toBeTruthy();
+      expect(ok).toBeTruthy();
     }).toPass({ timeout: 15000 });
 
     // Connect to PostgreSQL
@@ -36,6 +40,7 @@ test.describe('Advanced Features Tests', () => {
     await expect(runQueryBtn).toBeVisible({ timeout: 10000 });
 
     const editor = activeTab.locator('.monaco-editor').last();
+    await expect(editor).toBeVisible({ timeout: 10000 });
     await editor.click();
     await page.keyboard.press(`${mod}+a`);
     await page.keyboard.press('Backspace');
