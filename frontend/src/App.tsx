@@ -34,7 +34,7 @@ const SessionsContent: React.FC<SessionsContentProps> = React.memo(
             initialConfig={session.initialConfig}
             initialWorkspace={session.initialWorkspace}
             onStateChange={onStateChange}
-            onUpdateTitle={onUpdateTitle}
+            onUpdateTitle={(title: string) => onUpdateTitle(session.id, title)}
           />
         ))}
       </div>

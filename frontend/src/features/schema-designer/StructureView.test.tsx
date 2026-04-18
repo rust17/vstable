@@ -28,7 +28,7 @@ describe('StructureView Component', () => {
   });
 
   it('renders columns and indexes correctly', async () => {
-    (apiClient as any).query.mockImplementation((id, sql) => {
+    (apiClient as any).query.mockImplementation((id: any, sql: any) => {
       if (sql.includes('information_schema.columns')) {
         return Promise.resolve({
           success: true,
@@ -68,7 +68,7 @@ describe('StructureView Component', () => {
   });
 
   it('handles index columns returned as Postgres array strings', async () => {
-    (apiClient as any).query.mockImplementation((id, sql) => {
+    (apiClient as any).query.mockImplementation((id: any, sql: any) => {
       if (sql.includes('information_schema.columns')) {
         return Promise.resolve({
           success: true,
@@ -139,7 +139,7 @@ describe('StructureView Component', () => {
   });
 
   it('generates and executes SQL for changes', async () => {
-    (apiClient as any).query.mockImplementation((id, sql) => {
+    (apiClient as any).query.mockImplementation((id: any, sql: any) => {
       if (sql.includes('information_schema.columns')) {
         return Promise.resolve({
           success: true,
@@ -210,7 +210,7 @@ describe('StructureView Component', () => {
   });
 
   it('handles identity columns and comments', async () => {
-    (apiClient as any).query.mockImplementation((id, sql) => {
+    (apiClient as any).query.mockImplementation((id: any, sql: any) => {
       if (sql.includes('information_schema.columns')) {
         return Promise.resolve({
           success: true,

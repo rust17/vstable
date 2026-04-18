@@ -1,25 +1,18 @@
 import { invoke } from '@tauri-apps/api/core';
 import { LazyStore } from '@tauri-apps/plugin-store';
-import { info } from '@tauri-apps/plugin-log';
 import type { ConnectionConfig, PersistedWorkspace, QueryResult } from '../types/session';
+import type { DiffRequest } from '../types/vstable';
+import { grpcClient } from './grpcClient';
 
 /**
- * API Client Layer (Tauri Version)
- * Encapsulates all IPC calls to Tauri invoke and Store.
+ * API Client Layer
+ * Encapsulates gRPC-Web calls to Go engine and IPC calls to Tauri Store/Native.
  */
 
 const store = new LazyStore('settings.json');
 
-const callApi = async <T>(command: string, args: Record<string, any> = {}): Promise<T> => {
-  const traceId = crypto.randomUUID();
-  const payload = { ...args, traceId };
-  // Log the outgoing request to the unified log file
-  info(`[${traceId}] IPC Call: ${command} | args: ${JSON.stringify(args)}`);
-  return invoke<T>(command, payload);
-};
-
 export const apiClient = {
-  // Database Operations
+  // Database Operations via gRPC-Web
   connect: async (id: string, config: ConnectionConfig): Promise<QueryResult> => {
     const { dialect, user, password, host, port, database } = config;
     let dsn = '';
@@ -28,23 +21,39 @@ export const apiClient = {
     } else {
       dsn = `postgres://${user}:${password}@${host}:${port}/${database}?sslmode=disable`;
     }
-    return callApi('db_connect', { id, dialect, dsn });
+    await grpcClient.dbConnect({ id, dialect, dsn });
+    return { success: true };
   },
 
-  query: async (id: string, sql: string, params?: any[]): Promise<QueryResult> =>
-    callApi('db_query', { id, sql, params }),
+  query: async (id: string, sql: string, params?: any[]): Promise<QueryResult> => {
+    const res = await grpcClient.query({ id, sql, params });
+    return {
+      success: res.success || false,
+      rows: res.rows || [],
+      fields: res.fields as { name: string; type: string }[] | undefined,
+    };
+  },
 
-  disconnect: async (id: string): Promise<void> => callApi('db_disconnect', { id }),
+  disconnect: async (id: string): Promise<void> => {
+    await grpcClient.disconnect({ id });
+  },
 
-  enginePing: async (): Promise<boolean> => callApi('engine_ping'),
+  enginePing: async (): Promise<boolean> => {
+    try {
+      const res = await grpcClient.ping({});
+      return res.status === 'ok';
+    } catch {
+      return false;
+    }
+  },
 
-  generateAlterSql: async (req: any): Promise<string[]> => {
-    const res: any = await callApi('sql_generate_alter', { req });
+  generateAlterSql: async (req: DiffRequest): Promise<string[]> => {
+    const res = await grpcClient.generateAlterTable(req);
     return res.sqls || [];
   },
 
-  generateCreateSql: async (req: any): Promise<string[]> => {
-    const res: any = await callApi('sql_generate_create', { req });
+  generateCreateSql: async (req: DiffRequest): Promise<string[]> => {
+    const res = await grpcClient.generateCreateTable(req);
     return res.sqls || [];
   },
 
@@ -76,7 +85,8 @@ export const apiClient = {
   },
 
   getWorkspace: async (): Promise<PersistedWorkspace | null> => {
-    return store.get<PersistedWorkspace>('workspace');
+    const ws = await store.get<PersistedWorkspace>('workspace');
+    return ws ?? null;
   },
 
   saveWorkspace: async (data: PersistedWorkspace): Promise<void> => {

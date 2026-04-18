@@ -413,7 +413,7 @@ const SessionContent: React.FC<{
 
 export const SessionView: React.FC<SessionViewProps> = React.memo((props) => {
   return (
-    <SessionProvider id={props.id} onUpdateTitle={(title) => props.onUpdateTitle(props.id, title)}>
+    <SessionProvider id={props.id} onUpdateTitle={(title) => props.onUpdateTitle(title)}>
       <WorkspaceStoreWrapper
         isActive={props.isActive}
         initialConfig={props.initialConfig}

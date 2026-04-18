@@ -1,15 +1,7 @@
 mod commands;
-mod grpc;
-mod utils;
-
-pub mod vstable {
-    tonic::include_proto!("vstable");
-}
+mod error;
 
 use tauri_plugin_shell::ShellExt;
-use std::sync::Arc;
-use tokio::sync::Mutex;
-use grpc::GrpcState;
 use tauri_plugin_log::{Target, TargetKind, RotationStrategy};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -33,15 +25,8 @@ pub fn run() {
     )
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_store::Builder::default().build())
-    .manage(GrpcState { client: Arc::new(Mutex::new(None)), port: 39082 })
     .invoke_handler(tauri::generate_handler![
-      commands::db_connect,
-      commands::db_query,
-      commands::db_disconnect,
-      commands::engine_ping,
-      commands::window_toggle_maximize,
-      commands::sql_generate_alter,
-      commands::sql_generate_create
+      commands::window_toggle_maximize
     ])
     .setup(|app| {
       // Start Go sidecar

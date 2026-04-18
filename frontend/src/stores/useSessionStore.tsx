@@ -214,5 +214,6 @@ export function useSession<T>(selector?: (state: SessionState) => T): T | Sessio
   if (!store) {
     throw new Error('useSession must be used within a SessionProvider');
   }
+  // @ts-expect-error - Zustand useStore typing issue with optional selectors
   return useStore(store, selector ? selector : (state) => state);
 }

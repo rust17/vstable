@@ -1,43 +1,41 @@
-# Tauri
+# Agent Context: Tauri Core (Thin Shell)
 
-此目录包含 vstable 桌面应用程序的 Rust 核心部分，基于 Tauri v2 构建。它充当 TypeScript 前端与 Go 语言编写的数据库引擎（Sidecar）之间的桥梁。
+> **ATTENTION AI AGENTS & DEVELOPERS:**  
+> 此目录 `frontend/tauri/` 包含了 vstable 应用程序的系统原生层。在修改此处的 Rust 代码时，必须深刻理解本项目对 Tauri 角色的定位限制。
 
-## 架构概览
+## 1. Core Logic & Responsibilities
 
-- **Tauri v2:** 使用最新的 Tauri 框架进行窗口管理和系统集成。
-- **Go Sidecar:** 核心数据库引擎作为一个 Go 二进制文件捆绑为 Sidecar（边车）。
-- **gRPC 通信:** Rust 层通过 gRPC (Tonic) 与 Go Sidecar 进行通信。
-- **命令代理:** `commands.rs` 中的大多数 Tauri 命令都是异步代理，负责将请求转发给 gRPC 服务，并在 JSON 与 Protobuf 之间进行类型转换。
+在 `vstable` 架构中，Tauri 被严格降级为 **"Thin Shell" (薄壳层)**。它的核心逻辑只包含以下几点：
 
-## 关键文件与职责
+- **Sidecar Lifecycle Management (边车生命周期)**：
+  - 在 `src/lib.rs` 的 `setup` 钩子中，Tauri 负责启动编译好的 Go 二进制文件 (`vstable-engine`)。
+  - Tauri 会监听 Sidecar 的 `stdout` 和 `stderr`，并通过 `tauri-plugin-log` 管道化输出，便于在桌面端的日志目录下（如 `~/Library/Logs/com.vstable.dev`）追溯后端的崩溃与运行记录。
+- **Native OS Capabilities (操作系统原生能力)**：
+  - 提供纯前端（Browser Context）无法完成的操作，例如：窗口的最大化/恢复 (`window_toggle_maximize`)、文件系统对话框、深色模式跟随系统。
+- **Persistent Key-Value Store (本地状态持久化)**：
+  - 使用 `tauri-plugin-store` 保存轻量级的用户偏好设置，如：已保存的数据库连接配置、打开的 Workspace 状态。
 
-- `src/main.rs`: 应用程序入口点。
-- `src/lib.rs`: 处理插件初始化、Sidecar 启动以及全局状态管理 (`GrpcState`)。
-- `src/commands.rs`: 定义暴露给前端的 gRPC 接口。
-- `src/grpc.rs`: 定义共享的 gRPC 客户端状态和连接管理。
-- `src/utils.rs`: 包含 `serde_json::Value` 与 `prost_types` (Protobuf) 之间的转换逻辑。
-- `build.rs`: 在构建过程中编译 `backend/api/` 目录下的 gRPC `.proto`。
-- `tauri.conf.json`: 应用程序(vstable)的窗口样式、打包设置和 Sidecar 定义的配置。
-- `capabilities/` & `permissions/`: Tauri v2 的安全权限配置。
+## 2. Hard Rules for AI Agents (Tauri Layer)
 
-## 开发指南
+当你被要求修改 `frontend/tauri/` 目录下的代码时，**绝对禁止**以下操作：
 
-### 添加新命令
-1. 如果需要数据库交互，请确保 `vstable.proto` 中的 gRPC 服务支持该操作。
-2. 在 `src/commands.rs` 中实现命令。使用 `GrpcState` 访问 gRPC 客户端。
-3. 在 `src/lib.rs` 的 `generate_handler!` 宏中注册该命令。
-4. 如果使用了新的插件，请确保在 `capabilities/default.json` 中添加相应的权限。
+- **[PROHIBITED] 禁止处理业务网络请求**：
+  - **绝不允许**在 `src/commands.rs` 中使用 `reqwest`, `tonic`, 或任何 HTTP/gRPC 客户端来代理前端的请求（例如 `db_query`, `db_connect`）。
+  - 原因：这会创造“浅模块”(Shallow Modules)，导致大量无效的 JSON <-> Protobuf <-> Rust Struct 的透传代码。所有数据库业务应由前端 React 直接发往 Go Engine。
+- **[PROHIBITED] 禁止在 Rust 层维护业务状态**：
+  - 数据库的连接池、Session 管理必须放在 Go Backend (`vstable-engine`) 中。Tauri 内部（除了插件状态外）必须保持无状态 (Stateless)。
 
-### Sidecar 管理
-- Go Sidecar 在 `src/lib.rs` 的 `.setup()` 钩子中进行管理。
-- Sidecar 的标准输出/错误会被管道传输到 Rust 控制台，以便调试。
-- Sidecar 二进制文件名在 `tauri.conf.json` 的 `bundle > externalBin` 中定义。
+## 3. How to add a new Native Feature
 
-### 类型安全
-- 使用 `prost_types` 确保 Protobuf 兼容性。
-- 使用 `serde_json` 处理与前端的通信。
-- `src/utils.rs` 中的转换逻辑应尽量保持通用（例如 `json_to_prost_value`）。
+如果用户确实需要一个操作系统级别的功能（例如：打开本地文件选择器读取证书）：
 
-## 故障排除
-- **gRPC 失败:** 检查 Sidecar 是否正在运行，且端口（`39082`）在 Rust 和 Go 之间是否一致。
-- **Proto 变更:** 如果 `vstable.proto` 发生变化，请运行构建以触发 `build.rs` 并更新 `vstable` 模块中生成的代码。
+1. 在 `src/commands.rs` 中新增 `#[tauri::command]`。
+2. 参数传递和返回值应尽量简单，使用标准类型或 `serde_json::Value`。
+3. 在 `src/lib.rs` 中的 `tauri::generate_handler!` 宏里注册该命令。
+4. 如果使用了新的 Tauri API 或插件，切记在 `capabilities/default.json` (Tauri v2 权限管理系统) 中添加对应的前端 IPC 调用权限。
+
+## 4. Troubleshooting
+
+- **Sidecar 未启动/闪退**：
+  - 检查 `tauri.conf.json` 中 `bundle.externalBin` 的配置是否与 Go 编译出的二进制后缀 (`-aarch64-apple-darwin` 等) 完全匹配。
+  - 查看 Rust 控制台的 `Sidecar Error:` 日志，通常是因为本地 `:39082` 端口被占用。

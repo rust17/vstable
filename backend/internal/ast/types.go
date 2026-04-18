@@ -17,7 +17,7 @@ type ColumnDefinition struct {
 	Comment             string            `json:"comment"`
 	PkConstraintName    string            `json:"pkConstraintName"`
 	OriginalIndex       int               `json:"originalIndex"`
-	Original            *ColumnDefinition `json:"_original"` // 关键：对应前端的 _original
+	Original            *ColumnDefinition `json:"original"` // 关键：对应前端的 _original
 }
 
 type IndexDefinition struct {
@@ -25,7 +25,7 @@ type IndexDefinition struct {
 	Name     string           `json:"name"`
 	Columns  []string         `json:"columns"`
 	IsUnique bool             `json:"isUnique"`
-	Original *IndexDefinition `json:"_original"`
+	Original *IndexDefinition `json:"original"`
 }
 
 type ForeignKeyDefinition struct {
@@ -36,21 +36,21 @@ type ForeignKeyDefinition struct {
 	ReferencedColumns []string              `json:"referencedColumns"`
 	OnDelete          string                `json:"onDelete"`
 	OnUpdate          string                `json:"onUpdate"`
-	Original          *ForeignKeyDefinition `json:"_original"`
+	Original          *ForeignKeyDefinition `json:"original"`
 }
 
 type CheckConstraintDefinition struct {
 	ID         string                     `json:"id"`
 	Name       string                     `json:"name"`
 	Expression string                     `json:"expression"`
-	Original   *CheckConstraintDefinition `json:"_original"`
+	Original   *CheckConstraintDefinition `json:"original"`
 }
 
 type ViewDefinition struct {
 	ID         string          `json:"id"`
 	Name       string          `json:"name"`
 	Definition string          `json:"definition"`
-	Original   *ViewDefinition `json:"_original"`
+	Original   *ViewDefinition `json:"original"`
 }
 
 type TriggerDefinition struct {
@@ -61,7 +61,7 @@ type TriggerDefinition struct {
 	TableName  string             `json:"tableName"`
 	Definition string             `json:"definition"`
 	Enabled    bool               `json:"enabled"`
-	Original   *TriggerDefinition `json:"_original"`
+	Original   *TriggerDefinition `json:"original"`
 }
 
 type RoutineDefinition struct {
@@ -69,7 +69,7 @@ type RoutineDefinition struct {
 	Name       string             `json:"name"`
 	Type       string             `json:"type"` // PROCEDURE or FUNCTION
 	Definition string             `json:"definition"`
-	Original   *RoutineDefinition `json:"_original"`
+	Original   *RoutineDefinition `json:"original"`
 }
 
 type DatabaseConfig struct {
