@@ -25,9 +25,9 @@ export interface ColumnDefinition {
   id: string;
   name: string;
   type: string;
-  length?: string | number;
-  precision?: string | number;
-  scale?: string | number;
+  length?: number;
+  precision?: number;
+  scale?: number;
   nullable: boolean;
   defaultValue: any;
   isPrimaryKey: boolean;
@@ -37,7 +37,7 @@ export interface ColumnDefinition {
   pkConstraintName?: string;
   isDefaultExpression?: boolean;
   enumValues?: string[];
-  _original?: any;
+  original?: any;
 }
 
 export interface IndexDefinition {
@@ -45,7 +45,7 @@ export interface IndexDefinition {
   name: string;
   columns: string[];
   isUnique: boolean;
-  _original?: any;
+  original?: any;
 }
 
 interface StructureViewProps {
@@ -121,7 +121,7 @@ const ColumnContextMenu: React.FC<ColumnContextMenuProps> = ({
       >
         <Plus size={14} className="text-gray-400" /> Insert After
       </button>
-      {column._original && (
+      {column.original && (
         <button
           onClick={() => {
             onReset();
@@ -445,7 +445,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
         const sql = buildQuery(capabilities.supportsSchemas ? 'listSchemas' : 'listDatabases', {});
         const res = await apiClient.query(connectionId, sql);
         if (res.success && res.rows) {
-          setAvailableSchemas(res.rows.map((r: any) => Object.values(r)[0]));
+          setAvailableSchemas(res.rows.map((r: any) => Object.values(r)[0] as string));
         }
       } catch (e) {
         console.error(e);
@@ -479,7 +479,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
 
       if (!colRes.success) throw new Error(colRes.error);
 
-      const cols = colRes.rows.map((row: any) => {
+      const cols = (colRes.rows || []).map((row: any) => {
         let isAuto,
           isPk,
           isId,
@@ -535,7 +535,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
           isIdentity: isId,
           comment,
           pkConstraintName,
-          _original: {
+          original: {
             name,
             type,
             length,
@@ -565,7 +565,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
         let idxs = [];
         if (capabilities.dialect === 'mysql') {
           const groups: Record<string, any> = {};
-          idxRes.rows.forEach((row: any) => {
+          (idxRes.rows || []).forEach((row: any) => {
             const name = row.Key_name || row.key_name;
             if (!groups[name]) {
               groups[name] = {
@@ -575,7 +575,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
                 isUnique:
                   (row.Non_unique || row.non_unique) === 0 ||
                   (row.Non_unique || row.non_unique) === '0',
-                _original: {
+                original: {
                   name,
                   columns: [],
                   isUnique:
@@ -586,11 +586,11 @@ export const StructureView: React.FC<StructureViewProps> = ({
             }
             const colName = row.Column_name || row.column_name;
             groups[name].columns.push(colName);
-            groups[name]._original.columns.push(colName);
+            groups[name].original.columns.push(colName);
           });
           idxs = Object.values(groups).filter((idx) => idx.name !== 'PRIMARY');
         } else {
-          idxs = idxRes.rows.map((row: any) => {
+          idxs = (idxRes.rows || []).map((row: any) => {
             let cols: string[] = [];
             if (Array.isArray(row.column_names)) {
               cols = row.column_names;
@@ -607,7 +607,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
               name: row.index_name,
               columns: cols,
               isUnique: row.is_unique,
-              _original: {
+              original: {
                 name: row.index_name,
                 columns: [...cols],
                 isUnique: row.is_unique,
@@ -653,7 +653,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
   const handleDeleteColumnWithTracking = (id: string) => {
     const col = columns.find((c) => c.id === id);
     if (!col) return;
-    if (col._original) {
+    if (col.original) {
       setDeletedColumns([...deletedColumns, col]);
     }
     setColumns(columns.filter((c) => c.id !== id));
@@ -677,7 +677,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
   const handleDuplicateColumn = (id: string) => {
     const col = columns.find((c) => c.id === id);
     if (!col) return;
-    const { id: _, _original, ...rest } = col;
+    const { id: _, original, ...rest } = col;
     setColumns([
       ...columns,
       {
@@ -709,8 +709,8 @@ export const StructureView: React.FC<StructureViewProps> = ({
   const handleResetColumn = (id: string) => {
     setColumns(
       columns.map((c) => {
-        if (c.id === id && c._original) {
-          return { ...c, ...c._original };
+        if (c.id === id && c.original) {
+          return { ...c, ...c.original };
         }
         return c;
       })
@@ -797,7 +797,7 @@ export const StructureView: React.FC<StructureViewProps> = ({
   const handleDeleteIndexWithTracking = (id: string) => {
     const idx = indexes.find((i) => i.id === id);
     if (!idx) return;
-    if (idx._original) {
+    if (idx.original) {
       setDeletedIndexes([...deletedIndexes, idx]);
     }
     setIndexes(indexes.filter((i) => i.id !== id));
@@ -818,7 +818,13 @@ export const StructureView: React.FC<StructureViewProps> = ({
           dialect: capabilities.dialect,
           schema: schema,
           tableName: tableName,
-          columns,
+          columns: columns.map((c) => ({
+            ...c,
+            length: c.length != null && c.length !== '' ? Number(c.length) : undefined,
+            precision: c.precision != null && c.precision !== '' ? Number(c.precision) : undefined,
+            scale: c.scale != null && c.scale !== '' ? Number(c.scale) : undefined,
+            defaultValue: c.defaultValue === null ? undefined : String(c.defaultValue),
+          })),
           indexes,
         });
       } else {
@@ -829,9 +835,21 @@ export const StructureView: React.FC<StructureViewProps> = ({
           schema: initialSchema,
           tableName: initialTableName,
           oldTableName: initialTableName,
-          columns,
+          columns: columns.map((c) => ({
+            ...c,
+            length: c.length != null && c.length !== '' ? Number(c.length) : undefined,
+            precision: c.precision != null && c.precision !== '' ? Number(c.precision) : undefined,
+            scale: c.scale != null && c.scale !== '' ? Number(c.scale) : undefined,
+            defaultValue: c.defaultValue === null ? undefined : String(c.defaultValue),
+          })),
           indexes,
-          deletedColumns,
+          deletedColumns: deletedColumns.map((c) => ({
+            ...c,
+            length: c.length != null && c.length !== '' ? Number(c.length) : undefined,
+            precision: c.precision != null && c.precision !== '' ? Number(c.precision) : undefined,
+            scale: c.scale != null && c.scale !== '' ? Number(c.scale) : undefined,
+            defaultValue: c.defaultValue === null ? undefined : String(c.defaultValue),
+          })),
           deletedIndexes,
         });
       }
@@ -861,7 +879,13 @@ export const StructureView: React.FC<StructureViewProps> = ({
           dialect: capabilities.dialect,
           schema: newSchema,
           tableName: newTableName,
-          columns,
+          columns: columns.map((c) => ({
+            ...c,
+            length: c.length != null && c.length !== '' ? Number(c.length) : undefined,
+            precision: c.precision != null && c.precision !== '' ? Number(c.precision) : undefined,
+            scale: c.scale != null && c.scale !== '' ? Number(c.scale) : undefined,
+            defaultValue: c.defaultValue === null ? undefined : String(c.defaultValue),
+          })),
           indexes,
         });
       } else {
@@ -870,9 +894,21 @@ export const StructureView: React.FC<StructureViewProps> = ({
           schema: initialSchema,
           tableName: initialTableName,
           oldTableName: initialTableName,
-          columns,
+          columns: columns.map((c) => ({
+            ...c,
+            length: c.length != null && c.length !== '' ? Number(c.length) : undefined,
+            precision: c.precision != null && c.precision !== '' ? Number(c.precision) : undefined,
+            scale: c.scale != null && c.scale !== '' ? Number(c.scale) : undefined,
+            defaultValue: c.defaultValue === null ? undefined : String(c.defaultValue),
+          })),
           indexes,
-          deletedColumns,
+          deletedColumns: deletedColumns.map((c) => ({
+            ...c,
+            length: c.length != null && c.length !== '' ? Number(c.length) : undefined,
+            precision: c.precision != null && c.precision !== '' ? Number(c.precision) : undefined,
+            scale: c.scale != null && c.scale !== '' ? Number(c.scale) : undefined,
+            defaultValue: c.defaultValue === null ? undefined : String(c.defaultValue),
+          })),
           deletedIndexes,
         });
       }

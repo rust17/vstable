@@ -12,6 +12,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"net/http"
+
+	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"github.com/rs/cors"
 
 	"vstable-engine/internal/ast"
 	"vstable-engine/internal/db"
@@ -171,8 +175,32 @@ func main() {
 	dbManager := db.NewManager()
 	pb.RegisterEngineServiceServer(grpcServer, &engineServer{dbManager: dbManager})
 
-	fmt.Printf("gRPC Engine listening on :%s...\n", port)
-	if err := grpcServer.Serve(lis); err != nil {
+	wrappedGrpc := grpcweb.WrapServer(grpcServer,
+		grpcweb.WithOriginFunc(func(origin string) bool { return true }),
+	)
+
+	handler := func(res http.ResponseWriter, req *http.Request) {
+		if wrappedGrpc.IsGrpcWebRequest(req) || wrappedGrpc.IsAcceptableGrpcCorsRequest(req) {
+			wrappedGrpc.ServeHTTP(res, req)
+			return
+		}
+		http.DefaultServeMux.ServeHTTP(res, req)
+	}
+
+	corsHandler := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Accept-Encoding", "Accept-Language", "Content-Length", "Content-Type", "x-grpc-web", "x-user-agent", "x-trace-id"},
+		AllowCredentials: false,
+	}).Handler(http.HandlerFunc(handler))
+
+	fmt.Printf("gRPC-Web Engine listening on :%s...\n", port)
+	
+	httpServer := &http.Server{
+		Handler: corsHandler,
+	}
+
+	if err := httpServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
 }

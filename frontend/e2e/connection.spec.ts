@@ -4,12 +4,16 @@ test.describe('Connection Management Tests', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
 
-    // Ensure engine is pingable through our mock bridge
+    // Wait for Go Engine to be reachable via gRPC-Web
     await expect(async () => {
-      const pingOk = await page.evaluate(() =>
-        (window as any).__TAURI_INTERNALS__.invoke('engine_ping').catch(() => false)
+      const ok = await page.evaluate(() =>
+        fetch('http://localhost:39082/vstable.EngineService/Ping', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/grpc-web-text', 'x-grpc-web': '1' },
+          body: 'AAAAAAA=',
+        }).then((r) => r.ok).catch(() => false)
       );
-      expect(pingOk).toBeTruthy();
+      expect(ok).toBeTruthy();
     }).toPass({ timeout: 15000 });
   });
 

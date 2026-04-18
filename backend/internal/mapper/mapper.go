@@ -72,11 +72,6 @@ func mapColumn(c *pb.ColumnDefinition) ast.ColumnDefinition {
 		return ast.ColumnDefinition{}
 	}
 
-	var defaultValue *string
-	if c.DefaultValue != nil {
-		defaultValue = &c.DefaultValue.Value
-	}
-
 	var original *ast.ColumnDefinition
 	if c.Original != nil {
 		orig := mapColumn(c.Original)
@@ -88,11 +83,11 @@ func mapColumn(c *pb.ColumnDefinition) ast.ColumnDefinition {
 		Name:                c.Name,
 		Type:                c.Type,
 		EnumValues:          c.EnumValues,
-		Length:              fromValue(c.Length),
-		Precision:           fromValue(c.Precision),
-		Scale:               fromValue(c.Scale),
+		Length:              fromInt64Ptr(c.Length),
+		Precision:           fromInt64Ptr(c.Precision),
+		Scale:               fromInt64Ptr(c.Scale),
 		Nullable:            c.Nullable,
-		DefaultValue:        defaultValue,
+		DefaultValue:        c.DefaultValue,
 		IsDefaultExpression: c.IsDefaultExpression,
 		IsPrimaryKey:        c.IsPrimaryKey,
 		IsAutoIncrement:     c.IsAutoIncrement,
@@ -104,11 +99,11 @@ func mapColumn(c *pb.ColumnDefinition) ast.ColumnDefinition {
 	}
 }
 
-func fromValue(v *structpb.Value) interface{} {
+func fromInt64Ptr(v *int64) interface{} {
 	if v == nil {
 		return nil
 	}
-	return v.AsInterface()
+	return *v
 }
 
 func mapIndexes(idxs []*pb.IndexDefinition) []ast.IndexDefinition {

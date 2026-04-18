@@ -4,7 +4,6 @@ package vstable;
 option go_package = "vstable-engine/internal/pb";
 
 import "google/protobuf/struct.proto";
-import "google/protobuf/wrappers.proto";
 
 service EngineService {
   rpc Ping(PingRequest) returns (PingResponse);
@@ -61,11 +60,11 @@ message ColumnDefinition {
   string name = 2;
   string type = 3;
   repeated string enum_values = 4;
-  google.protobuf.Value length = 5;
-  google.protobuf.Value precision = 6;
-  google.protobuf.Value scale = 7;
+  optional int64 length = 5;
+  optional int64 precision = 6;
+  optional int64 scale = 7;
   bool nullable = 8;
-  google.protobuf.StringValue default_value = 9;
+  optional string default_value = 9;
   bool is_default_expression = 10;
   bool is_primary_key = 11;
   bool is_auto_increment = 12;

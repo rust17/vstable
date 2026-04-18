@@ -10,7 +10,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	structpb "google.golang.org/protobuf/types/known/structpb"
-	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
+	_ "google.golang.org/protobuf/types/known/wrapperspb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -468,24 +468,24 @@ func (x *QueryResponse) GetFields() []*FieldInfo {
 }
 
 type ColumnDefinition struct {
-	state               protoimpl.MessageState  `protogen:"open.v1"`
-	Id                  string                  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name                string                  `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Type                string                  `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
-	EnumValues          []string                `protobuf:"bytes,4,rep,name=enum_values,json=enumValues,proto3" json:"enum_values,omitempty"`
-	Length              *structpb.Value         `protobuf:"bytes,5,opt,name=length,proto3" json:"length,omitempty"`
-	Precision           *structpb.Value         `protobuf:"bytes,6,opt,name=precision,proto3" json:"precision,omitempty"`
-	Scale               *structpb.Value         `protobuf:"bytes,7,opt,name=scale,proto3" json:"scale,omitempty"`
-	Nullable            bool                    `protobuf:"varint,8,opt,name=nullable,proto3" json:"nullable,omitempty"`
-	DefaultValue        *wrapperspb.StringValue `protobuf:"bytes,9,opt,name=default_value,json=defaultValue,proto3" json:"default_value,omitempty"`
-	IsDefaultExpression bool                    `protobuf:"varint,10,opt,name=is_default_expression,json=isDefaultExpression,proto3" json:"is_default_expression,omitempty"`
-	IsPrimaryKey        bool                    `protobuf:"varint,11,opt,name=is_primary_key,json=isPrimaryKey,proto3" json:"is_primary_key,omitempty"`
-	IsAutoIncrement     bool                    `protobuf:"varint,12,opt,name=is_auto_increment,json=isAutoIncrement,proto3" json:"is_auto_increment,omitempty"`
-	IsIdentity          bool                    `protobuf:"varint,13,opt,name=is_identity,json=isIdentity,proto3" json:"is_identity,omitempty"`
-	Comment             string                  `protobuf:"bytes,14,opt,name=comment,proto3" json:"comment,omitempty"`
-	PkConstraintName    string                  `protobuf:"bytes,15,opt,name=pk_constraint_name,json=pkConstraintName,proto3" json:"pk_constraint_name,omitempty"`
-	OriginalIndex       int32                   `protobuf:"varint,16,opt,name=original_index,json=originalIndex,proto3" json:"original_index,omitempty"`
-	Original            *ColumnDefinition       `protobuf:"bytes,17,opt,name=original,proto3" json:"original,omitempty"`
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Id                  string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Type                string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	EnumValues          []string               `protobuf:"bytes,4,rep,name=enum_values,json=enumValues,proto3" json:"enum_values,omitempty"`
+	Length              *int64                 `protobuf:"varint,5,opt,name=length,proto3,oneof" json:"length,omitempty"`
+	Precision           *int64                 `protobuf:"varint,6,opt,name=precision,proto3,oneof" json:"precision,omitempty"`
+	Scale               *int64                 `protobuf:"varint,7,opt,name=scale,proto3,oneof" json:"scale,omitempty"`
+	Nullable            bool                   `protobuf:"varint,8,opt,name=nullable,proto3" json:"nullable,omitempty"`
+	DefaultValue        *string                `protobuf:"bytes,9,opt,name=default_value,json=defaultValue,proto3,oneof" json:"default_value,omitempty"`
+	IsDefaultExpression bool                   `protobuf:"varint,10,opt,name=is_default_expression,json=isDefaultExpression,proto3" json:"is_default_expression,omitempty"`
+	IsPrimaryKey        bool                   `protobuf:"varint,11,opt,name=is_primary_key,json=isPrimaryKey,proto3" json:"is_primary_key,omitempty"`
+	IsAutoIncrement     bool                   `protobuf:"varint,12,opt,name=is_auto_increment,json=isAutoIncrement,proto3" json:"is_auto_increment,omitempty"`
+	IsIdentity          bool                   `protobuf:"varint,13,opt,name=is_identity,json=isIdentity,proto3" json:"is_identity,omitempty"`
+	Comment             string                 `protobuf:"bytes,14,opt,name=comment,proto3" json:"comment,omitempty"`
+	PkConstraintName    string                 `protobuf:"bytes,15,opt,name=pk_constraint_name,json=pkConstraintName,proto3" json:"pk_constraint_name,omitempty"`
+	OriginalIndex       int32                  `protobuf:"varint,16,opt,name=original_index,json=originalIndex,proto3" json:"original_index,omitempty"`
+	Original            *ColumnDefinition      `protobuf:"bytes,17,opt,name=original,proto3" json:"original,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -548,25 +548,25 @@ func (x *ColumnDefinition) GetEnumValues() []string {
 	return nil
 }
 
-func (x *ColumnDefinition) GetLength() *structpb.Value {
-	if x != nil {
-		return x.Length
+func (x *ColumnDefinition) GetLength() int64 {
+	if x != nil && x.Length != nil {
+		return *x.Length
 	}
-	return nil
+	return 0
 }
 
-func (x *ColumnDefinition) GetPrecision() *structpb.Value {
-	if x != nil {
-		return x.Precision
+func (x *ColumnDefinition) GetPrecision() int64 {
+	if x != nil && x.Precision != nil {
+		return *x.Precision
 	}
-	return nil
+	return 0
 }
 
-func (x *ColumnDefinition) GetScale() *structpb.Value {
-	if x != nil {
-		return x.Scale
+func (x *ColumnDefinition) GetScale() int64 {
+	if x != nil && x.Scale != nil {
+		return *x.Scale
 	}
-	return nil
+	return 0
 }
 
 func (x *ColumnDefinition) GetNullable() bool {
@@ -576,11 +576,11 @@ func (x *ColumnDefinition) GetNullable() bool {
 	return false
 }
 
-func (x *ColumnDefinition) GetDefaultValue() *wrapperspb.StringValue {
-	if x != nil {
-		return x.DefaultValue
+func (x *ColumnDefinition) GetDefaultValue() string {
+	if x != nil && x.DefaultValue != nil {
+		return *x.DefaultValue
 	}
-	return nil
+	return ""
 }
 
 func (x *ColumnDefinition) GetIsDefaultExpression() bool {
@@ -1463,18 +1463,18 @@ const file_api_vstable_proto_rawDesc = "" +
 	"\rQueryResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12+\n" +
 	"\x04rows\x18\x02 \x03(\v2\x17.google.protobuf.StructR\x04rows\x12*\n" +
-	"\x06fields\x18\x03 \x03(\v2\x12.vstable.FieldInfoR\x06fields\"\xab\x05\n" +
+	"\x06fields\x18\x03 \x03(\v2\x12.vstable.FieldInfoR\x06fields\"\x8e\x05\n" +
 	"\x10ColumnDefinition\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04type\x18\x03 \x01(\tR\x04type\x12\x1f\n" +
 	"\venum_values\x18\x04 \x03(\tR\n" +
-	"enumValues\x12.\n" +
-	"\x06length\x18\x05 \x01(\v2\x16.google.protobuf.ValueR\x06length\x124\n" +
-	"\tprecision\x18\x06 \x01(\v2\x16.google.protobuf.ValueR\tprecision\x12,\n" +
-	"\x05scale\x18\a \x01(\v2\x16.google.protobuf.ValueR\x05scale\x12\x1a\n" +
-	"\bnullable\x18\b \x01(\bR\bnullable\x12A\n" +
-	"\rdefault_value\x18\t \x01(\v2\x1c.google.protobuf.StringValueR\fdefaultValue\x122\n" +
+	"enumValues\x12\x1b\n" +
+	"\x06length\x18\x05 \x01(\x03H\x00R\x06length\x88\x01\x01\x12!\n" +
+	"\tprecision\x18\x06 \x01(\x03H\x01R\tprecision\x88\x01\x01\x12\x19\n" +
+	"\x05scale\x18\a \x01(\x03H\x02R\x05scale\x88\x01\x01\x12\x1a\n" +
+	"\bnullable\x18\b \x01(\bR\bnullable\x12(\n" +
+	"\rdefault_value\x18\t \x01(\tH\x03R\fdefaultValue\x88\x01\x01\x122\n" +
 	"\x15is_default_expression\x18\n" +
 	" \x01(\bR\x13isDefaultExpression\x12$\n" +
 	"\x0eis_primary_key\x18\v \x01(\bR\fisPrimaryKey\x12*\n" +
@@ -1484,7 +1484,12 @@ const file_api_vstable_proto_rawDesc = "" +
 	"\acomment\x18\x0e \x01(\tR\acomment\x12,\n" +
 	"\x12pk_constraint_name\x18\x0f \x01(\tR\x10pkConstraintName\x12%\n" +
 	"\x0eoriginal_index\x18\x10 \x01(\x05R\roriginalIndex\x125\n" +
-	"\boriginal\x18\x11 \x01(\v2\x19.vstable.ColumnDefinitionR\boriginal\"\xa2\x01\n" +
+	"\boriginal\x18\x11 \x01(\v2\x19.vstable.ColumnDefinitionR\boriginalB\t\n" +
+	"\a_lengthB\f\n" +
+	"\n" +
+	"_precisionB\b\n" +
+	"\x06_scaleB\x10\n" +
+	"\x0e_default_value\"\xa2\x01\n" +
 	"\x0fIndexDefinition\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
@@ -1608,56 +1613,50 @@ var file_api_vstable_proto_goTypes = []any{
 	(*GenerateSQLResponse)(nil),       // 18: vstable.GenerateSQLResponse
 	(*structpb.ListValue)(nil),        // 19: google.protobuf.ListValue
 	(*structpb.Struct)(nil),           // 20: google.protobuf.Struct
-	(*structpb.Value)(nil),            // 21: google.protobuf.Value
-	(*wrapperspb.StringValue)(nil),    // 22: google.protobuf.StringValue
 }
 var file_api_vstable_proto_depIdxs = []int32{
 	19, // 0: vstable.QueryRequest.params:type_name -> google.protobuf.ListValue
 	20, // 1: vstable.QueryResponse.rows:type_name -> google.protobuf.Struct
 	7,  // 2: vstable.QueryResponse.fields:type_name -> vstable.FieldInfo
-	21, // 3: vstable.ColumnDefinition.length:type_name -> google.protobuf.Value
-	21, // 4: vstable.ColumnDefinition.precision:type_name -> google.protobuf.Value
-	21, // 5: vstable.ColumnDefinition.scale:type_name -> google.protobuf.Value
-	22, // 6: vstable.ColumnDefinition.default_value:type_name -> google.protobuf.StringValue
-	9,  // 7: vstable.ColumnDefinition.original:type_name -> vstable.ColumnDefinition
-	10, // 8: vstable.IndexDefinition.original:type_name -> vstable.IndexDefinition
-	11, // 9: vstable.ForeignKeyDefinition.original:type_name -> vstable.ForeignKeyDefinition
-	12, // 10: vstable.CheckConstraintDefinition.original:type_name -> vstable.CheckConstraintDefinition
-	13, // 11: vstable.ViewDefinition.original:type_name -> vstable.ViewDefinition
-	14, // 12: vstable.TriggerDefinition.original:type_name -> vstable.TriggerDefinition
-	15, // 13: vstable.RoutineDefinition.original:type_name -> vstable.RoutineDefinition
-	9,  // 14: vstable.DiffRequest.columns:type_name -> vstable.ColumnDefinition
-	10, // 15: vstable.DiffRequest.indexes:type_name -> vstable.IndexDefinition
-	9,  // 16: vstable.DiffRequest.deleted_columns:type_name -> vstable.ColumnDefinition
-	10, // 17: vstable.DiffRequest.deleted_indexes:type_name -> vstable.IndexDefinition
-	11, // 18: vstable.DiffRequest.foreign_keys:type_name -> vstable.ForeignKeyDefinition
-	11, // 19: vstable.DiffRequest.deleted_foreign_keys:type_name -> vstable.ForeignKeyDefinition
-	12, // 20: vstable.DiffRequest.check_constraints:type_name -> vstable.CheckConstraintDefinition
-	12, // 21: vstable.DiffRequest.deleted_checks:type_name -> vstable.CheckConstraintDefinition
-	13, // 22: vstable.DiffRequest.views:type_name -> vstable.ViewDefinition
-	13, // 23: vstable.DiffRequest.deleted_views:type_name -> vstable.ViewDefinition
-	14, // 24: vstable.DiffRequest.triggers:type_name -> vstable.TriggerDefinition
-	14, // 25: vstable.DiffRequest.deleted_triggers:type_name -> vstable.TriggerDefinition
-	15, // 26: vstable.DiffRequest.routines:type_name -> vstable.RoutineDefinition
-	15, // 27: vstable.DiffRequest.deleted_routines:type_name -> vstable.RoutineDefinition
-	16, // 28: vstable.DiffRequest.config:type_name -> vstable.DatabaseConfig
-	0,  // 29: vstable.EngineService.Ping:input_type -> vstable.PingRequest
-	2,  // 30: vstable.EngineService.DbConnect:input_type -> vstable.ConnectRequest
-	4,  // 31: vstable.EngineService.Disconnect:input_type -> vstable.DisconnectRequest
-	6,  // 32: vstable.EngineService.Query:input_type -> vstable.QueryRequest
-	17, // 33: vstable.EngineService.GenerateAlterTable:input_type -> vstable.DiffRequest
-	17, // 34: vstable.EngineService.GenerateCreateTable:input_type -> vstable.DiffRequest
-	1,  // 35: vstable.EngineService.Ping:output_type -> vstable.PingResponse
-	3,  // 36: vstable.EngineService.DbConnect:output_type -> vstable.ConnectResponse
-	5,  // 37: vstable.EngineService.Disconnect:output_type -> vstable.DisconnectResponse
-	8,  // 38: vstable.EngineService.Query:output_type -> vstable.QueryResponse
-	18, // 39: vstable.EngineService.GenerateAlterTable:output_type -> vstable.GenerateSQLResponse
-	18, // 40: vstable.EngineService.GenerateCreateTable:output_type -> vstable.GenerateSQLResponse
-	35, // [35:41] is the sub-list for method output_type
-	29, // [29:35] is the sub-list for method input_type
-	29, // [29:29] is the sub-list for extension type_name
-	29, // [29:29] is the sub-list for extension extendee
-	0,  // [0:29] is the sub-list for field type_name
+	9,  // 3: vstable.ColumnDefinition.original:type_name -> vstable.ColumnDefinition
+	10, // 4: vstable.IndexDefinition.original:type_name -> vstable.IndexDefinition
+	11, // 5: vstable.ForeignKeyDefinition.original:type_name -> vstable.ForeignKeyDefinition
+	12, // 6: vstable.CheckConstraintDefinition.original:type_name -> vstable.CheckConstraintDefinition
+	13, // 7: vstable.ViewDefinition.original:type_name -> vstable.ViewDefinition
+	14, // 8: vstable.TriggerDefinition.original:type_name -> vstable.TriggerDefinition
+	15, // 9: vstable.RoutineDefinition.original:type_name -> vstable.RoutineDefinition
+	9,  // 10: vstable.DiffRequest.columns:type_name -> vstable.ColumnDefinition
+	10, // 11: vstable.DiffRequest.indexes:type_name -> vstable.IndexDefinition
+	9,  // 12: vstable.DiffRequest.deleted_columns:type_name -> vstable.ColumnDefinition
+	10, // 13: vstable.DiffRequest.deleted_indexes:type_name -> vstable.IndexDefinition
+	11, // 14: vstable.DiffRequest.foreign_keys:type_name -> vstable.ForeignKeyDefinition
+	11, // 15: vstable.DiffRequest.deleted_foreign_keys:type_name -> vstable.ForeignKeyDefinition
+	12, // 16: vstable.DiffRequest.check_constraints:type_name -> vstable.CheckConstraintDefinition
+	12, // 17: vstable.DiffRequest.deleted_checks:type_name -> vstable.CheckConstraintDefinition
+	13, // 18: vstable.DiffRequest.views:type_name -> vstable.ViewDefinition
+	13, // 19: vstable.DiffRequest.deleted_views:type_name -> vstable.ViewDefinition
+	14, // 20: vstable.DiffRequest.triggers:type_name -> vstable.TriggerDefinition
+	14, // 21: vstable.DiffRequest.deleted_triggers:type_name -> vstable.TriggerDefinition
+	15, // 22: vstable.DiffRequest.routines:type_name -> vstable.RoutineDefinition
+	15, // 23: vstable.DiffRequest.deleted_routines:type_name -> vstable.RoutineDefinition
+	16, // 24: vstable.DiffRequest.config:type_name -> vstable.DatabaseConfig
+	0,  // 25: vstable.EngineService.Ping:input_type -> vstable.PingRequest
+	2,  // 26: vstable.EngineService.DbConnect:input_type -> vstable.ConnectRequest
+	4,  // 27: vstable.EngineService.Disconnect:input_type -> vstable.DisconnectRequest
+	6,  // 28: vstable.EngineService.Query:input_type -> vstable.QueryRequest
+	17, // 29: vstable.EngineService.GenerateAlterTable:input_type -> vstable.DiffRequest
+	17, // 30: vstable.EngineService.GenerateCreateTable:input_type -> vstable.DiffRequest
+	1,  // 31: vstable.EngineService.Ping:output_type -> vstable.PingResponse
+	3,  // 32: vstable.EngineService.DbConnect:output_type -> vstable.ConnectResponse
+	5,  // 33: vstable.EngineService.Disconnect:output_type -> vstable.DisconnectResponse
+	8,  // 34: vstable.EngineService.Query:output_type -> vstable.QueryResponse
+	18, // 35: vstable.EngineService.GenerateAlterTable:output_type -> vstable.GenerateSQLResponse
+	18, // 36: vstable.EngineService.GenerateCreateTable:output_type -> vstable.GenerateSQLResponse
+	31, // [31:37] is the sub-list for method output_type
+	25, // [25:31] is the sub-list for method input_type
+	25, // [25:25] is the sub-list for extension type_name
+	25, // [25:25] is the sub-list for extension extendee
+	0,  // [0:25] is the sub-list for field type_name
 }
 
 func init() { file_api_vstable_proto_init() }
@@ -1665,6 +1664,7 @@ func file_api_vstable_proto_init() {
 	if File_api_vstable_proto != nil {
 		return
 	}
+	file_api_vstable_proto_msgTypes[9].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

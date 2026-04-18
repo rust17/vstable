@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import { useSession } from '../../../stores/useSessionStore';
 import type { FilterCondition, SortCondition, TableTab } from '../../../types/session';
 
@@ -8,6 +8,8 @@ export const useTableData = (tab: TableTab) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalRows, setTotalRows] = useState(tab.totalRows || 0);
+
+  const fetchCounter = useRef(0);
 
   const q = capabilities?.quoteChar || '"';
 
@@ -21,6 +23,7 @@ export const useTableData = (tab: TableTab) => {
       filters: FilterCondition[],
       sorts: SortCondition[] = []
     ) => {
+      const currentFetch = ++fetchCounter.current;
       setLoading(true);
       setError(null);
       try {
@@ -83,6 +86,10 @@ export const useTableData = (tab: TableTab) => {
 
         const sql = `SELECT * FROM ${tableRef}${whereClause}${orderByClause} LIMIT ${pageSize} OFFSET ${offset};`;
         const res = await query(sql);
+
+        if (currentFetch !== fetchCounter.current) {
+          return;
+        }
 
         if (res.success) {
           setData({ rows: res.rows || [], fields: res.fields || [] });

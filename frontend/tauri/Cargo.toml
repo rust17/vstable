@@ -16,8 +16,6 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2.5.6", features = [] }
-tonic-build = "0.12"
-prost-build = "0.13"
 
 [dependencies]
 serde_json = "1.0"
@@ -27,8 +25,3 @@ tauri = { version = "2.10.3", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-store = "2"
-tonic = { version = "0.12", features = ["tls"] }
-prost = "0.13"
-tokio = { version = "1", features = ["full"] }
-prost-types = "0.13"
-async-trait = "0.1"
