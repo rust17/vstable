@@ -11,7 +11,9 @@ struct SidecarState(Mutex<Option<CommandChild>>);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  let log_dir = std::env::current_exe().unwrap().parent().unwrap().join("logs");
+  let log_dir = std::env::var("HOME")
+    .map(|h| std::path::PathBuf::from(h).join(".vstable").join("logs"))
+    .unwrap_or_else(|_| std::env::temp_dir().join("vstable").join("logs"));
 
   tauri::Builder::default()
     .plugin(
