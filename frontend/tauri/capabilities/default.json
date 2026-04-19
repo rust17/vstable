@@ -14,7 +14,7 @@
       "identifier": "shell:allow-spawn",
       "allow": [
         {
-          "name": "bin/vstable",
+          "name": "bin/vstable-engine",
           "sidecar": true
         }
       ]
