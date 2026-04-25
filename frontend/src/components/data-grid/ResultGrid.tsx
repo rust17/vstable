@@ -1,3 +1,4 @@
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import type React from 'react';
 import { useRef, useState } from 'react';
@@ -41,6 +42,20 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: rows?.length || 0,
+    getScrollElement: () => containerRef.current,
+    estimateSize: () => 36, // Approximate row height
+    overscan: 10,
+  });
+
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
+  const paddingBottom =
+    virtualItems.length > 0
+      ? rowVirtualizer.getTotalSize() - virtualItems[virtualItems.length - 1].end
+      : 0;
 
   const handleHeaderClick = (e: React.MouseEvent, column: string) => {
     if (!onSortChange) return;
@@ -219,52 +234,74 @@ export const ResultGrid: React.FC<ResultGridProps> = ({
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, i) => (
-              <tr
-                key={i}
-                data-selected={selectedRowIndices.has(i) ? 'true' : 'false'}
-                onClick={(e) => {
-                  const isMac = window.navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-                  const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
-                  // If user is selecting text, don't trigger row selection,
-                  // unless they are using selection modifiers (Shift/Cmd/Ctrl)
-                  const selection = window.getSelection();
-                  if (selection && selection.toString().length > 0 && !e.shiftKey && !cmdOrCtrl)
-                    return;
-                  handleRowClick(e, i);
-                }}
-                className={`${selectedRowIndices.has(i) ? 'bg-primary-100' : 'hover:bg-primary-50/50'} border-b border-gray-100 transition-colors cursor-context-menu`}
-                onContextMenu={(e) => handleContextMenu(e, i)}
-              >
-                {fields.map((field, j) => {
-                  const colInfo = structure?.find((c) => c.column_name === field.name);
-                  return (
-                    <td
-                      key={j}
-                      data-testid={`cell-${field.name}-${i}`}
-                      className="border-r border-gray-100 text-gray-600 whitespace-nowrap max-w-xs truncate p-0 select-text"
-                      onDoubleClick={() => {
-                        const newSelection = new Set([i]);
-                        setSelectedRowIndices(newSelection);
-                        setLastSelectedIndex(i);
-                        if (onSelectionChange) onSelectionChange(newSelection);
-                        if (onCellDoubleClick) {
-                          onCellDoubleClick(row, field.name, row[field.name], colInfo?.data_type);
-                        }
-                      }}
-                    >
-                      <div className="w-full h-full px-4 py-2.5 cursor-text">
-                        <div className="max-h-20 overflow-hidden text-ellipsis whitespace-nowrap select-text">
-                          {formatDisplayValue(row[field.name], colInfo?.data_type) || (
-                            <span className="text-gray-300 italic select-none">null</span>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                  );
-                })}
+            {paddingTop > 0 && (
+              <tr>
+                <td
+                  style={{ height: `${paddingTop}px`, padding: 0, border: 0 }}
+                  colSpan={fields.length}
+                />
               </tr>
-            ))}
+            )}
+            {virtualItems.map((virtualRow) => {
+              const i = virtualRow.index;
+              const row = rows[i];
+              return (
+                <tr
+                  key={virtualRow.key}
+                  data-index={virtualRow.index}
+                  ref={rowVirtualizer.measureElement}
+                  data-selected={selectedRowIndices.has(i) ? 'true' : 'false'}
+                  onClick={(e) => {
+                    const isMac = window.navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+                    const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
+                    // If user is selecting text, don't trigger row selection,
+                    // unless they are using selection modifiers (Shift/Cmd/Ctrl)
+                    const selection = window.getSelection();
+                    if (selection && selection.toString().length > 0 && !e.shiftKey && !cmdOrCtrl)
+                      return;
+                    handleRowClick(e, i);
+                  }}
+                  className={`${selectedRowIndices.has(i) ? 'bg-primary-100' : 'hover:bg-primary-50/50'} border-b border-gray-100 transition-colors cursor-context-menu`}
+                  onContextMenu={(e) => handleContextMenu(e, i)}
+                >
+                  {fields.map((field, j) => {
+                    const colInfo = structure?.find((c) => c.column_name === field.name);
+                    return (
+                      <td
+                        key={j}
+                        data-testid={`cell-${field.name}-${i}`}
+                        className="border-r border-gray-100 text-gray-600 whitespace-nowrap max-w-xs truncate p-0 select-text"
+                        onDoubleClick={() => {
+                          const newSelection = new Set([i]);
+                          setSelectedRowIndices(newSelection);
+                          setLastSelectedIndex(i);
+                          if (onSelectionChange) onSelectionChange(newSelection);
+                          if (onCellDoubleClick) {
+                            onCellDoubleClick(row, field.name, row[field.name], colInfo?.data_type);
+                          }
+                        }}
+                      >
+                        <div className="w-full h-full px-4 py-2.5 cursor-text">
+                          <div className="max-h-20 overflow-hidden text-ellipsis whitespace-nowrap select-text">
+                            {formatDisplayValue(row[field.name], colInfo?.data_type) || (
+                              <span className="text-gray-300 italic select-none">null</span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+            {paddingBottom > 0 && (
+              <tr>
+                <td
+                  style={{ height: `${paddingBottom}px`, padding: 0, border: 0 }}
+                  colSpan={fields.length}
+                />
+              </tr>
+            )}
             {isAddingRow && (
               <tr className="bg-green-50 sticky bottom-0 z-20 shadow-sm border-t-2 border-green-200">
                 {(fields.length > 0

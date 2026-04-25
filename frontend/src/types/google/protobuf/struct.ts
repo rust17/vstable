@@ -5,9 +5,9 @@
 // source: google/protobuf/struct.proto
 
 /* eslint-disable */
-import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { BinaryReader, BinaryWriter } from '@bufbuild/protobuf/wire';
 
-export const protobufPackage = "google.protobuf";
+export const protobufPackage = 'google.protobuf';
 
 /**
  * `NullValue` is a singleton enumeration to represent the null value for the
@@ -51,25 +51,15 @@ export interface Struct_FieldsEntry {
  */
 export interface Value {
   /** Represents a null value. */
-  nullValue?:
-    | NullValue
-    | undefined;
+  nullValue?: NullValue | undefined;
   /** Represents a double value. */
-  numberValue?:
-    | number
-    | undefined;
+  numberValue?: number | undefined;
   /** Represents a string value. */
-  stringValue?:
-    | string
-    | undefined;
+  stringValue?: string | undefined;
   /** Represents a boolean value. */
-  boolValue?:
-    | boolean
-    | undefined;
+  boolValue?: boolean | undefined;
   /** Represents a structured value. */
-  structValue?:
-    | { [key: string]: any }
-    | undefined;
+  structValue?: { [key: string]: any } | undefined;
   /** Represents a repeated `Value`. */
   listValue?: Array<any> | undefined;
 }
@@ -90,11 +80,13 @@ function createBaseStruct(): Struct {
 
 export const Struct: MessageFns<Struct> & StructWrapperFns = {
   encode(message: Struct, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    globalThis.Object.entries(message.fields || {}).forEach(([key, value]: [string, any | undefined]) => {
-      if (value !== undefined) {
-        Struct_FieldsEntry.encode({ key: key as any, value }, writer.uint32(10).fork()).join();
+    globalThis.Object.entries(message.fields || {}).forEach(
+      ([key, value]: [string, any | undefined]) => {
+        if (value !== undefined) {
+          Struct_FieldsEntry.encode({ key: key as any, value }, writer.uint32(10).fork()).join();
+        }
       }
-    });
+    );
     return writer;
   },
 
@@ -148,12 +140,12 @@ export const Struct: MessageFns<Struct> & StructWrapperFns = {
 };
 
 function createBaseStruct_FieldsEntry(): Struct_FieldsEntry {
-  return { key: "", value: undefined };
+  return { key: '', value: undefined };
 }
 
 export const Struct_FieldsEntry: MessageFns<Struct_FieldsEntry> = {
   encode(message: Struct_FieldsEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.key !== "") {
+    if (message.key !== '') {
       writer.uint32(10).string(message.key);
     }
     if (message.value !== undefined) {
@@ -297,18 +289,18 @@ export const Value: MessageFns<Value> & AnyValueWrapperFns = {
     const result = createBaseValue();
     if (value === null) {
       result.nullValue = NullValue.NULL_VALUE;
-    } else if (typeof value === "boolean") {
+    } else if (typeof value === 'boolean') {
       result.boolValue = value;
-    } else if (typeof value === "number") {
+    } else if (typeof value === 'number') {
       result.numberValue = value;
-    } else if (typeof value === "string") {
+    } else if (typeof value === 'string') {
       result.stringValue = value;
     } else if (globalThis.Array.isArray(value)) {
       result.listValue = value;
-    } else if (typeof value === "object") {
+    } else if (typeof value === 'object') {
       result.structValue = value;
-    } else if (typeof value !== "undefined") {
-      throw new globalThis.Error("Unsupported any value type: " + typeof value);
+    } else if (typeof value !== 'undefined') {
+      throw new globalThis.Error('Unsupported any value type: ' + typeof value);
     }
     return result;
   },
@@ -379,7 +371,7 @@ export const ListValue: MessageFns<ListValue> & ListValueWrapperFns = {
   },
 
   unwrap(message: ListValue): Array<any> {
-    if (message?.hasOwnProperty("values") && globalThis.Array.isArray(message.values)) {
+    if (message?.hasOwnProperty('values') && globalThis.Array.isArray(message.values)) {
       return message.values;
     } else {
       return message as any;

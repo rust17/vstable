@@ -2,6 +2,21 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ResultGrid } from './ResultGrid';
 
+vi.mock('@tanstack/react-virtual', () => ({
+  useVirtualizer: (options: any) => ({
+    getVirtualItems: () =>
+      Array.from({ length: options.count }).map((_, i) => ({
+        index: i,
+        key: i,
+        start: i * 36,
+        end: (i + 1) * 36,
+        size: 36,
+      })),
+    getTotalSize: () => options.count * 36,
+    measureElement: vi.fn(),
+  }),
+}));
+
 describe('ResultGrid Component', () => {
   const fields = [{ name: 'id' }, { name: 'name' }];
   const rows = [
