@@ -11,7 +11,9 @@ test.describe('Connection Management Tests', () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/grpc-web-text', 'x-grpc-web': '1' },
           body: 'AAAAAAA=',
-        }).then((r) => r.ok).catch(() => false)
+        })
+          .then((r) => r.ok)
+          .catch(() => false)
       );
       expect(ok).toBeTruthy();
     }).toPass({ timeout: 15000 });

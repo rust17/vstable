@@ -14,7 +14,9 @@ test.describe('Advanced Features Tests', () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/grpc-web-text', 'x-grpc-web': '1' },
           body: 'AAAAAAA=',
-        }).then((r) => r.ok).catch(() => false)
+        })
+          .then((r) => r.ok)
+          .catch(() => false)
       );
       expect(ok).toBeTruthy();
     }).toPass({ timeout: 15000 });
@@ -30,6 +32,8 @@ test.describe('Advanced Features Tests', () => {
     await expect(page.locator('form[data-testid="connection-form"]')).not.toBeVisible({
       timeout: 10000,
     });
+    // Give the workspace time to mount and register global keyboard shortcuts
+    await page.waitForTimeout(500);
   });
 
   test('A-01: SQL Console Execution', async ({ page }) => {
@@ -67,6 +71,7 @@ test.describe('Advanced Features Tests', () => {
     // 1. Setup Data via SQL Console
     await page.keyboard.press(`${mod}+t`);
     let activeTab = page.locator('div[data-testid="active-tab-content"]');
+    await expect(activeTab.locator('button[data-testid="btn-run-query"]')).toBeVisible({ timeout: 10000 });
     const editor = activeTab.locator('.monaco-editor').last();
 
     const statements = [
@@ -118,6 +123,7 @@ test.describe('Advanced Features Tests', () => {
     // 1. Setup Data via SQL Console
     await page.keyboard.press(`${mod}+t`);
     let activeTab = page.locator('div[data-testid="active-tab-content"]');
+    await expect(activeTab.locator('button[data-testid="btn-run-query"]')).toBeVisible({ timeout: 10000 });
     const editor = activeTab.locator('.monaco-editor').last();
 
     const statements = [
@@ -192,8 +198,8 @@ test.describe('Advanced Features Tests', () => {
       .click();
     await valueInput.fill('1, 2, 3');
     await page.keyboard.press('Enter');
-    // Total is 106, minus 3 = 103. Current page should show 100.
-    await expect(activeTab.locator('tbody tr')).toHaveCount(100, { timeout: 10000 });
+    // Total is 105 non-null, minus 3 = 102. Current page should show 100.
+    await expect(activeTab.getByText('Total: 102')).toBeVisible({ timeout: 10000 });
 
     // 8. Test `IS NULL` operator
     await opDropdown.click();
@@ -214,7 +220,7 @@ test.describe('Advanced Features Tests', () => {
     // Simulate refresh
     await page.keyboard.press(`${mod}+r`);
     // Non-null rows = 105. Current page shows 100.
-    await expect(activeTab.locator('tbody tr')).toHaveCount(100, { timeout: 10000 });
+    await expect(activeTab.getByText('Total: 105')).toBeVisible({ timeout: 10000 });
 
     // Cleanup
     await tableItem.hover();

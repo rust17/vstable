@@ -5,14 +5,13 @@
 // source: vstable.proto
 
 /* eslint-disable */
-import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import type { CallContext, CallOptions } from "nice-grpc-common";
-import { ListValue, Struct } from "./google/protobuf/struct";
+import { BinaryReader, BinaryWriter } from '@bufbuild/protobuf/wire';
+import type { CallContext, CallOptions } from 'nice-grpc-common';
+import { ListValue, Struct } from './google/protobuf/struct';
 
-export const protobufPackage = "vstable";
+export const protobufPackage = 'vstable';
 
-export interface PingRequest {
-}
+export type PingRequest = {};
 
 export interface PingResponse {
   status?: string | undefined;
@@ -186,12 +185,12 @@ export const PingRequest: MessageFns<PingRequest> = {
 };
 
 function createBasePingResponse(): PingResponse {
-  return { status: "" };
+  return { status: '' };
 }
 
 export const PingResponse: MessageFns<PingResponse> = {
   encode(message: PingResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.status !== undefined && message.status !== "") {
+    if (message.status !== undefined && message.status !== '') {
       writer.uint32(10).string(message.status);
     }
     return writer;
@@ -223,18 +222,18 @@ export const PingResponse: MessageFns<PingResponse> = {
 };
 
 function createBaseConnectRequest(): ConnectRequest {
-  return { id: "", dialect: "", dsn: "" };
+  return { id: '', dialect: '', dsn: '' };
 }
 
 export const ConnectRequest: MessageFns<ConnectRequest> = {
   encode(message: ConnectRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== undefined && message.id !== "") {
+    if (message.id !== undefined && message.id !== '') {
       writer.uint32(10).string(message.id);
     }
-    if (message.dialect !== undefined && message.dialect !== "") {
+    if (message.dialect !== undefined && message.dialect !== '') {
       writer.uint32(18).string(message.dialect);
     }
-    if (message.dsn !== undefined && message.dsn !== "") {
+    if (message.dsn !== undefined && message.dsn !== '') {
       writer.uint32(26).string(message.dsn);
     }
     return writer;
@@ -319,12 +318,12 @@ export const ConnectResponse: MessageFns<ConnectResponse> = {
 };
 
 function createBaseDisconnectRequest(): DisconnectRequest {
-  return { id: "" };
+  return { id: '' };
 }
 
 export const DisconnectRequest: MessageFns<DisconnectRequest> = {
   encode(message: DisconnectRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== undefined && message.id !== "") {
+    if (message.id !== undefined && message.id !== '') {
       writer.uint32(10).string(message.id);
     }
     return writer;
@@ -393,15 +392,15 @@ export const DisconnectResponse: MessageFns<DisconnectResponse> = {
 };
 
 function createBaseQueryRequest(): QueryRequest {
-  return { id: "", sql: "", params: undefined };
+  return { id: '', sql: '', params: undefined };
 }
 
 export const QueryRequest: MessageFns<QueryRequest> = {
   encode(message: QueryRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== undefined && message.id !== "") {
+    if (message.id !== undefined && message.id !== '') {
       writer.uint32(10).string(message.id);
     }
-    if (message.sql !== undefined && message.sql !== "") {
+    if (message.sql !== undefined && message.sql !== '') {
       writer.uint32(18).string(message.sql);
     }
     if (message.params !== undefined) {
@@ -452,15 +451,15 @@ export const QueryRequest: MessageFns<QueryRequest> = {
 };
 
 function createBaseFieldInfo(): FieldInfo {
-  return { name: "", type: "" };
+  return { name: '', type: '' };
 }
 
 export const FieldInfo: MessageFns<FieldInfo> = {
   encode(message: FieldInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.name !== undefined && message.name !== "") {
+    if (message.name !== undefined && message.name !== '') {
       writer.uint32(10).string(message.name);
     }
-    if (message.type !== undefined && message.type !== "") {
+    if (message.type !== undefined && message.type !== '') {
       writer.uint32(18).string(message.type);
     }
     return writer;
@@ -570,9 +569,9 @@ export const QueryResponse: MessageFns<QueryResponse> = {
 
 function createBaseColumnDefinition(): ColumnDefinition {
   return {
-    id: "",
-    name: "",
-    type: "",
+    id: '',
+    name: '',
+    type: '',
     enumValues: [],
     length: undefined,
     precision: undefined,
@@ -583,8 +582,8 @@ function createBaseColumnDefinition(): ColumnDefinition {
     isPrimaryKey: false,
     isAutoIncrement: false,
     isIdentity: false,
-    comment: "",
-    pkConstraintName: "",
+    comment: '',
+    pkConstraintName: '',
     originalIndex: 0,
     original: undefined,
   };
@@ -592,13 +591,13 @@ function createBaseColumnDefinition(): ColumnDefinition {
 
 export const ColumnDefinition: MessageFns<ColumnDefinition> = {
   encode(message: ColumnDefinition, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== undefined && message.id !== "") {
+    if (message.id !== undefined && message.id !== '') {
       writer.uint32(10).string(message.id);
     }
-    if (message.name !== undefined && message.name !== "") {
+    if (message.name !== undefined && message.name !== '') {
       writer.uint32(18).string(message.name);
     }
-    if (message.type !== undefined && message.type !== "") {
+    if (message.type !== undefined && message.type !== '') {
       writer.uint32(26).string(message.type);
     }
     if (message.enumValues !== undefined && message.enumValues.length !== 0) {
@@ -633,10 +632,10 @@ export const ColumnDefinition: MessageFns<ColumnDefinition> = {
     if (message.isIdentity !== undefined && message.isIdentity !== false) {
       writer.uint32(104).bool(message.isIdentity);
     }
-    if (message.comment !== undefined && message.comment !== "") {
+    if (message.comment !== undefined && message.comment !== '') {
       writer.uint32(114).string(message.comment);
     }
-    if (message.pkConstraintName !== undefined && message.pkConstraintName !== "") {
+    if (message.pkConstraintName !== undefined && message.pkConstraintName !== '') {
       writer.uint32(122).string(message.pkConstraintName);
     }
     if (message.originalIndex !== undefined && message.originalIndex !== 0) {
@@ -805,15 +804,15 @@ export const ColumnDefinition: MessageFns<ColumnDefinition> = {
 };
 
 function createBaseIndexDefinition(): IndexDefinition {
-  return { id: "", name: "", columns: [], isUnique: false, original: undefined };
+  return { id: '', name: '', columns: [], isUnique: false, original: undefined };
 }
 
 export const IndexDefinition: MessageFns<IndexDefinition> = {
   encode(message: IndexDefinition, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== undefined && message.id !== "") {
+    if (message.id !== undefined && message.id !== '') {
       writer.uint32(10).string(message.id);
     }
-    if (message.name !== undefined && message.name !== "") {
+    if (message.name !== undefined && message.name !== '') {
       writer.uint32(18).string(message.name);
     }
     if (message.columns !== undefined && message.columns.length !== 0) {
@@ -892,23 +891,23 @@ export const IndexDefinition: MessageFns<IndexDefinition> = {
 
 function createBaseForeignKeyDefinition(): ForeignKeyDefinition {
   return {
-    id: "",
-    name: "",
+    id: '',
+    name: '',
     columns: [],
-    referencedTable: "",
+    referencedTable: '',
     referencedColumns: [],
-    onDelete: "",
-    onUpdate: "",
+    onDelete: '',
+    onUpdate: '',
     original: undefined,
   };
 }
 
 export const ForeignKeyDefinition: MessageFns<ForeignKeyDefinition> = {
   encode(message: ForeignKeyDefinition, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== undefined && message.id !== "") {
+    if (message.id !== undefined && message.id !== '') {
       writer.uint32(10).string(message.id);
     }
-    if (message.name !== undefined && message.name !== "") {
+    if (message.name !== undefined && message.name !== '') {
       writer.uint32(18).string(message.name);
     }
     if (message.columns !== undefined && message.columns.length !== 0) {
@@ -916,7 +915,7 @@ export const ForeignKeyDefinition: MessageFns<ForeignKeyDefinition> = {
         writer.uint32(26).string(v!);
       }
     }
-    if (message.referencedTable !== undefined && message.referencedTable !== "") {
+    if (message.referencedTable !== undefined && message.referencedTable !== '') {
       writer.uint32(34).string(message.referencedTable);
     }
     if (message.referencedColumns !== undefined && message.referencedColumns.length !== 0) {
@@ -924,10 +923,10 @@ export const ForeignKeyDefinition: MessageFns<ForeignKeyDefinition> = {
         writer.uint32(42).string(v!);
       }
     }
-    if (message.onDelete !== undefined && message.onDelete !== "") {
+    if (message.onDelete !== undefined && message.onDelete !== '') {
       writer.uint32(50).string(message.onDelete);
     }
-    if (message.onUpdate !== undefined && message.onUpdate !== "") {
+    if (message.onUpdate !== undefined && message.onUpdate !== '') {
       writer.uint32(58).string(message.onUpdate);
     }
     if (message.original !== undefined) {
@@ -1024,18 +1023,21 @@ export const ForeignKeyDefinition: MessageFns<ForeignKeyDefinition> = {
 };
 
 function createBaseCheckConstraintDefinition(): CheckConstraintDefinition {
-  return { id: "", name: "", expression: "", original: undefined };
+  return { id: '', name: '', expression: '', original: undefined };
 }
 
 export const CheckConstraintDefinition: MessageFns<CheckConstraintDefinition> = {
-  encode(message: CheckConstraintDefinition, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== undefined && message.id !== "") {
+  encode(
+    message: CheckConstraintDefinition,
+    writer: BinaryWriter = new BinaryWriter()
+  ): BinaryWriter {
+    if (message.id !== undefined && message.id !== '') {
       writer.uint32(10).string(message.id);
     }
-    if (message.name !== undefined && message.name !== "") {
+    if (message.name !== undefined && message.name !== '') {
       writer.uint32(18).string(message.name);
     }
-    if (message.expression !== undefined && message.expression !== "") {
+    if (message.expression !== undefined && message.expression !== '') {
       writer.uint32(26).string(message.expression);
     }
     if (message.original !== undefined) {
@@ -1094,18 +1096,18 @@ export const CheckConstraintDefinition: MessageFns<CheckConstraintDefinition> = 
 };
 
 function createBaseViewDefinition(): ViewDefinition {
-  return { id: "", name: "", definition: "", original: undefined };
+  return { id: '', name: '', definition: '', original: undefined };
 }
 
 export const ViewDefinition: MessageFns<ViewDefinition> = {
   encode(message: ViewDefinition, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== undefined && message.id !== "") {
+    if (message.id !== undefined && message.id !== '') {
       writer.uint32(10).string(message.id);
     }
-    if (message.name !== undefined && message.name !== "") {
+    if (message.name !== undefined && message.name !== '') {
       writer.uint32(18).string(message.name);
     }
-    if (message.definition !== undefined && message.definition !== "") {
+    if (message.definition !== undefined && message.definition !== '') {
       writer.uint32(26).string(message.definition);
     }
     if (message.original !== undefined) {
@@ -1165,12 +1167,12 @@ export const ViewDefinition: MessageFns<ViewDefinition> = {
 
 function createBaseTriggerDefinition(): TriggerDefinition {
   return {
-    id: "",
-    name: "",
-    timing: "",
-    event: "",
-    tableName: "",
-    definition: "",
+    id: '',
+    name: '',
+    timing: '',
+    event: '',
+    tableName: '',
+    definition: '',
     enabled: false,
     original: undefined,
   };
@@ -1178,22 +1180,22 @@ function createBaseTriggerDefinition(): TriggerDefinition {
 
 export const TriggerDefinition: MessageFns<TriggerDefinition> = {
   encode(message: TriggerDefinition, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== undefined && message.id !== "") {
+    if (message.id !== undefined && message.id !== '') {
       writer.uint32(10).string(message.id);
     }
-    if (message.name !== undefined && message.name !== "") {
+    if (message.name !== undefined && message.name !== '') {
       writer.uint32(18).string(message.name);
     }
-    if (message.timing !== undefined && message.timing !== "") {
+    if (message.timing !== undefined && message.timing !== '') {
       writer.uint32(26).string(message.timing);
     }
-    if (message.event !== undefined && message.event !== "") {
+    if (message.event !== undefined && message.event !== '') {
       writer.uint32(34).string(message.event);
     }
-    if (message.tableName !== undefined && message.tableName !== "") {
+    if (message.tableName !== undefined && message.tableName !== '') {
       writer.uint32(42).string(message.tableName);
     }
-    if (message.definition !== undefined && message.definition !== "") {
+    if (message.definition !== undefined && message.definition !== '') {
       writer.uint32(50).string(message.definition);
     }
     if (message.enabled !== undefined && message.enabled !== false) {
@@ -1287,21 +1289,21 @@ export const TriggerDefinition: MessageFns<TriggerDefinition> = {
 };
 
 function createBaseRoutineDefinition(): RoutineDefinition {
-  return { id: "", name: "", type: "", definition: "", original: undefined };
+  return { id: '', name: '', type: '', definition: '', original: undefined };
 }
 
 export const RoutineDefinition: MessageFns<RoutineDefinition> = {
   encode(message: RoutineDefinition, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== undefined && message.id !== "") {
+    if (message.id !== undefined && message.id !== '') {
       writer.uint32(10).string(message.id);
     }
-    if (message.name !== undefined && message.name !== "") {
+    if (message.name !== undefined && message.name !== '') {
       writer.uint32(18).string(message.name);
     }
-    if (message.type !== undefined && message.type !== "") {
+    if (message.type !== undefined && message.type !== '') {
       writer.uint32(26).string(message.type);
     }
-    if (message.definition !== undefined && message.definition !== "") {
+    if (message.definition !== undefined && message.definition !== '') {
       writer.uint32(34).string(message.definition);
     }
     if (message.original !== undefined) {
@@ -1368,18 +1370,18 @@ export const RoutineDefinition: MessageFns<RoutineDefinition> = {
 };
 
 function createBaseDatabaseConfig(): DatabaseConfig {
-  return { charset: "", collation: "", engine: "", autoIncrementOffset: 0 };
+  return { charset: '', collation: '', engine: '', autoIncrementOffset: 0 };
 }
 
 export const DatabaseConfig: MessageFns<DatabaseConfig> = {
   encode(message: DatabaseConfig, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.charset !== undefined && message.charset !== "") {
+    if (message.charset !== undefined && message.charset !== '') {
       writer.uint32(10).string(message.charset);
     }
-    if (message.collation !== undefined && message.collation !== "") {
+    if (message.collation !== undefined && message.collation !== '') {
       writer.uint32(18).string(message.collation);
     }
-    if (message.engine !== undefined && message.engine !== "") {
+    if (message.engine !== undefined && message.engine !== '') {
       writer.uint32(26).string(message.engine);
     }
     if (message.autoIncrementOffset !== undefined && message.autoIncrementOffset !== 0) {
@@ -1439,10 +1441,10 @@ export const DatabaseConfig: MessageFns<DatabaseConfig> = {
 
 function createBaseDiffRequest(): DiffRequest {
   return {
-    dialect: "",
-    schema: "",
-    tableName: "",
-    oldTableName: "",
+    dialect: '',
+    schema: '',
+    tableName: '',
+    oldTableName: '',
     columns: [],
     indexes: [],
     deletedColumns: [],
@@ -1463,16 +1465,16 @@ function createBaseDiffRequest(): DiffRequest {
 
 export const DiffRequest: MessageFns<DiffRequest> = {
   encode(message: DiffRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.dialect !== undefined && message.dialect !== "") {
+    if (message.dialect !== undefined && message.dialect !== '') {
       writer.uint32(10).string(message.dialect);
     }
-    if (message.schema !== undefined && message.schema !== "") {
+    if (message.schema !== undefined && message.schema !== '') {
       writer.uint32(18).string(message.schema);
     }
-    if (message.tableName !== undefined && message.tableName !== "") {
+    if (message.tableName !== undefined && message.tableName !== '') {
       writer.uint32(26).string(message.tableName);
     }
-    if (message.oldTableName !== undefined && message.oldTableName !== "") {
+    if (message.oldTableName !== undefined && message.oldTableName !== '') {
       writer.uint32(34).string(message.oldTableName);
     }
     if (message.columns !== undefined && message.columns.length !== 0) {
@@ -1817,11 +1819,11 @@ export const GenerateSQLResponse: MessageFns<GenerateSQLResponse> = {
 
 export type EngineServiceDefinition = typeof EngineServiceDefinition;
 export const EngineServiceDefinition = {
-  name: "EngineService",
-  fullName: "vstable.EngineService",
+  name: 'EngineService',
+  fullName: 'vstable.EngineService',
   methods: {
     ping: {
-      name: "Ping",
+      name: 'Ping',
       requestType: PingRequest as typeof PingRequest,
       requestStream: false,
       responseType: PingResponse as typeof PingResponse,
@@ -1829,7 +1831,7 @@ export const EngineServiceDefinition = {
       options: {},
     },
     dbConnect: {
-      name: "DbConnect",
+      name: 'DbConnect',
       requestType: ConnectRequest as typeof ConnectRequest,
       requestStream: false,
       responseType: ConnectResponse as typeof ConnectResponse,
@@ -1837,7 +1839,7 @@ export const EngineServiceDefinition = {
       options: {},
     },
     disconnect: {
-      name: "Disconnect",
+      name: 'Disconnect',
       requestType: DisconnectRequest as typeof DisconnectRequest,
       requestStream: false,
       responseType: DisconnectResponse as typeof DisconnectResponse,
@@ -1845,7 +1847,7 @@ export const EngineServiceDefinition = {
       options: {},
     },
     query: {
-      name: "Query",
+      name: 'Query',
       requestType: QueryRequest as typeof QueryRequest,
       requestStream: false,
       responseType: QueryResponse as typeof QueryResponse,
@@ -1853,7 +1855,7 @@ export const EngineServiceDefinition = {
       options: {},
     },
     generateAlterTable: {
-      name: "GenerateAlterTable",
+      name: 'GenerateAlterTable',
       requestType: DiffRequest as typeof DiffRequest,
       requestStream: false,
       responseType: GenerateSQLResponse as typeof GenerateSQLResponse,
@@ -1861,7 +1863,7 @@ export const EngineServiceDefinition = {
       options: {},
     },
     generateCreateTable: {
-      name: "GenerateCreateTable",
+      name: 'GenerateCreateTable',
       requestType: DiffRequest as typeof DiffRequest,
       requestStream: false,
       responseType: GenerateSQLResponse as typeof GenerateSQLResponse,
@@ -1873,29 +1875,53 @@ export const EngineServiceDefinition = {
 
 export interface EngineServiceImplementation<CallContextExt = {}> {
   ping(request: PingRequest, context: CallContext & CallContextExt): Promise<PingResponse>;
-  dbConnect(request: ConnectRequest, context: CallContext & CallContextExt): Promise<ConnectResponse>;
-  disconnect(request: DisconnectRequest, context: CallContext & CallContextExt): Promise<DisconnectResponse>;
+  dbConnect(
+    request: ConnectRequest,
+    context: CallContext & CallContextExt
+  ): Promise<ConnectResponse>;
+  disconnect(
+    request: DisconnectRequest,
+    context: CallContext & CallContextExt
+  ): Promise<DisconnectResponse>;
   query(request: QueryRequest, context: CallContext & CallContextExt): Promise<QueryResponse>;
-  generateAlterTable(request: DiffRequest, context: CallContext & CallContextExt): Promise<GenerateSQLResponse>;
-  generateCreateTable(request: DiffRequest, context: CallContext & CallContextExt): Promise<GenerateSQLResponse>;
+  generateAlterTable(
+    request: DiffRequest,
+    context: CallContext & CallContextExt
+  ): Promise<GenerateSQLResponse>;
+  generateCreateTable(
+    request: DiffRequest,
+    context: CallContext & CallContextExt
+  ): Promise<GenerateSQLResponse>;
 }
 
 export interface EngineServiceClient<CallOptionsExt = {}> {
   ping(request: PingRequest, options?: CallOptions & CallOptionsExt): Promise<PingResponse>;
-  dbConnect(request: ConnectRequest, options?: CallOptions & CallOptionsExt): Promise<ConnectResponse>;
-  disconnect(request: DisconnectRequest, options?: CallOptions & CallOptionsExt): Promise<DisconnectResponse>;
+  dbConnect(
+    request: ConnectRequest,
+    options?: CallOptions & CallOptionsExt
+  ): Promise<ConnectResponse>;
+  disconnect(
+    request: DisconnectRequest,
+    options?: CallOptions & CallOptionsExt
+  ): Promise<DisconnectResponse>;
   query(request: QueryRequest, options?: CallOptions & CallOptionsExt): Promise<QueryResponse>;
-  generateAlterTable(request: DiffRequest, options?: CallOptions & CallOptionsExt): Promise<GenerateSQLResponse>;
-  generateCreateTable(request: DiffRequest, options?: CallOptions & CallOptionsExt): Promise<GenerateSQLResponse>;
+  generateAlterTable(
+    request: DiffRequest,
+    options?: CallOptions & CallOptionsExt
+  ): Promise<GenerateSQLResponse>;
+  generateCreateTable(
+    request: DiffRequest,
+    options?: CallOptions & CallOptionsExt
+  ): Promise<GenerateSQLResponse>;
 }
 
 function longToNumber(int64: { toString(): string }): number {
   const num = globalThis.Number(int64.toString());
   if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
+    throw new globalThis.Error('Value is larger than Number.MAX_SAFE_INTEGER');
   }
   if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
+    throw new globalThis.Error('Value is smaller than Number.MIN_SAFE_INTEGER');
   }
   return num;
 }
