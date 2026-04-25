@@ -1,3 +1,6 @@
+import { ask } from '@tauri-apps/plugin-dialog';
+import { relaunch } from '@tauri-apps/plugin-process';
+import { check } from '@tauri-apps/plugin-updater';
 import { Plus, X } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { apiClient } from './api/client';
@@ -55,6 +58,36 @@ function App() {
       return newSessions;
     });
   });
+
+  // Check for updates on mount
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      try {
+        const update = await check();
+        if (update) {
+          const yes = await ask(
+            `Update to ${update.version} is available!\n\nRelease notes:\n${update.body || 'No release notes provided.'}\n\nDo you want to install it now?`,
+            {
+              title: 'Update Available',
+              kind: 'info',
+              okLabel: 'Update',
+              cancelLabel: 'Cancel',
+            }
+          );
+          if (yes) {
+            await update.downloadAndInstall();
+            await relaunch();
+          }
+        }
+      } catch (error) {
+        console.error('Failed to check for updates:', error);
+      }
+    };
+    // Only check in desktop environments (Tauri)
+    if ((window as any).__TAURI_INTERNALS__) {
+      checkForUpdates();
+    }
+  }, []);
 
   // Store the latest state of each session reported by SessionView
   const sessionStatesRef = useRef<Record<string, any>>({});
